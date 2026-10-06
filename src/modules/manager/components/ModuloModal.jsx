@@ -1,0 +1,94 @@
+import { useEffect, useState } from 'react'
+import { XMarkIcon } from '@heroicons/react/24/outline'
+
+export default function ModuloModal({ isOpen, onClose, onSave, modulo }) {
+  const [formData, setFormData] = useState({
+    codigo: '',
+    nombre: '',
+    descripcion: '',
+    activo: true
+  })
+
+  useEffect(() => {
+    if (modulo) {
+      setFormData({
+        codigo: modulo.codigo || '',
+        nombre: modulo.nombre || '',
+        descripcion: modulo.descripcion || '',
+        activo: modulo.activo ?? true
+      })
+    } else {
+      setFormData({
+        codigo: '', nombre: '', descripcion: '', activo: true 
+      })
+    }
+  }, [modulo, isOpen])
+
+  if (!isOpen) return null
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onSave(formData)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-white">
+            {modulo ? 'Editar Módulo' : 'Nuevo Módulo'}
+          </h2>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 overflow-y-auto flex-1">
+          <form id="modulo-form" onSubmit={handleSubmit} className="space-y-4">
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código Único *</label>
+              <input required type="text" name="codigo" value={formData.codigo} onChange={handleChange} className="input-field" placeholder="EJ: VENTAS, COMPRAS" disabled={!!modulo} />
+              {modulo && <p className="text-xs text-slate-500 mt-1">El código no puede modificarse una vez creado.</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre del Módulo *</label>
+              <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="input-field" placeholder="Ej: Gestión de Ventas" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descripción</label>
+              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="input-field" placeholder="Descripción breve del módulo..." rows="3"></textarea>
+            </div>
+
+            <div className="flex items-center mt-2">
+              <input type="checkbox" id="activo_mod" name="activo" checked={formData.activo} onChange={handleChange} className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <label htmlFor="activo_mod" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">Módulo Activo</label>
+            </div>
+
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" form="modulo-form" className="btn-primary px-6">
+            Guardar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  )
+}

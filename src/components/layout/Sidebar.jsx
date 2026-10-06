@@ -8,19 +8,35 @@ import {
   DocumentChartBarIcon,
   Cog6ToothIcon,
   XMarkIcon,
+  BuildingOfficeIcon,
+  MapPinIcon,
+  Square3Stack3DIcon,
 } from '@heroicons/react/24/outline'
-
-const nav = [
-  { to: '/dashboard',     icon: HomeIcon,             label: 'Dashboard' },
-  { to: '/productos',     icon: CubeIcon,             label: 'Productos' },
-  { to: '/clientes',      icon: UsersIcon,            label: 'Clientes' },
-  { to: '/ventas',        icon: ShoppingCartIcon,     label: 'Ventas' },
-  { to: '/usuarios',      icon: UserGroupIcon,        label: 'Usuarios' },
-  { to: '/reportes',      icon: DocumentChartBarIcon, label: 'Reportes' },
-  { to: '/configuracion', icon: Cog6ToothIcon,        label: 'Configuración' },
-]
+import { useAuthStore } from '../../store/useAuthStore'
 
 export default function Sidebar({ collapsed, mobileOpen, onClose }) {
+  const { user } = useAuthStore()
+
+  // Construir rutas de navegación basadas en permisos
+  const nav = [
+    { to: '/dashboard',     icon: HomeIcon,             label: 'Dashboard' },
+    { to: '/productos',     icon: CubeIcon,             label: 'Productos' },
+    { to: '/clientes',      icon: UsersIcon,            label: 'Clientes' },
+    { to: '/ventas',        icon: ShoppingCartIcon,     label: 'Ventas' },
+    { to: '/reportes',      icon: DocumentChartBarIcon, label: 'Reportes' },
+  ]
+
+  // Rutas exclusivas para Super Admin (Gestión)
+  if (user?.es_super_admin) {
+    nav.push(
+      { to: '/usuarios',      icon: UserGroupIcon,        label: 'Usuarios' },
+      { to: '/empresas',      icon: BuildingOfficeIcon,   label: 'Empresas' },
+      { to: '/sucursales',    icon: MapPinIcon,           label: 'Sucursales' },
+      { to: '/modulos',       icon: Square3Stack3DIcon,   label: 'Módulos' },
+      { to: '/configuracion', icon: Cog6ToothIcon,        label: 'Configuración' }
+    )
+  }
+
   return (
     <>
       {/* Overlay mobile */}

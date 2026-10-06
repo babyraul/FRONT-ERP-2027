@@ -1,2 +1,5 @@
 export { default as Usuarios } from './pages/Usuarios.jsx'
 export { default as Configuracion } from './pages/Configuracion.jsx'
+export { Empresas } from './pages/Empresas.jsx'
+export { Sucursales } from './pages/Sucursales.jsx'
+export { Modulos } from './pages/Modulos.jsx'
