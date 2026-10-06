@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { MagnifyingGlassIcon, ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
-import { useClientesStore } from '../../store/useClientesStore.js'
-import { exportToExcel } from '../../utils/exportExcel.js'
+import { useClientesStore } from '../../../store/useClientesStore.js'
+import { exportToExcel } from '../../../utils/exportExcel.js'
 
 export default function Clientes() {
   const { setBusqueda, getFiltered, deleteCliente } = useClientesStore()

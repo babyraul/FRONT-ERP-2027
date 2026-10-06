@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { ArrowDownTrayIcon, DocumentChartBarIcon } from '@heroicons/react/24/outline'
-import { useVentasStore } from '../../store/useVentasStore.js'
-import { useProductosStore } from '../../store/useProductosStore.js'
-import { useClientesStore } from '../../store/useClientesStore.js'
-import { exportToExcel, formatCurrency } from '../../utils/exportExcel.js'
+import { useVentasStore } from '../../../store/useVentasStore.js'
+import { useProductosStore } from '../../../store/useProductosStore.js'
+import { useClientesStore } from '../../../store/useClientesStore.js'
+import { exportToExcel, formatCurrency } from '../../../utils/exportExcel.js'
 
 const REPORTES = [
   { id: 'ventas',    label: 'Reporte de Ventas',    desc: 'Todas las ventas del período seleccionado.' },

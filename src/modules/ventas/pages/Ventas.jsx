@@ -3,8 +3,8 @@ import { MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outl
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { useVentasStore } from '../../store/useVentasStore.js'
-import { exportToExcel, formatCurrency } from '../../utils/exportExcel.js'
+import { useVentasStore } from '../../../store/useVentasStore.js'
+import { exportToExcel, formatCurrency } from '../../../utils/exportExcel.js'
 
 const ESTADOS = ['pagado', 'pendiente', 'anulado']
 

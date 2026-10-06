@@ -3,10 +3,10 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { useVentasStore } from '../../store/useVentasStore.js'
-import { useProductosStore } from '../../store/useProductosStore.js'
-import { useClientesStore } from '../../store/useClientesStore.js'
-import { formatCurrency } from '../../utils/exportExcel.js'
+import { useVentasStore } from '../../../store/useVentasStore.js'
+import { useProductosStore } from '../../../store/useProductosStore.js'
+import { useClientesStore } from '../../../store/useClientesStore.js'
+import { formatCurrency } from '../../../utils/exportExcel.js'
 
 const ventasMensuales = [
   { mes: 'Abr', ventas: 18400, meta: 20000 },

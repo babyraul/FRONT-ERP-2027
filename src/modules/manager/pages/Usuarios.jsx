@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { MagnifyingGlassIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
-import { useUsuariosStore } from '../../store/useUsuariosStore.js'
+import { useUsuariosStore } from '../../../store/useUsuariosStore.js'
 
 const ROL_COLORS = {
   admin:      'badge-blue',

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { MagnifyingGlassIcon, ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
-import { useProductosStore } from '../../store/useProductosStore.js'
-import { exportToExcel, formatCurrency } from '../../utils/exportExcel.js'
+import { useProductosStore } from '../../../store/useProductosStore.js'
+import { exportToExcel, formatCurrency } from '../../../utils/exportExcel.js'
 
 const CATEGORIAS = ['Abarrotes', 'Lácteos', 'Limpieza', 'Panadería', 'Bebidas', 'Frutas y Verduras']
 
