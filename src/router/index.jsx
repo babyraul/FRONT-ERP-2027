@@ -7,7 +7,7 @@ import Ventas from '../pages/Ventas/Ventas.jsx'
 import Usuarios from '../pages/Usuarios/Usuarios.jsx'
 import Reportes from '../pages/Reportes/Reportes.jsx'
 import Configuracion from '../pages/Configuracion/Configuracion.jsx'
-import Login from '../pages/Login/Login.jsx'
+import Login from '../modules/auth/pages/Login.jsx'
 
 export const router = createBrowserRouter([
   {
@@ -19,12 +19,12 @@ export const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: 'dashboard',     element: <Dashboard /> },
-      { path: 'productos',     element: <Productos /> },
-      { path: 'clientes',      element: <Clientes /> },
-      { path: 'ventas',        element: <Ventas /> },
-      { path: 'usuarios',      element: <Usuarios /> },
-      { path: 'reportes',      element: <Reportes /> },
+      { path: 'dashboard', element: <Dashboard /> },
+      { path: 'productos', element: <Productos /> },
+      { path: 'clientes', element: <Clientes /> },
+      { path: 'ventas', element: <Ventas /> },
+      { path: 'usuarios', element: <Usuarios /> },
+      { path: 'reportes', element: <Reportes /> },
       { path: 'configuracion', element: <Configuracion /> },
     ],
   },

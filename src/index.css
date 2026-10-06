@@ -2,46 +2,126 @@
 @tailwind components;
 @tailwind utilities;
 
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @layer base {
+  :root {
+    --bg: #f1f5f9;
+    --panel: #ffffff;
+    --panel2: #6c757d;
+    --text: #0f172a;
+    --muted: #6c757d;
+    --color-primary: #35605a;
+    --color-secondary: #01a59c;
+    --border: #e6e9ee;
+    --shadow: 0 4px 12px rgba(2, 6, 23, 0.08);
+  }
+
+  html[data-theme='dark'] {
+    --bg: #0f1720;
+    --panel: #111827;
+    --panel2: #2d333d;
+    --text: #dbe7ef;
+    --muted: #9aa6b2;
+    --color-primary: #1f6f64;
+    --color-secondary: #06b6a4;
+    --border: #e6e9ee;
+    --shadow: 0 6px 18px rgba(2, 6, 23, 0.45);
+  }
+
   * {
     @apply box-border;
   }
-  body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+  
+  html, body {
+    background-color: var(--bg);
+    color: var(--text);
+    transition: background-color 180ms ease, color 180ms ease;
+    @apply font-sans antialiased;
   }
+  
   ::-webkit-scrollbar {
     @apply w-1.5 h-1.5;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100;
+    @apply bg-transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 rounded-full;
+    background-color: var(--muted);
+    @apply rounded-full;
   }
 }
 
 @layer components {
+  .panel {
+    background-color: var(--panel);
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  /* Sobrescritura automática para clases Tailwind en modo oscuro */
+  html[data-theme='dark'] .bg-white {
+    background-color: var(--panel) !important;
+  }
+  html[data-theme='dark'] .bg-gray-50 {
+    background-color: var(--bg) !important;
+  }
+  html[data-theme='dark'] .text-gray-700,
+  html[data-theme='dark'] .text-gray-800,
+  html[data-theme='dark'] .text-gray-900 {
+    color: var(--text) !important;
+  }
+  html[data-theme='dark'] .text-gray-500,
+  html[data-theme='dark'] .text-gray-400 {
+    color: var(--muted) !important;
+  }
+  html[data-theme='dark'] .border-gray-200,
+  html[data-theme='dark'] .border-gray-300 {
+    border-color: var(--border) !important;
+  }
+  html[data-theme='dark'] .shadow-sm,
+  html[data-theme='dark'] .shadow-md,
+  html[data-theme='dark'] .shadow-lg,
+  html[data-theme='dark'] .shadow-xl {
+    box-shadow: var(--shadow) !important;
+  }
+
   .btn-primary {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: var(--color-primary);
   }
+  .btn-primary:hover {
+    background-color: var(--color-secondary);
+  }
+  
   .btn-secondary {
-    @apply inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors;
+    @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border transition-colors;
+    background-color: var(--panel);
+    color: var(--text);
+    border-color: var(--border);
   }
+  .btn-secondary:hover {
+    background-color: var(--bg);
+  }
+
   .btn-danger {
     @apply inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors;
   }
+  
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+    @apply rounded-xl p-6 transition-colors duration-300;
+    background-color: var(--panel);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
   }
+  
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-colors duration-300;
+    background-color: var(--panel);
+    color: var(--text);
+    border-color: var(--border);
   }
+  
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
-  .badge-green  { @apply badge bg-green-100 text-green-800; }
-  .badge-red    { @apply badge bg-red-100 text-red-800; }
-  .badge-yellow { @apply badge bg-yellow-100 text-yellow-800; }
-  .badge-blue   { @apply badge bg-blue-100 text-blue-800; }
-  .badge-gray   { @apply badge bg-gray-100 text-gray-800; }
 }

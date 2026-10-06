@@ -1,18 +1,31 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import api from '../utils/api'
 
 export const useAuthStore = create(
   persist(
     (set) => ({
-      user: { nombre: 'Admin', rol: 'admin', email: 'admin@sistemmarket.pe' },
+      user: null,
       token: null,
-      isAuthenticated: true, // set to false in production
+      isAuthenticated: false,
 
-      login: (userData, token) =>
-        set({ user: userData, token, isAuthenticated: true }),
+      login: async (usuario, password) => {
+        try {
+          const response = await api.post('/auth/login', { usuario, password })
+          const { access_token, user } = response.data
+          set({ user, token: access_token, isAuthenticated: true })
+          return { success: true }
+        } catch (error) {
+          console.error('Error de login:', error)
+          const errorMsg = error.response?.data?.message || 'Error de conexión'
+          return { success: false, message: errorMsg }
+        }
+      },
 
-      logout: () =>
-        set({ user: null, token: null, isAuthenticated: false }),
+      logout: () => {
+        // Opcional: podrías hacer un api.post('/auth/logout') aquí
+        set({ user: null, token: null, isAuthenticated: false })
+      },
     }),
     {
       name: 'auth-storage',
