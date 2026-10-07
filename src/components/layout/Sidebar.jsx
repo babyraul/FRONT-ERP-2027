@@ -51,9 +51,12 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
     const sections = sidebarMenu.map(rootModule => ({
       id: rootModule.id,
       title: rootModule.nombre,
+      iconClass: rootModule.icon,
+      ruta: rootModule.ruta,
       items: (rootModule.items || []).map(child => ({
         to: child.ruta || `/${child.codigo.toLowerCase()}`,
         icon: getIconForModule(child.codigo),
+        iconClass: child.icon,
         label: child.nombre
       }))
     }))
@@ -65,7 +68,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
         id: 'dashboard-root',
         title: 'Principal',
         items: [
-          { to: '/dashboard', icon: HomeIcon, label: 'Dashboard' }
+          { to: '/dashboard', icon: HomeIcon, label: 'Dashboard', iconClass: 'fas fa-chart-line' }
         ]
       })
     }
@@ -134,7 +137,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
                     title={collapsed ? section.title : undefined}
                     className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}
                    >
-                     <Icon className="h-5 w-5 shrink-0" />
+                     {section.iconClass ? <i className={`${section.iconClass} w-5 shrink-0 text-center text-[1.125rem]`} /> : <Icon className="h-5 w-5 shrink-0" />}
                      <span className="sidebar-label truncate">{section.title}</span>
                    </NavLink>
                 </div>
@@ -166,7 +169,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
                   }`}
                 >
                   <ul className="overflow-hidden space-y-1">
-                    {section.items.map(({ to, icon: Icon, label }) => (
+                    {section.items.map(({ to, icon: Icon, iconClass, label }) => (
                       <li key={to}>
                         <NavLink
                           to={to}
@@ -174,7 +177,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
                           title={collapsed ? label : undefined}
                           className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}
                         >
-                          <Icon className="h-5 w-5 shrink-0" />
+                          {iconClass ? <i className={`${iconClass} w-5 shrink-0 text-center text-[1.125rem]`} /> : <Icon className="h-5 w-5 shrink-0" />}
                           <span className="sidebar-label truncate">{label}</span>
                         </NavLink>
                       </li>

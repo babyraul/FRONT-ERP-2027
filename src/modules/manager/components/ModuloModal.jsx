@@ -10,6 +10,7 @@ export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosLi
     ruta: '',
     tipo: 'MODULO',
     orden: 0,
+    icon: '',
     activo: true
   })
 
@@ -23,11 +24,12 @@ export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosLi
         ruta: modulo.ruta || '',
         tipo: modulo.tipo || 'MODULO',
         orden: modulo.orden || 0,
+        icon: modulo.icon || '',
         activo: modulo.activo ?? true
       })
     } else {
       setFormData({
-        codigo: '', nombre: '', descripcion: '', padre_id: '', ruta: '', tipo: 'MODULO', orden: 0, activo: true 
+        codigo: '', nombre: '', descripcion: '', padre_id: '', ruta: '', tipo: 'MODULO', orden: 0, icon: '', activo: true 
       })
     }
   }, [modulo, isOpen])
@@ -145,9 +147,14 @@ export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosLi
                 <input type="text" name="ruta" value={formData.ruta} onChange={handleChange} className="input-field" placeholder="Ej: /ventas/pedidos" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Orden *</label>
-                <input required type="number" name="orden" value={formData.orden} onChange={handleChange} className="input-field" min="0" />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ícono (FontAwesome)</label>
+                <input type="text" name="icon" value={formData.icon} onChange={handleChange} className="input-field" placeholder="Ej: fas fa-home" />
               </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Orden *</label>
+              <input required type="number" name="orden" value={formData.orden} onChange={handleChange} className="input-field" min="0" />
             </div>
 
             <div>

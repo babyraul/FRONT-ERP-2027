@@ -74,9 +74,29 @@ export function Modulos() {
       }
     },
     {
+      accessorKey: 'icon',
+      header: 'Ícono',
+      size: 120,
+      cell: info => {
+        const iconClass = info.getValue()
+        return (
+          <div className="flex items-center justify-center gap-2">
+            {iconClass ? (
+              <>
+                <i className={`${iconClass} text-slate-500`} />
+                <span className="text-xs text-slate-500 hidden sm:inline-block">{iconClass}</span>
+              </>
+            ) : (
+              <span className="text-xs text-slate-400">-</span>
+            )}
+          </div>
+        )
+      }
+    },
+    {
       accessorKey: 'ruta',
       header: 'Ruta',
-      size: 150,
+      size: 120,
       cell: info => <div className="text-center text-sm font-mono text-slate-500">{info.getValue() || '-'}</div>
     },
     {
