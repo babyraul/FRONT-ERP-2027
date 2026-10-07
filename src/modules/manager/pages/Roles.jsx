@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { PlusIcon, PencilIcon, TrashIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, ShieldCheckIcon, Squares2X2Icon } from '@heroicons/react/24/outline'
 import { rolController } from '../controllers/rol.js'
 import { toast } from '../../../utils/toast'
 import RolModal from '../components/RolModal.jsx'
+import RolPermisosModal from '../components/RolPermisosModal.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import { useAuthStore } from '../../../store/useAuthStore'
 
@@ -12,8 +13,9 @@ export default function Roles() {
   const [isModalOpen, setModalOpen] = useState(false)
   const [rolEdit, setRolEdit] = useState(null)
   
-  // En un sistema multitenant, cuando se crea un rol se debe enviar el empresa_id.
-  // Aquí podemos sacarlo del usuario actual.
+  const [isPermisosModalOpen, setPermisosModalOpen] = useState(false)
+  const [rolPermisosEdit, setRolPermisosEdit] = useState(null)
+  
   const { user } = useAuthStore()
 
   const loadRoles = useCallback(async () => {
@@ -36,6 +38,11 @@ export default function Roles() {
   const handleOpenEdit = (rol) => {
     setRolEdit(rol)
     setModalOpen(true)
+  }
+
+  const handleOpenPermisos = (rol) => {
+    setRolPermisosEdit(rol)
+    setPermisosModalOpen(true)
   }
 
   const handleDelete = async (id) => {
@@ -120,6 +127,9 @@ export default function Roles() {
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-1.5">
+          <button onClick={() => handleOpenPermisos(row.original)} className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors tooltip-target" title="Permisos">
+            <Squares2X2Icon className="h-4 w-4" />
+          </button>
           <button onClick={() => handleOpenEdit(row.original)} className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors tooltip-target" title="Editar">
             <PencilIcon className="h-4 w-4" />
           </button>
@@ -167,6 +177,12 @@ export default function Roles() {
         onClose={() => setModalOpen(false)}
         onSave={handleSaveModal}
         rol={rolEdit}
+      />
+      
+      <RolPermisosModal
+        isOpen={isPermisosModalOpen}
+        onClose={() => setPermisosModalOpen(false)}
+        rol={rolPermisosEdit}
       />
     </div>
   )

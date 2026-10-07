@@ -1,14 +1,29 @@
 import { useEffect, useState } from 'react'
 import Modal from '../../../components/ui/Modal.jsx'
+import { empresaController } from '../controllers/empresa.js'
+import { useAuthStore } from '../../../store/useAuthStore'
 
 export default function RolModal({ isOpen, onClose, onSave, rol }) {
+  const { user } = useAuthStore()
+  const [empresas, setEmpresas] = useState([])
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
     nivel: 100,
     es_sistema: false,
-    activo: true
+    activo: true,
+    empresa_id: ''
   })
+
+  useEffect(() => {
+    if (isOpen) {
+      if (user?.es_super_admin) {
+        empresaController.getAll().then(res => {
+          if (res.success) setEmpresas(res.data)
+        })
+      }
+    }
+  }, [isOpen, user])
 
   useEffect(() => {
     if (rol) {
@@ -17,7 +32,8 @@ export default function RolModal({ isOpen, onClose, onSave, rol }) {
         descripcion: rol.descripcion || '',
         nivel: rol.nivel ?? 100,
         es_sistema: rol.es_sistema ?? false,
-        activo: rol.activo ?? true
+        activo: rol.activo ?? true,
+        empresa_id: rol.empresa_id || ''
       })
     } else {
       setFormData({
@@ -25,10 +41,11 @@ export default function RolModal({ isOpen, onClose, onSave, rol }) {
         descripcion: '',
         nivel: 100,
         es_sistema: false,
-        activo: true
+        activo: true,
+        empresa_id: user?.empresa_id || ''
       })
     }
-  }, [rol, isOpen])
+  }, [rol, isOpen, user])
 
   if (!isOpen) return null
 
@@ -50,9 +67,6 @@ export default function RolModal({ isOpen, onClose, onSave, rol }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Si la empresa viene global o default, podríamos hardcodear empresa_id para pruebas si es necesario.
-    // El backend probablemente asuma la empresa_id del token, o debe enviarse
-    // Omitimos validaciones exhaustivas por brevedad
     onSave(formData)
   }
 
@@ -66,6 +80,18 @@ export default function RolModal({ isOpen, onClose, onSave, rol }) {
     >
       <form id="rol-form" onSubmit={handleSubmit} className="space-y-4">
         
+        {user?.es_super_admin && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Empresa *</label>
+            <select required name="empresa_id" value={formData.empresa_id} onChange={handleChange} className="input-field">
+              <option value="">-- Seleccione Empresa --</option>
+              {empresas.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nombre del Rol *</label>
           <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="input-field" placeholder="EJ. ADMINISTRADOR" />
