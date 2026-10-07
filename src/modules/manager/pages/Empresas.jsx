@@ -1,13 +1,14 @@
-import { useEffect, useState, useCallback } from 'react'
-import { MagnifyingGlassIcon, ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
 import { empresaController } from '../controllers/empresa.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
+import { toast } from '../../../utils/toast'
 import EmpresaModal from '../components/EmpresaModal.jsx'
+import { DataTable } from '../../../components/ui/DataTable.jsx'
 
 export function Empresas() {
   const [empresas, setEmpresas] = useState([])
   const [loading, setLoading] = useState(true)
-  const [busq, setBusq] = useState('')
   const [isModalOpen, setModalOpen] = useState(false)
   const [empresaEdit, setEmpresaEdit] = useState(null)
 
@@ -15,6 +16,7 @@ export function Empresas() {
     setLoading(true)
     const res = await empresaController.getAll()
     if (res.success) setEmpresas(res.data)
+    else toast.error('Error al cargar las empresas')
     setLoading(false)
   }, [])
 
@@ -22,16 +24,8 @@ export function Empresas() {
     loadEmpresas()
   }, [loadEmpresas])
 
-  const handleBusq = (e) => setBusq(e.target.value)
-
-  const filtered = empresas.filter(e => 
-    e.ruc?.toLowerCase().includes(busq.toLowerCase()) || 
-    e.razon_social?.toLowerCase().includes(busq.toLowerCase()) ||
-    e.nombre_comercial?.toLowerCase().includes(busq.toLowerCase())
-  )
-
   const handleExport = () => {
-    const data = filtered.map((e) => ({
+    const data = empresas.map((e) => ({
       RUC: e.ruc,
       'Razón Social': e.razon_social,
       'Nombre Comercial': e.nombre_comercial,
@@ -56,9 +50,10 @@ export function Empresas() {
     if (!confirm('¿Eliminar empresa?')) return
     const res = await empresaController.delete(id)
     if (res.success) {
+      toast.success('Empresa eliminada correctamente')
       loadEmpresas()
     } else {
-      alert(res.message || 'Error al eliminar')
+      toast.error(res.message || 'Error al eliminar la empresa')
     }
   }
 
@@ -69,94 +64,115 @@ export function Empresas() {
     } else {
       res = await empresaController.create(data)
     }
-    
+
     if (res.success) {
       setModalOpen(false)
+      toast.success(empresaEdit ? 'Empresa actualizada correctamente' : 'Empresa, Sucursal y Almacén creados correctamente')
       loadEmpresas()
     } else {
-      alert(res.message || 'Error al guardar la empresa')
+      toast.error(res.message || 'Error al guardar la empresa')
     }
   }
 
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'ruc',
+      header: 'RUC',
+      cell: info => <span className="font-mono text-xs font-semibold tracking-wider text-slate-700 dark:text-slate-300">{info.getValue()}</span>,
+      size: 150
+    },
+    {
+      accessorKey: 'razon_social',
+      header: 'Razón Social',
+      cell: info => (
+        <div className="flex items-center gap-2">
+          <BuildingOfficeIcon className="h-5 w-5 text-slate-400" />
+          <span className="font-medium text-slate-800 dark:text-slate-100">{info.getValue()}</span>
+        </div>
+      ),
+      size: 400
+    },
+    {
+      accessorKey: 'nombre_comercial',
+      header: 'Nombre Comercial',
+      cell: info => info.getValue() || <span className="text-slate-400 italic">No especificado</span>,
+      size: 400
+    },
+    {
+      accessorKey: 'ubigeo_descripcion',
+      header: 'Ubicación (Ubigeo)',
+      cell: info => info.getValue() || <span className="text-slate-400 italic">No especificado</span>,
+      size: 300
+    },
+    {
+      accessorKey: 'email1',
+      header: 'Email',
+      size: 150
+    },
+    {
+      accessorKey: 'telefono1',
+      header: 'Teléfono',
+      size: 120
+    },
+    {
+      accessorKey: 'activo',
+      header: 'Estado',
+      cell: info => (
+        <div className="flex justify-center">
+          <span className={info.getValue() ? 'badge-green' : 'badge-gray'}>
+            {info.getValue() ? 'Activo' : 'Inactivo'}
+          </span>
+        </div>
+      ),
+      size: 100,
+      enableColumnFilter: false
+    },
+    {
+      id: 'acciones',
+      header: 'Acciones',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-1.5">
+          <button onClick={() => handleOpenEdit(row.original)} className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors tooltip-target" title="Editar">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+          <button onClick={() => handleDelete(row.original.id)} className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors tooltip-target" title="Eliminar">
+            <TrashIcon className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+      size: 100,
+      enableColumnFilter: false
+    }
+  ], [])
+
   return (
-    <div className="space-y-5 p-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Empresas</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{filtered.length} empresas registradas</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Empresas</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            {empresas.length} {empresas.length === 1 ? 'empresa registrada' : 'empresas registradas'} en el sistema
+          </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={handleExport} className="btn-secondary">
+          <button onClick={handleExport} className="btn-secondary flex items-center gap-2">
             <ArrowDownTrayIcon className="h-4 w-4" /> Exportar Excel
           </button>
-          <button onClick={handleOpenNew} className="btn-primary">
+          <button onClick={handleOpenNew} className="btn-primary flex items-center gap-2">
             <PlusIcon className="h-4 w-4" /> Nueva Empresa
           </button>
         </div>
       </div>
 
-      <div className="card p-4">
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text" placeholder="Buscar por RUC, Razón Social o Nombre Comercial..."
-            value={busq} onChange={handleBusq}
-            className="input-field pl-9"
-          />
-        </div>
-      </div>
-
-      <div className="card p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-              <tr className="text-left text-slate-500 dark:text-slate-400">
-                <th className="px-4 py-3 font-medium">RUC</th>
-                <th className="px-4 py-3 font-medium">Razón Social</th>
-                <th className="px-4 py-3 font-medium">Nombre Comercial</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Teléfono</th>
-                <th className="px-4 py-3 font-medium text-center">Estado</th>
-                <th className="px-4 py-3 font-medium text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {loading ? (
-                <tr><td colSpan="7" className="py-8 text-center text-slate-500">Cargando empresas...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan="7" className="py-8 text-center text-slate-500">No se encontraron empresas.</td></tr>
-              ) : (
-                filtered.map((e) => (
-                  <tr key={e.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-slate-700 dark:text-slate-300">
-                    <td className="px-4 py-3 font-mono text-xs">{e.ruc}</td>
-                    <td className="px-4 py-3 font-medium">{e.razon_social}</td>
-                    <td className="px-4 py-3">{e.nombre_comercial}</td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{e.email1}</td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{e.telefono1}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={e.activo ? 'badge-green' : 'badge-gray'}>
-                        {e.activo ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => handleOpenEdit(e)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors">
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(e.id)}
-                          className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="w-full">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-64 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 text-slate-500 font-medium">Cargando empresas...</p>
+          </div>
+        ) : (
+          <DataTable data={empresas} columns={columns} pagination={true} />
+        )}
       </div>
 
       <EmpresaModal

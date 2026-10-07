@@ -91,20 +91,22 @@ export default function Navbar({ onMenuClick }) {
                     <ChevronDownIcon className={`h-4 w-4 text-slate-400 transition-transform ${configOpen ? 'rotate-180' : ''}`} />
                   </button>
                   
-                  <div className={`overflow-hidden transition-all duration-200 ${configOpen ? 'max-h-48' : 'max-h-0'}`}>
-                    {configuracionModule.items?.map((item) => (
-                      <Link
-                        key={item.id}
-                        to={item.ruta || `/${item.codigo.toLowerCase()}`}
-                        onClick={() => {
-                          setMenuOpen(false)
-                          setConfigOpen(false)
-                        }}
-                        className="block pl-9 pr-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        {item.nombre}
-                      </Link>
-                    ))}
+                  <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${configOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                    <div className="overflow-hidden">
+                      {configuracionModule.items?.map((item) => (
+                        <Link
+                          key={item.id}
+                          to={item.ruta || `/${item.codigo.toLowerCase()}`}
+                          onClick={() => {
+                            setMenuOpen(false)
+                            setConfigOpen(false)
+                          }}
+                          className="block pl-9 pr-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          {item.nombre}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
