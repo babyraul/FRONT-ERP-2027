@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 
-export default function ModuloModal({ isOpen, onClose, onSave, modulo }) {
+export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosList = [] }) {
   const [formData, setFormData] = useState({
     codigo: '',
     nombre: '',
     descripcion: '',
+    padre_id: '',
+    ruta: '',
+    tipo: 'MODULO',
+    orden: 0,
     activo: true
   })
 
@@ -15,11 +19,15 @@ export default function ModuloModal({ isOpen, onClose, onSave, modulo }) {
         codigo: modulo.codigo || '',
         nombre: modulo.nombre || '',
         descripcion: modulo.descripcion || '',
+        padre_id: modulo.padre_id || '',
+        ruta: modulo.ruta || '',
+        tipo: modulo.tipo || 'MODULO',
+        orden: modulo.orden || 0,
         activo: modulo.activo ?? true
       })
     } else {
       setFormData({
-        codigo: '', nombre: '', descripcion: '', activo: true 
+        codigo: '', nombre: '', descripcion: '', padre_id: '', ruta: '', tipo: 'MODULO', orden: 0, activo: true 
       })
     }
   }, [modulo, isOpen])
@@ -28,13 +36,21 @@ export default function ModuloModal({ isOpen, onClose, onSave, modulo }) {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : (type === 'number' ? Number(value) : value)
+    }))
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSave(formData)
+    // Transform empty string to null for padre_id
+    const payload = { ...formData, padre_id: formData.padre_id || null }
+    onSave(payload)
   }
+
+  // Prevent selecting itself or its children as parent
+  const availableParents = modulosList.filter(m => m.id !== modulo?.id)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -54,20 +70,51 @@ export default function ModuloModal({ isOpen, onClose, onSave, modulo }) {
         <div className="p-6 overflow-y-auto flex-1">
           <form id="modulo-form" onSubmit={handleSubmit} className="space-y-4">
             
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código Único *</label>
-              <input required type="text" name="codigo" value={formData.codigo} onChange={handleChange} className="input-field" placeholder="EJ: VENTAS, COMPRAS" disabled={!!modulo} />
-              {modulo && <p className="text-xs text-slate-500 mt-1">El código no puede modificarse una vez creado.</p>}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código Único *</label>
+                <input required type="text" name="codigo" value={formData.codigo} onChange={handleChange} className="input-field" placeholder="EJ: VENTAS, COMPRAS" disabled={!!modulo} />
+                {modulo && <p className="text-xs text-slate-500 mt-1">El código no puede modificarse.</p>}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo *</label>
+                <select required name="tipo" value={formData.tipo} onChange={handleChange} className="input-field">
+                  <option value="MODULO">MODULO RAÍZ / SECCIÓN</option>
+                  <option value="MENU">MENÚ / ACCESO</option>
+                </select>
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre del Módulo *</label>
               <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="input-field" placeholder="Ej: Gestión de Ventas" />
             </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Módulo Padre</label>
+              <select name="padre_id" value={formData.padre_id || ''} onChange={handleChange} className="input-field">
+                <option value="">-- Sin Módulo Padre (Raíz) --</option>
+                {availableParents.map(m => (
+                  <option key={m.id} value={m.id}>{m.codigo} - {m.nombre}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ruta (Navegación)</label>
+                <input type="text" name="ruta" value={formData.ruta} onChange={handleChange} className="input-field" placeholder="Ej: /ventas/pedidos" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Orden *</label>
+                <input required type="number" name="orden" value={formData.orden} onChange={handleChange} className="input-field" min="0" />
+              </div>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descripción</label>
-              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="input-field" placeholder="Descripción breve del módulo..." rows="3"></textarea>
+              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="input-field" placeholder="Descripción breve del módulo..." rows="2"></textarea>
             </div>
 
             <div className="flex items-center mt-2">

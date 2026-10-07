@@ -24,8 +24,8 @@ export function Modulos() {
 
   const handleBusq = (e) => setBusq(e.target.value)
 
-  const filtered = modulos.filter(m => 
-    m.codigo?.toLowerCase().includes(busq.toLowerCase()) || 
+  const filtered = modulos.filter(m =>
+    m.codigo?.toLowerCase().includes(busq.toLowerCase()) ||
     m.nombre?.toLowerCase().includes(busq.toLowerCase()) ||
     m.descripcion?.toLowerCase().includes(busq.toLowerCase())
   )
@@ -67,7 +67,7 @@ export function Modulos() {
     } else {
       res = await moduloController.create(data)
     }
-    
+
     if (res.success) {
       setModalOpen(false)
       loadModulos()
@@ -111,43 +111,62 @@ export function Modulos() {
               <tr className="text-left text-slate-500 dark:text-slate-400">
                 <th className="px-4 py-3 font-medium">Código</th>
                 <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Descripción</th>
+                <th className="px-4 py-3 font-medium">Padre / Tipo</th>
+                <th className="px-4 py-3 font-medium text-center">Ruta</th>
+                <th className="px-4 py-3 font-medium text-center">Orden</th>
                 <th className="px-4 py-3 font-medium text-center">Estado</th>
                 <th className="px-4 py-3 font-medium text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
-                <tr><td colSpan="5" className="py-8 text-center text-slate-500">Cargando módulos...</td></tr>
+                <tr><td colSpan="7" className="py-8 text-center text-slate-500">Cargando módulos...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="5" className="py-8 text-center text-slate-500">No se encontraron módulos.</td></tr>
+                <tr><td colSpan="7" className="py-8 text-center text-slate-500">No se encontraron módulos.</td></tr>
               ) : (
-                filtered.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-slate-700 dark:text-slate-300">
-                    <td className="px-4 py-3 font-mono font-semibold text-blue-600 dark:text-blue-400">{m.codigo}</td>
-                    <td className="px-4 py-3 font-medium">{m.nombre}</td>
-                    <td className="px-4 py-3 text-slate-500 max-w-sm truncate" title={m.descripcion}>{m.descripcion}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={m.activo ? 'badge-green' : 'badge-gray'}>
-                        {m.activo ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => handleOpenEdit(m)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors" title="Editar Módulo">
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(m.id)}
-                          className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
-                          title="Eliminar Módulo"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                filtered.map((m) => {
+                  const parent = modulos.find(p => p.id === m.padre_id)
+                  return (
+                    <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-3 font-mono font-semibold text-blue-600 dark:text-blue-400">{m.codigo}</td>
+                      <td className="px-4 py-3 font-medium">
+                        {m.nombre}
+                        {m.descripcion && <p className="text-xs text-slate-400 font-normal truncate max-w-xs">{m.descripcion}</p>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 mr-2">
+                          {m.tipo}
+                        </span>
+                        {parent && <span className="text-xs text-slate-500">↳ {parent.codigo}</span>}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm font-mono text-slate-500">
+                        {m.ruta || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {m.orden}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={m.activo ? 'badge-green' : 'badge-gray'}>
+                          {m.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-1">
+                          <button onClick={() => handleOpenEdit(m)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors" title="Editar Módulo">
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(m.id)}
+                            className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                            title="Eliminar Módulo"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
@@ -159,6 +178,7 @@ export function Modulos() {
         onClose={() => setModalOpen(false)}
         onSave={handleSaveModal}
         modulo={moduloEdit}
+        modulosList={modulos}
       />
     </div>
   )
