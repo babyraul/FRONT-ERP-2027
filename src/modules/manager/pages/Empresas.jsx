@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
+import { ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon, BuildingOfficeIcon, Squares2X2Icon } from '@heroicons/react/24/outline'
 import { empresaController } from '../controllers/empresa.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
 import { toast } from '../../../utils/toast'
 import EmpresaModal from '../components/EmpresaModal.jsx'
+import EmpresaModulosModal from '../components/EmpresaModulosModal.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 
 export function Empresas() {
@@ -11,6 +12,10 @@ export function Empresas() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setModalOpen] = useState(false)
   const [empresaEdit, setEmpresaEdit] = useState(null)
+  
+  // Estado para el modal de módulos
+  const [isModulosModalOpen, setModulosModalOpen] = useState(false)
+  const [empresaModulosEdit, setEmpresaModulosEdit] = useState(null)
 
   const loadEmpresas = useCallback(async () => {
     setLoading(true)
@@ -44,6 +49,11 @@ export function Empresas() {
   const handleOpenEdit = (empresa) => {
     setEmpresaEdit(empresa)
     setModalOpen(true)
+  }
+
+  const handleOpenModulos = (empresa) => {
+    setEmpresaModulosEdit(empresa)
+    setModulosModalOpen(true)
   }
 
   const handleDelete = async (id) => {
@@ -132,10 +142,13 @@ export function Empresas() {
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-1.5">
-          <button onClick={() => handleOpenEdit(row.original)} className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors tooltip-target" title="Editar">
+          <button onClick={() => handleOpenModulos(row.original)} className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors tooltip-target" title="Asignar Módulos">
+            <Squares2X2Icon className="h-4 w-4" />
+          </button>
+          <button onClick={() => handleOpenEdit(row.original)} className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors tooltip-target" title="Editar Empresa">
             <PencilIcon className="h-4 w-4" />
           </button>
-          <button onClick={() => handleDelete(row.original.id)} className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors tooltip-target" title="Eliminar">
+          <button onClick={() => handleDelete(row.original.id)} className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors tooltip-target" title="Eliminar Empresa">
             <TrashIcon className="h-4 w-4" />
           </button>
         </div>
@@ -180,6 +193,12 @@ export function Empresas() {
         onClose={() => setModalOpen(false)}
         onSave={handleSaveModal}
         empresa={empresaEdit}
+      />
+
+      <EmpresaModulosModal
+        isOpen={isModulosModalOpen}
+        onClose={() => setModulosModalOpen(false)}
+        empresa={empresaModulosEdit}
       />
     </div>
   )
