@@ -8,6 +8,7 @@ export const useAuthStore = create(
       user: null,
       token: null,
       isAuthenticated: false,
+      menu: [],
 
       login: async (usuario, password) => {
         try {
@@ -22,9 +23,20 @@ export const useAuthStore = create(
         }
       },
 
+      fetchMenu: async () => {
+        try {
+          const response = await api.get('/auth/menu')
+          set({ menu: response.data || [] })
+          return { success: true, data: response.data }
+        } catch (error) {
+          console.error('Error fetching menu:', error)
+          return { success: false }
+        }
+      },
+
       logout: () => {
         // Opcional: podrías hacer un api.post('/auth/logout') aquí
-        set({ user: null, token: null, isAuthenticated: false })
+        set({ user: null, token: null, isAuthenticated: false, menu: [] })
       },
     }),
     {

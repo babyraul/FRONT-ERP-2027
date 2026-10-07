@@ -25,6 +25,13 @@ export default function Layout() {
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
+  // Cargar el menú global al iniciar
+  useEffect(() => {
+    if (isAuthenticated) {
+      useAuthStore.getState().fetchMenu()
+    }
+  }, [isAuthenticated])
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />
   }

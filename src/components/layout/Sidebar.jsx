@@ -35,61 +35,50 @@ const getIconForModule = (codigo) => {
 }
 
 export default function Sidebar({ collapsed, mobileOpen, onClose }) {
-  const { user } = useAuthStore()
+  const { user, menu } = useAuthStore()
   const [navSections, setNavSections] = useState([])
-  const [loading, setLoading] = useState(true)
   
   // Estado para controlar qué divisiones están abiertas (por defecto todas abiertas)
   const [openSections, setOpenSections] = useState({})
 
   useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        const response = await api.get('/auth/menu')
-        const menuData = response.data
-        
-        // Map backend modules to frontend structure
-        const sections = menuData.map(rootModule => ({
-          id: rootModule.id,
-          title: rootModule.nombre,
-          items: (rootModule.items || []).map(child => ({
-            to: child.ruta || `/${child.codigo.toLowerCase()}`,
-            icon: getIconForModule(child.codigo),
-            label: child.nombre
-          }))
-        }))
+    if (!menu) return
 
-        // Ensure "Dashboard" is always there if they have basic access or add it dynamically
-        const hasDashboard = sections.some(s => s.items.some(i => i.to === '/dashboard'))
-        if (!hasDashboard && user) {
-          sections.unshift({
-            id: 'dashboard-root',
-            title: 'Principal',
-            items: [
-              { to: '/dashboard', icon: HomeIcon, label: 'Dashboard' }
-            ]
-          })
-        }
+    // Filter out 'CONFIGURACION' from Sidebar, it goes to Navbar
+    const sidebarMenu = menu.filter(m => m.codigo !== 'CONFIGURACION')
 
-        setNavSections(sections)
-        
-        // Open all sections by default
-        const initialOpenState = {}
-        sections.forEach((_, idx) => {
-          initialOpenState[idx] = true
-        })
-        setOpenSections(initialOpenState)
-      } catch (error) {
-        console.error("Error fetching menu", error)
-      } finally {
-        setLoading(false)
-      }
+    // Map backend modules to frontend structure
+    const sections = sidebarMenu.map(rootModule => ({
+      id: rootModule.id,
+      title: rootModule.nombre,
+      items: (rootModule.items || []).map(child => ({
+        to: child.ruta || `/${child.codigo.toLowerCase()}`,
+        icon: getIconForModule(child.codigo),
+        label: child.nombre
+      }))
+    }))
+
+    // Ensure "Dashboard" is always there if they have basic access or add it dynamically
+    const hasDashboard = sections.some(s => s.items.some(i => i.to === '/dashboard'))
+    if (!hasDashboard && user) {
+      sections.unshift({
+        id: 'dashboard-root',
+        title: 'Principal',
+        items: [
+          { to: '/dashboard', icon: HomeIcon, label: 'Dashboard' }
+        ]
+      })
     }
 
-    if (user) {
-      fetchMenu()
-    }
-  }, [user])
+    setNavSections(sections)
+    
+    // Open all sections by default
+    const initialOpenState = {}
+    sections.forEach((_, idx) => {
+      initialOpenState[idx] = true
+    })
+    setOpenSections(initialOpenState)
+  }, [menu, user])
 
   const toggleSection = (idx) => {
     setOpenSections(prev => ({
@@ -131,7 +120,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          {loading ? (
+          {!menu ? (
             <div className="text-white/50 text-xs px-3 py-2">Cargando menú...</div>
           ) : navSections.map((section, idx) => {
             const isOpen = openSections[idx] || collapsed; // Siempre visible si está colapsado para mostrar los íconos
