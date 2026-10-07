@@ -36,21 +36,58 @@ export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosLi
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : (type === 'number' ? Number(value) : value)
-    }))
+    setFormData(prev => {
+      let newValue = type === 'checkbox' ? checked : (type === 'number' ? Number(value) : value)
+      
+      if (typeof newValue === 'string' && (name === 'codigo' || name === 'nombre')) {
+        newValue = newValue.toUpperCase()
+      }
+
+      const newData = { ...prev, [name]: newValue }
+
+      // Regla: Si tiene padre, debe ser MENU. Si no tiene, debe ser MODULO.
+      if (name === 'padre_id') {
+        if (newValue !== '') {
+          newData.tipo = 'MENU'
+        } else {
+          newData.tipo = 'MODULO'
+        }
+      }
+
+      // Regla: Si cambia manualmente el tipo a MODULO, no puede tener padre
+      if (name === 'tipo') {
+        if (newValue === 'MODULO') {
+          newData.padre_id = ''
+        }
+      }
+
+      return newData
+    })
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
     // Transform empty string to null for padre_id
-    const payload = { ...formData, padre_id: formData.padre_id || null }
+    const payload = { 
+      ...formData, 
+      padre_id: formData.padre_id || null,
+      codigo: formData.codigo.toUpperCase(),
+      nombre: formData.nombre.toUpperCase()
+    }
     onSave(payload)
   }
 
   // Prevent selecting itself or its children as parent
-  const availableParents = modulosList.filter(m => m.id !== modulo?.id)
+  // Only modulos of type MODULO can be parents
+  // Sort by creation date (newest first)
+  const availableParents = modulosList
+    .filter(m => m.id !== modulo?.id && m.tipo === 'MODULO')
+    .sort((a, b) => {
+      if (a.created_at && b.created_at) {
+        return new Date(b.created_at) - new Date(a.created_at)
+      }
+      return 0
+    })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -73,16 +110,17 @@ export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosLi
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código Único *</label>
-                <input required type="text" name="codigo" value={formData.codigo} onChange={handleChange} className="input-field" placeholder="EJ: VENTAS, COMPRAS" disabled={!!modulo} />
+                <input required type="text" name="codigo" value={formData.codigo} onChange={handleChange} className="input-field uppercase" placeholder="EJ: VENTAS, COMPRAS" disabled={!!modulo} />
                 {modulo && <p className="text-xs text-slate-500 mt-1">El código no puede modificarse.</p>}
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo *</label>
-                <select required name="tipo" value={formData.tipo} onChange={handleChange} className="input-field">
+                <select required name="tipo" value={formData.tipo} onChange={handleChange} className="input-field" disabled={!!formData.padre_id}>
                   <option value="MODULO">MODULO RAÍZ / SECCIÓN</option>
                   <option value="MENU">MENÚ / ACCESO</option>
                 </select>
+                {!!formData.padre_id && <p className="text-xs text-slate-500 mt-1">Hijos deben ser de tipo Menú.</p>}
               </div>
             </div>
 
