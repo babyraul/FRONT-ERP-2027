@@ -28,7 +28,10 @@ export default function Modal({
   isProcessing = false,
   maxWidth = 'max-w-lg',
   children,
-  confirmButtonId
+  confirmButtonId,
+  showFooter = true,
+  hideConfirm = false,
+  noPadding = false
 }) {
   // Prevenir scroll en el body cuando el modal está abierto
   useEffect(() => {
@@ -83,29 +86,33 @@ export default function Modal({
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 bg-slate-50/50 dark:bg-slate-900/50 p-6">
+        <div className={`overflow-y-auto flex-1 bg-slate-50/50 dark:bg-slate-900/50 ${noPadding ? '' : 'p-6'}`}>
           {children}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-end gap-3 shrink-0">
-          <button 
-            type="button" 
-            onClick={onClose} 
-            className="px-5 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
-          >
-            {cancelText}
-          </button>
-          <button 
-            type={confirmButtonId ? "submit" : "button"}
-            form={confirmButtonId}
-            onClick={!confirmButtonId && onConfirm ? onConfirm : undefined} 
-            disabled={isProcessing}
-            className="btn-primary px-6 py-2.5 rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
-          >
-            {isProcessing ? 'Procesando...' : confirmText}
-          </button>
-        </div>
+        {showFooter && (
+          <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-end gap-3 shrink-0">
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="px-5 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+            >
+              {cancelText}
+            </button>
+            {!hideConfirm && (
+              <button 
+                type={confirmButtonId ? "submit" : "button"}
+                form={confirmButtonId}
+                onClick={!confirmButtonId && onConfirm ? onConfirm : undefined} 
+                disabled={isProcessing}
+                className="btn-primary px-6 py-2.5 rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+              >
+                {isProcessing ? 'Procesando...' : confirmText}
+              </button>
+            )}
+          </div>
+        )}
 
       </div>
     </div>

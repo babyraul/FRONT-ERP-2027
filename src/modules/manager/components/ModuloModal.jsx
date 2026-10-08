@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import Modal from '../../../components/ui/Modal.jsx'
 
 export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosList = [] }) {
   const [formData, setFormData] = useState({
@@ -92,95 +92,74 @@ export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosLi
     })
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={modulo ? 'Editar Módulo' : 'Nuevo Módulo'}
+      confirmButtonId="modulo-form"
+      maxWidth="max-w-lg"
+    >
+      <form id="modulo-form" onSubmit={handleSubmit} className="space-y-4">
         
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white">
-            {modulo ? 'Editar Módulo' : 'Nuevo Módulo'}
-          </h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <XMarkIcon className="h-5 w-5" />
-          </button>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código Único *</label>
+            <input required type="text" name="codigo" value={formData.codigo} onChange={handleChange} className="input-field uppercase" placeholder="EJ: VENTAS, COMPRAS" disabled={!!modulo} />
+            {modulo && <p className="text-xs text-slate-500 mt-1">El código no puede modificarse.</p>}
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo *</label>
+            <select required name="tipo" value={formData.tipo} onChange={handleChange} className="input-field" disabled={!!formData.padre_id}>
+              <option value="MODULO">MODULO RAÍZ / SECCIÓN</option>
+              <option value="MENU">MENÚ / ACCESO</option>
+            </select>
+            {!!formData.padre_id && <p className="text-xs text-slate-500 mt-1">Hijos deben ser de tipo Menú.</p>}
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="p-6 overflow-y-auto flex-1">
-          <form id="modulo-form" onSubmit={handleSubmit} className="space-y-4">
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código Único *</label>
-                <input required type="text" name="codigo" value={formData.codigo} onChange={handleChange} className="input-field uppercase" placeholder="EJ: VENTAS, COMPRAS" disabled={!!modulo} />
-                {modulo && <p className="text-xs text-slate-500 mt-1">El código no puede modificarse.</p>}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo *</label>
-                <select required name="tipo" value={formData.tipo} onChange={handleChange} className="input-field" disabled={!!formData.padre_id}>
-                  <option value="MODULO">MODULO RAÍZ / SECCIÓN</option>
-                  <option value="MENU">MENÚ / ACCESO</option>
-                </select>
-                {!!formData.padre_id && <p className="text-xs text-slate-500 mt-1">Hijos deben ser de tipo Menú.</p>}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre del Módulo *</label>
-              <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="input-field" placeholder="Ej: Gestión de Ventas" />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Módulo Padre</label>
-              <select name="padre_id" value={formData.padre_id || ''} onChange={handleChange} className="input-field">
-                <option value="">-- Sin Módulo Padre (Raíz) --</option>
-                {availableParents.map(m => (
-                  <option key={m.id} value={m.id}>{m.codigo} - {m.nombre}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ruta (Navegación)</label>
-                <input type="text" name="ruta" value={formData.ruta} onChange={handleChange} className="input-field" placeholder="Ej: /ventas/pedidos" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ícono (FontAwesome)</label>
-                <input type="text" name="icon" value={formData.icon} onChange={handleChange} className="input-field" placeholder="Ej: fas fa-home" />
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Orden *</label>
-              <input required type="number" name="orden" value={formData.orden} onChange={handleChange} className="input-field" min="0" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descripción</label>
-              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="input-field" placeholder="Descripción breve del módulo..." rows="2"></textarea>
-            </div>
-
-            <div className="flex items-center mt-2">
-              <input type="checkbox" id="activo_mod" name="activo" checked={formData.activo} onChange={handleChange} className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <label htmlFor="activo_mod" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">Módulo Activo</label>
-            </div>
-
-          </form>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre del Módulo *</label>
+          <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="input-field" placeholder="Ej: Gestión de Ventas" />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Módulo Padre</label>
+          <select name="padre_id" value={formData.padre_id || ''} onChange={handleChange} className="input-field">
+            <option value="">-- Sin Módulo Padre (Raíz) --</option>
+            {availableParents.map(m => (
+              <option key={m.id} value={m.id}>{m.codigo} - {m.nombre}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ruta (Navegación)</label>
+            <input type="text" name="ruta" value={formData.ruta} onChange={handleChange} className="input-field" placeholder="Ej: /ventas/pedidos" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ícono (FontAwesome)</label>
+            <input type="text" name="icon" value={formData.icon} onChange={handleChange} className="input-field" placeholder="Ej: fas fa-home" />
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Orden *</label>
+          <input required type="number" name="orden" value={formData.orden} onChange={handleChange} className="input-field" min="0" />
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-            Cancelar
-          </button>
-          <button type="submit" form="modulo-form" className="btn-primary px-6">
-            Guardar
-          </button>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descripción</label>
+          <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="input-field" placeholder="Descripción breve del módulo..." rows="2"></textarea>
         </div>
 
-      </div>
-    </div>
+        <div className="flex items-center mt-2">
+          <input type="checkbox" id="activo_mod" name="activo" checked={formData.activo} onChange={handleChange} className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+          <label htmlFor="activo_mod" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">Módulo Activo</label>
+        </div>
+
+      </form>
+    </Modal>
   )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import Modal from '../../../components/ui/Modal.jsx'
 import { empresaController } from '../controllers/empresa.js'
 
 export default function SucursalModal({ isOpen, onClose, onSave, sucursal }) {
@@ -63,93 +63,72 @@ export default function SucursalModal({ isOpen, onClose, onSave, sucursal }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white">
-            {sucursal ? 'Editar Sucursal' : 'Nueva Sucursal'}
-          </h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <XMarkIcon className="h-5 w-5" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={sucursal ? 'Editar Sucursal' : 'Nueva Sucursal'}
+      confirmButtonId="sucursal-form"
+      maxWidth="max-w-3xl"
+    >
+      <form id="sucursal-form" onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Empresa Principal *</label>
+            <select required name="empresa_id" value={formData.empresa_id} onChange={handleChange} className="input-field">
+              <option value="">Seleccione una empresa...</option>
+              {empresas.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.razon_social} (RUC: {emp.ruc})</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre de Sucursal *</label>
+            <input required type="text" name="sucursal_nombre" value={formData.sucursal_nombre} onChange={handleChange} className="input-field" placeholder="Sede Principal, Sede Norte..." />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código Anexo (SUNAT)</label>
+            <input type="text" name="codigo_anexo" maxLength="4" value={formData.codigo_anexo} onChange={handleChange} className="input-field" placeholder="0000" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">RUC *</label>
+            <input required type="text" name="ruc" maxLength="11" value={formData.ruc} onChange={handleChange} className="input-field" placeholder="11 dígitos" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Razón Social *</label>
+            <input required type="text" name="razon_social" value={formData.razon_social} onChange={handleChange} className="input-field" placeholder="Razón Social S.A.C." />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre Comercial</label>
+            <input type="text" name="nombre_comercial" value={formData.nombre_comercial} onChange={handleChange} className="input-field" placeholder="Nombre Comercial" />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Dirección *</label>
+            <input required type="text" name="direccion" value={formData.direccion} onChange={handleChange} className="input-field" placeholder="Dirección de la sucursal" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Teléfono</label>
+            <input type="text" name="telefono1" value={formData.telefono1} onChange={handleChange} className="input-field" placeholder="999 999 999" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+            <input type="email" name="email1" value={formData.email1} onChange={handleChange} className="input-field" placeholder="sucursal@empresa.com" />
+          </div>
+
+          <div className="md:col-span-2 flex items-center mt-2">
+            <input type="checkbox" id="activo_suc" name="activo" checked={formData.activo} onChange={handleChange} className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+            <label htmlFor="activo_suc" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">Sucursal Activa</label>
+          </div>
         </div>
-
-        {/* Body */}
-        <div className="p-6 overflow-y-auto flex-1">
-          <form id="sucursal-form" onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Empresa Principal *</label>
-                <select required name="empresa_id" value={formData.empresa_id} onChange={handleChange} className="input-field">
-                  <option value="">Seleccione una empresa...</option>
-                  {empresas.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.razon_social} (RUC: {emp.ruc})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre de Sucursal *</label>
-                <input required type="text" name="sucursal_nombre" value={formData.sucursal_nombre} onChange={handleChange} className="input-field" placeholder="Sede Principal, Sede Norte..." />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código Anexo (SUNAT)</label>
-                <input type="text" name="codigo_anexo" maxLength="4" value={formData.codigo_anexo} onChange={handleChange} className="input-field" placeholder="0000" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">RUC *</label>
-                <input required type="text" name="ruc" maxLength="11" value={formData.ruc} onChange={handleChange} className="input-field" placeholder="11 dígitos" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Razón Social *</label>
-                <input required type="text" name="razon_social" value={formData.razon_social} onChange={handleChange} className="input-field" placeholder="Razón Social S.A.C." />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre Comercial</label>
-                <input type="text" name="nombre_comercial" value={formData.nombre_comercial} onChange={handleChange} className="input-field" placeholder="Nombre Comercial" />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Dirección *</label>
-                <input required type="text" name="direccion" value={formData.direccion} onChange={handleChange} className="input-field" placeholder="Dirección de la sucursal" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Teléfono</label>
-                <input type="text" name="telefono1" value={formData.telefono1} onChange={handleChange} className="input-field" placeholder="999 999 999" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
-                <input type="email" name="email1" value={formData.email1} onChange={handleChange} className="input-field" placeholder="sucursal@empresa.com" />
-              </div>
-
-              <div className="md:col-span-2 flex items-center mt-2">
-                <input type="checkbox" id="activo_suc" name="activo" checked={formData.activo} onChange={handleChange} className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-                <label htmlFor="activo_suc" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">Sucursal Activa</label>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-            Cancelar
-          </button>
-          <button type="submit" form="sucursal-form" className="btn-primary px-6">
-            Guardar
-          </button>
-        </div>
-
-      </div>
-    </div>
+      </form>
+    </Modal>
   )
 }

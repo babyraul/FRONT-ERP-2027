@@ -1,91 +1,174 @@
-import { useState } from 'react'
-import { MagnifyingGlassIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
-import { useUsuariosStore } from '../../../store/useUsuariosStore.js'
-
-const ROL_COLORS = {
-  admin:      'badge-blue',
-  vendedor:   'badge-green',
-  almacenero: 'badge-yellow',
-  contador:   'badge-gray',
-}
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { PlusIcon, PencilIcon, TrashIcon, KeyIcon } from '@heroicons/react/24/outline'
+import { DataTable } from '../../../components/ui/DataTable.jsx'
+import { toast } from '../../../utils/toast.js'
+import { usuarioController } from '../controllers/usuario.js'
+import UsuarioModal from '../components/UsuarioModal.jsx'
+import UsuarioAccesosModal from '../components/UsuarioAccesosModal.jsx'
 
 export default function Usuarios() {
-  const { setBusqueda, getFiltered, deleteUsuario } = useUsuariosStore()
-  const usuarios = getFiltered()
-  const [busq, setBusq] = useState('')
+  const [usuarios, setUsuarios] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [isModalOpen, setModalOpen] = useState(false)
+  const [usuarioEdit, setUsuarioEdit] = useState(null)
+  
+  const [isAccessModalOpen, setAccessModalOpen] = useState(false)
+  const [usuarioAccess, setUsuarioAccess] = useState(null)
 
-  const handleBusq = (e) => { setBusq(e.target.value); setBusqueda(e.target.value) }
+  const loadUsuarios = useCallback(async () => {
+    setLoading(true)
+    const res = await usuarioController.getAll()
+    if (res.success) {
+      setUsuarios(res.data)
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    loadUsuarios()
+  }, [loadUsuarios])
+
+  const handleOpenEdit = (user) => {
+    setUsuarioEdit(user)
+    setModalOpen(true)
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('¿Eliminar usuario de manera permanente?')) return
+    const res = await usuarioController.delete(id)
+    if (res.success) {
+      toast.success('Éxito', 'Usuario eliminado.')
+      loadUsuarios()
+    } else {
+      toast.error('Error al eliminar', res.message)
+    }
+  }
+
+  const handleOpenAccess = (user) => {
+    setUsuarioAccess(user)
+    setAccessModalOpen(true)
+  }
+
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'nombre',
+      header: 'Nombre Completo',
+      size: 200,
+      cell: info => <span className="font-medium text-slate-800 dark:text-slate-200">{info.getValue()}</span>
+    },
+    {
+      accessorKey: 'usuario',
+      header: 'Usuario (Login)',
+      size: 150,
+      cell: info => <span className="font-mono text-blue-600 dark:text-blue-400 font-semibold">{info.getValue()}</span>
+    },
+    {
+      accessorKey: 'es_super_admin',
+      header: 'Privilegios',
+      size: 120,
+      cell: info => (
+        <div className="text-center">
+          <span className={info.getValue() ? 'badge-red' : 'badge-gray'}>
+            {info.getValue() ? 'Super Admin' : 'Estándar'}
+          </span>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'activo',
+      header: 'Estado',
+      size: 100,
+      cell: info => (
+        <div className="text-center">
+          <span className={info.getValue() ? 'badge-green' : 'badge-gray'}>
+            {info.getValue() ? 'Activo' : 'Inactivo'}
+          </span>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'last_activity_at',
+      header: 'Última Actividad',
+      size: 160,
+      cell: info => {
+        const val = info.getValue()
+        return val ? new Date(val).toLocaleString() : '-'
+      }
+    },
+    {
+      id: 'acciones',
+      header: 'Acciones',
+      size: 150,
+      enableSorting: false,
+      enableColumnFilter: false,
+      cell: info => (
+        <div className="flex items-center justify-center gap-1">
+          <button onClick={() => handleOpenAccess(info.row.original)} className="p-1.5 rounded hover:bg-yellow-50 text-slate-400 hover:text-yellow-600 transition-colors" title="Gestionar Accesos">
+            <KeyIcon className="h-4 w-4" />
+          </button>
+          <button onClick={() => handleOpenEdit(info.row.original)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors" title="Editar Identidad">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+          <button onClick={() => handleDelete(info.row.original.id)} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors" title="Eliminar Usuario">
+            <TrashIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )
+    }
+  ], [])
+
+  const handleOpenNew = () => {
+    setUsuarioEdit(null)
+    setModalOpen(true)
+  }
+
+  const handleSaveModal = async (data) => {
+    let res
+    if (usuarioEdit) {
+      res = await usuarioController.update(usuarioEdit.id, data)
+    } else {
+      res = await usuarioController.create(data)
+    }
+
+    if (res.success) {
+      toast.success('Guardado correctamente', usuarioEdit ? 'Usuario actualizado.' : 'Usuario creado.')
+      setModalOpen(false)
+      loadUsuarios()
+    } else {
+      toast.error('Error', res.message)
+    }
+  }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{usuarios.length} usuarios registrados</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Usuarios</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{usuarios.length} usuarios registrados en el sistema</p>
         </div>
-        <button className="btn-primary">
+        <button onClick={handleOpenNew} className="btn-primary">
           <PlusIcon className="h-4 w-4" /> Nuevo Usuario
         </button>
       </div>
 
-      <div className="card p-4">
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text" placeholder="Buscar por nombre, email o rol..."
-            value={busq} onChange={handleBusq}
-            className="input-field pl-9"
-          />
-        </div>
-      </div>
+      {loading ? (
+        <div className="card p-8 text-center text-slate-500">Cargando usuarios...</div>
+      ) : (
+        <DataTable data={usuarios} columns={columns} />
+      )}
 
-      <div className="card p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr className="text-left text-gray-500">
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium text-center">Rol</th>
-                <th className="px-4 py-3 font-medium text-center">Estado</th>
-                <th className="px-4 py-3 font-medium">Último acceso</th>
-                <th className="px-4 py-3 font-medium text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {usuarios.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-900">{u.nombre}</td>
-                  <td className="px-4 py-3 text-gray-500">{u.email}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={ROL_COLORS[u.rol] ?? 'badge-gray'}>{u.rol}</span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={u.estado === 'activo' ? 'badge-green' : 'badge-gray'}>{u.estado}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{u.ultimoAcceso}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center gap-1">
-                      <button className="p-1.5 rounded hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors">
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteUsuario(u.id)}
-                        className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {usuarios.length === 0 && (
-            <div className="py-16 text-center text-gray-400">No se encontraron usuarios.</div>
-          )}
-        </div>
-      </div>
+      <UsuarioModal
+        isOpen={isModalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSaveModal}
+        usuario={usuarioEdit}
+      />
+
+      <UsuarioAccesosModal
+        isOpen={isAccessModalOpen}
+        onClose={() => setAccessModalOpen(false)}
+        user={usuarioAccess}
+      />
     </div>
   )
 }
