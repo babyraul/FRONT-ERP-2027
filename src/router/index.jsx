@@ -28,14 +28,14 @@ export const router = createBrowserRouter([
       { path: 'ventas', element: <Ventas /> },
       { path: 'reportes', element: <Reportes /> },
       
-      // Rutas de gestión protegidas (requieren super admin por ahora)
-      { path: 'usuarios', element: <ProtectedRoute requireSuperAdmin><Usuarios /></ProtectedRoute> },
+      // Rutas de gestión protegidas (validadas 100% dinámicamente)
+      { path: 'usuarios', element: <ProtectedRoute><Usuarios /></ProtectedRoute> },
       { path: 'configuracion', element: <ProtectedRoute requireSuperAdmin><Configuracion /></ProtectedRoute> },
-      { path: 'empresas', element: <ProtectedRoute requireSuperAdmin><Empresas /></ProtectedRoute> },
-      { path: 'sucursales', element: <ProtectedRoute requireSuperAdmin><Sucursales /></ProtectedRoute> },
-      { path: 'almacenes', element: <ProtectedRoute requireSuperAdmin><Almacenes /></ProtectedRoute> },
+      { path: 'empresas', element: <ProtectedRoute><Empresas /></ProtectedRoute> },
+      { path: 'sucursales', element: <ProtectedRoute><Sucursales /></ProtectedRoute> },
+      { path: 'almacenes', element: <ProtectedRoute><Almacenes /></ProtectedRoute> },
       { path: 'modulos', element: <ProtectedRoute requireSuperAdmin><Modulos /></ProtectedRoute> },
-      { path: 'roles', element: <ProtectedRoute requireSuperAdmin><Roles /></ProtectedRoute> },
+      { path: 'roles', element: <ProtectedRoute><Roles /></ProtectedRoute> },
     ],
   },
 ])

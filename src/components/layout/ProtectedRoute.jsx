@@ -6,14 +6,14 @@ import { useAuthStore } from '../../store/useAuthStore.js'
  * @param {Object} props
  * @param {React.ReactNode} props.children Componente hijo
  * @param {boolean} props.requireSuperAdmin Si true, requiere que el usuario sea super admin
- * @param {Array<string>} [props.allowedRoles] Arreglo de roles permitidos (futuro)
+ * @param {string} [props.requirePermission] Permiso manual (opcional, si no se envía se infiere de la URL)
  */
 export default function ProtectedRoute({ 
   children, 
   requireSuperAdmin = false,
-  allowedRoles = [] 
+  requirePermission = null
 }) {
-  const { user, isAuthenticated } = useAuthStore()
+  const { user, isAuthenticated, menu } = useAuthStore()
   const location = useLocation()
 
   // 1. Si no está autenticado, mandar al login
@@ -27,11 +27,20 @@ export default function ProtectedRoute({
     return <Navigate to="/dashboard" replace />
   }
 
-  // 3. Validación de roles/módulos en el futuro
-  if (allowedRoles.length > 0) {
-    // Aquí puedes agregar la lógica para revisar `user.roles` o `user.modulos`
-    // const hasRole = allowedRoles.some(role => user.roles?.includes(role))
-    // if (!hasRole && !user.es_super_admin) return <Navigate to="/dashboard" replace />
+  // 3. Validación Automática (Inferencia de Permiso por Convención)
+  if (!user.es_super_admin) {
+    // Extraemos el módulo base (ej: /empresas -> empresas)
+    const moduleName = location.pathname.split('/')[1]
+    const ignoredModules = ['dashboard', 'perfil', ''] // Rutas base que no usan la convención estricta
+    
+    if (moduleName && !ignoredModules.includes(moduleName)) {
+      // Si no se pasó un permiso manual, asumimos "modulo.ver" para leer la vista
+      const required = requirePermission || `${moduleName}.ver`
+      
+      if (!user.permisos || !user.permisos.includes(required)) {
+        return <Navigate to="/dashboard" replace />
+      }
+    }
   }
 
   return children
