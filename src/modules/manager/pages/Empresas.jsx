@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon, BuildingOfficeIcon, Squares2X2Icon } from '@heroicons/react/24/outline'
+import { ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon, BuildingOfficeIcon, Squares2X2Icon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { Link } from 'react-router-dom'
 import { empresaController } from '../controllers/empresa.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
 import { toast } from '../../../utils/toast'
@@ -182,11 +183,16 @@ export function Empresas() {
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Empresas</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {empresas.length} {empresas.length === 1 ? 'empresa registrada' : 'empresas registradas'} en el sistema
-          </p>
+        <div className="flex items-center gap-3">
+          <Link to="/configuracion" className="p-2 -ml-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500" title="Volver a Configuración">
+            <ArrowLeftIcon className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Empresas</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              {empresas.length} {empresas.length === 1 ? 'empresa registrada' : 'empresas registradas'} en el sistema
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <button onClick={handleExport} className="btn-secondary flex items-center gap-2">

@@ -15,15 +15,12 @@ export default function Navbar({ onMenuClick }) {
   const { user, logout, menu } = useAuthStore()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [configOpen, setConfigOpen] = useState(false)
   const menuRef = useRef(null)
-  const configRef = useRef(null)
 
   // Cerrar el menú al hacer clic fuera
   useEffect(() => {
     const onClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
-      if (configRef.current && !configRef.current.contains(e.target)) setConfigOpen(false)
     }
     document.addEventListener('mousedown', onClick)
     return () => document.removeEventListener('mousedown', onClick)
@@ -74,40 +71,19 @@ export default function Navbar({ onMenuClick }) {
                 {rol && <p className="text-xs text-muted">{rol}</p>}
               </div>
 
-              {/* Submenú de Configuración dentro del perfil */}
+              {/* Enlace de Configuración dentro del perfil */}
               {configuracionModule && (
                 <div className="border-b border-slate-100 dark:border-slate-800 py-1">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setConfigOpen(!configOpen)
-                    }}
-                    className="w-full px-4 py-2 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  <Link 
+                    to="/configuracion"
+                    onClick={() => setMenuOpen(false)}
+                    className="w-full px-4 py-2 flex items-center text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                   >
                     <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                       <Cog6ToothIcon className="h-4 w-4" />
                       Administración
                     </span>
-                    <ChevronDownIcon className={`h-4 w-4 text-slate-400 transition-transform ${configOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  
-                  <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${configOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-                    <div className="overflow-hidden">
-                      {configuracionModule.items?.map((item) => (
-                        <Link
-                          key={item.id}
-                          to={item.ruta || `/${item.codigo.toLowerCase()}`}
-                          onClick={() => {
-                            setMenuOpen(false)
-                            setConfigOpen(false)
-                          }}
-                          className="block pl-9 pr-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                        >
-                          {item.nombre}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
+                  </Link>
                 </div>
               )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { PlusIcon, PencilIcon, TrashIcon, KeyIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, KeyIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { Link } from 'react-router-dom'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import { toast } from '../../../utils/toast.js'
 import { usuarioController } from '../controllers/usuario.js'
@@ -163,9 +164,14 @@ export default function Usuarios() {
   return (
     <div className="space-y-5 p-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Usuarios</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{usuarios.length} usuarios registrados en el sistema</p>
+        <div className="flex items-center gap-3">
+          <Link to="/configuracion" className="p-2 -ml-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500" title="Volver a Configuración">
+            <ArrowLeftIcon className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Usuarios</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{usuarios.length} usuarios registrados en el sistema</p>
+          </div>
         </div>
         <Can I="crear" a="usuarios">
           <button onClick={handleOpenNew} className="btn-primary">

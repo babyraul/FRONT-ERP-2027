@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { MagnifyingGlassIcon, ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { Link } from 'react-router-dom'
 import { moduloController } from '../controllers/modulo.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
 import ModuloModal from '../components/ModuloModal.jsx'
@@ -188,9 +189,14 @@ export function Modulos() {
   return (
     <div className="space-y-5 p-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Módulos del Sistema</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{filtered.length} módulos registrados</p>
+        <div className="flex items-center gap-3">
+          <Link to="/configuracion" className="p-2 -ml-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500" title="Volver a Configuración">
+            <ArrowLeftIcon className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Módulos del Sistema</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{filtered.length} módulos registrados</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <button onClick={handleExport} className="btn-secondary">
