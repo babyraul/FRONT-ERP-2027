@@ -4,7 +4,7 @@ import api from '../utils/api'
 
 export const useAuthStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -29,6 +29,10 @@ export const useAuthStore = create(
           const { access_token, user } = response.data
           // Re-hidratamos el usuario con el nuevo contexto y su nuevo array de permisos
           set({ user, token: access_token })
+          
+          // Refrescamos el menú porque los módulos permitidos pueden haber cambiado para esta nueva sucursal
+          await get().fetchMenu()
+          
           return { success: true }
         } catch (error) {
           console.error('Error al cambiar de sucursal:', error)

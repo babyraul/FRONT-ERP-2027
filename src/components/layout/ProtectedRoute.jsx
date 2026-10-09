@@ -31,7 +31,7 @@ export default function ProtectedRoute({
 
   // 3. Validación Automática Predictiva (UX Inteligente)
   const moduleName = location.pathname.split('/')[1]
-  const ignoredModules = ['dashboard', 'perfil', ''] // Rutas base neutras
+  const ignoredModules = ['dashboard', 'perfil', 'configuracion', ''] // Rutas base neutras
   
   if (moduleName && !ignoredModules.includes(moduleName)) {
     const required = requirePermission || `${moduleName}.ver`

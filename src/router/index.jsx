@@ -30,11 +30,11 @@ export const router = createBrowserRouter([
       
       // Rutas de gestión protegidas (validadas 100% dinámicamente)
       { path: 'usuarios', element: <ProtectedRoute><Usuarios /></ProtectedRoute> },
-      { path: 'configuracion', element: <ProtectedRoute requireSuperAdmin><Configuracion /></ProtectedRoute> },
+      { path: 'configuracion', element: <ProtectedRoute><Configuracion /></ProtectedRoute> },
       { path: 'empresas', element: <ProtectedRoute><Empresas /></ProtectedRoute> },
       { path: 'sucursales', element: <ProtectedRoute><Sucursales /></ProtectedRoute> },
       { path: 'almacenes', element: <ProtectedRoute><Almacenes /></ProtectedRoute> },
-      { path: 'modulos', element: <ProtectedRoute requireSuperAdmin><Modulos /></ProtectedRoute> },
+      { path: 'modulos', element: <ProtectedRoute><Modulos /></ProtectedRoute> },
       { path: 'roles', element: <ProtectedRoute><Roles /></ProtectedRoute> },
     ],
   },
