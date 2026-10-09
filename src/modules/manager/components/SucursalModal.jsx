@@ -4,7 +4,7 @@ import { empresaController } from '../controllers/empresa.js'
 
 export default function SucursalModal({ isOpen, onClose, onSave, sucursal }) {
   const [empresas, setEmpresas] = useState([])
-  
+
   const [formData, setFormData] = useState({
     empresa_id: '',
     ruc: '',
@@ -13,6 +13,7 @@ export default function SucursalModal({ isOpen, onClose, onSave, sucursal }) {
     sucursal_nombre: '',
     direccion: '',
     codigo_anexo: '0000',
+    ubigeo: '',
     telefono1: '',
     email1: '',
     activo: true
@@ -37,15 +38,16 @@ export default function SucursalModal({ isOpen, onClose, onSave, sucursal }) {
         sucursal_nombre: sucursal.sucursal_nombre || '',
         direccion: sucursal.direccion || '',
         codigo_anexo: sucursal.codigo_anexo || '0000',
+        ubigeo: sucursal.ubigeo || '',
         telefono1: sucursal.telefono1 || '',
         email1: sucursal.email1 || '',
         activo: sucursal.activo ?? true
       })
     } else {
       setFormData({
-        empresa_id: '', ruc: '', razon_social: '', nombre_comercial: '', 
-        sucursal_nombre: '', direccion: '', codigo_anexo: '0000', 
-        telefono1: '', email1: '', activo: true 
+        empresa_id: '', ruc: '', razon_social: '', nombre_comercial: '',
+        sucursal_nombre: '', direccion: '', codigo_anexo: '0000', ubigeo: '',
+        telefono1: '', email1: '', activo: true
       })
     }
   }, [sucursal, isOpen])
@@ -54,6 +56,29 @@ export default function SucursalModal({ isOpen, onClose, onSave, sucursal }) {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
+
+    if (name === 'empresa_id') {
+      const selectedEmpresa = empresas.find(emp => String(emp.id) === String(value))
+      if (selectedEmpresa) {
+        setFormData(prev => ({
+          ...prev,
+          empresa_id: value,
+          ruc: selectedEmpresa.ruc || '',
+          razon_social: selectedEmpresa.razon_social || '',
+          nombre_comercial: selectedEmpresa.nombre_comercial || ''
+        }))
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          empresa_id: value,
+          ruc: '',
+          razon_social: '',
+          nombre_comercial: ''
+        }))
+      }
+      return
+    }
+
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
   }
 
@@ -72,7 +97,7 @@ export default function SucursalModal({ isOpen, onClose, onSave, sucursal }) {
     >
       <form id="sucursal-form" onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          
+
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Empresa Principal *</label>
             <select required name="empresa_id" value={formData.empresa_id} onChange={handleChange} className="input-field">
@@ -94,21 +119,13 @@ export default function SucursalModal({ isOpen, onClose, onSave, sucursal }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">RUC *</label>
-            <input required type="text" name="ruc" maxLength="11" value={formData.ruc} onChange={handleChange} className="input-field" placeholder="11 dígitos" />
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código Ubigeo</label>
+            <input type="text" name="ubigeo" maxLength="6" value={formData.ubigeo} onChange={handleChange} className="input-field" placeholder="150101" />
           </div>
+
+
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Razón Social *</label>
-            <input required type="text" name="razon_social" value={formData.razon_social} onChange={handleChange} className="input-field" placeholder="Razón Social S.A.C." />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre Comercial</label>
-            <input type="text" name="nombre_comercial" value={formData.nombre_comercial} onChange={handleChange} className="input-field" placeholder="Nombre Comercial" />
-          </div>
-
-          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Dirección *</label>
             <input required type="text" name="direccion" value={formData.direccion} onChange={handleChange} className="input-field" placeholder="Dirección de la sucursal" />
           </div>

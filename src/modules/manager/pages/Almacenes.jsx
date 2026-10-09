@@ -4,6 +4,7 @@ import { almacenController } from '../controllers/almacen.js'
 import { toast } from '../../../utils/toast'
 import AlmacenModal from '../components/AlmacenModal.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
+import Can from '../../../components/ui/Can.jsx'
 
 export function Almacenes() {
   const [almacenes, setAlmacenes] = useState([])
@@ -108,12 +109,25 @@ export function Almacenes() {
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-1.5">
-          <button onClick={() => handleOpenEdit(row.original)} className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors tooltip-target" title="Editar">
-            <PencilIcon className="h-4 w-4" />
-          </button>
-          <button onClick={() => handleDelete(row.original.id)} className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors tooltip-target" title="Eliminar">
-            <TrashIcon className="h-4 w-4" />
-          </button>
+          <Can I="editar" a="almacenes" fallback={
+            <button disabled className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed" title="Sin permiso">
+              <PencilIcon className="h-4 w-4" />
+            </button>
+          }>
+            <button onClick={() => handleOpenEdit(row.original)} className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors tooltip-target" title="Editar">
+              <PencilIcon className="h-4 w-4" />
+            </button>
+          </Can>
+          
+          <Can I="eliminar" a="almacenes" fallback={
+            <button disabled className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed" title="Sin permiso">
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          }>
+            <button onClick={() => handleDelete(row.original.id)} className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors tooltip-target" title="Eliminar">
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          </Can>
         </div>
       ),
       size: 100,
@@ -131,9 +145,11 @@ export function Almacenes() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={handleOpenNew} className="btn-primary flex items-center gap-2">
-            <PlusIcon className="h-4 w-4" /> Nuevo Almacén
-          </button>
+          <Can I="crear" a="almacenes">
+            <button onClick={handleOpenNew} className="btn-primary flex items-center gap-2">
+              <PlusIcon className="h-4 w-4" /> Nuevo Almacén
+            </button>
+          </Can>
         </div>
       </div>
 

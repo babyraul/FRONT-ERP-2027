@@ -5,6 +5,7 @@ import { toast } from '../../../utils/toast.js'
 import { usuarioController } from '../controllers/usuario.js'
 import UsuarioModal from '../components/UsuarioModal.jsx'
 import UsuarioAccesosModal from '../components/UsuarioAccesosModal.jsx'
+import Can from '../../../components/ui/Can.jsx'
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([])
@@ -103,15 +104,35 @@ export default function Usuarios() {
       enableColumnFilter: false,
       cell: info => (
         <div className="flex items-center justify-center gap-1">
-          <button onClick={() => handleOpenAccess(info.row.original)} className="p-1.5 rounded hover:bg-yellow-50 text-slate-400 hover:text-yellow-600 transition-colors" title="Gestionar Accesos">
-            <KeyIcon className="h-4 w-4" />
-          </button>
-          <button onClick={() => handleOpenEdit(info.row.original)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors" title="Editar Identidad">
-            <PencilIcon className="h-4 w-4" />
-          </button>
-          <button onClick={() => handleDelete(info.row.original.id)} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors" title="Eliminar Usuario">
-            <TrashIcon className="h-4 w-4" />
-          </button>
+          <Can I="accesos" a="usuarios" fallback={
+            <button disabled className="p-1.5 rounded bg-slate-50 text-slate-300 cursor-not-allowed" title="Sin permiso">
+              <KeyIcon className="h-4 w-4" />
+            </button>
+          }>
+            <button onClick={() => handleOpenAccess(info.row.original)} className="p-1.5 rounded hover:bg-yellow-50 text-slate-400 hover:text-yellow-600 transition-colors" title="Gestionar Accesos">
+              <KeyIcon className="h-4 w-4" />
+            </button>
+          </Can>
+          
+          <Can I="editar" a="usuarios" fallback={
+            <button disabled className="p-1.5 rounded bg-slate-50 text-slate-300 cursor-not-allowed" title="Sin permiso">
+              <PencilIcon className="h-4 w-4" />
+            </button>
+          }>
+            <button onClick={() => handleOpenEdit(info.row.original)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors" title="Editar Identidad">
+              <PencilIcon className="h-4 w-4" />
+            </button>
+          </Can>
+          
+          <Can I="eliminar" a="usuarios" fallback={
+            <button disabled className="p-1.5 rounded bg-slate-50 text-slate-300 cursor-not-allowed" title="Sin permiso">
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          }>
+            <button onClick={() => handleDelete(info.row.original.id)} className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors" title="Eliminar Usuario">
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          </Can>
         </div>
       )
     }
@@ -146,9 +167,11 @@ export default function Usuarios() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Usuarios</h1>
           <p className="text-sm text-gray-500 mt-0.5">{usuarios.length} usuarios registrados en el sistema</p>
         </div>
-        <button onClick={handleOpenNew} className="btn-primary">
-          <PlusIcon className="h-4 w-4" /> Nuevo Usuario
-        </button>
+        <Can I="crear" a="usuarios">
+          <button onClick={handleOpenNew} className="btn-primary">
+            <PlusIcon className="h-4 w-4" /> Nuevo Usuario
+          </button>
+        </Can>
       </div>
 
       {loading ? (

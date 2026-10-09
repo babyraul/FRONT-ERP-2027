@@ -1,8 +1,10 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { MagnifyingGlassIcon, ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { sucursalController } from '../controllers/sucursal.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
 import SucursalModal from '../components/SucursalModal.jsx'
+import { DataTable } from '../../../components/ui/DataTable.jsx'
+import Can from '../../../components/ui/Can.jsx'
 
 export function Sucursales() {
   const [sucursales, setSucursales] = useState([])
@@ -80,6 +82,94 @@ export function Sucursales() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const columns = useMemo(() => [
+    {
+      header: 'Anexo',
+      accessorKey: 'codigo_anexo',
+    },
+    {
+      header: 'Sucursal',
+      accessorKey: 'sucursal_nombre',
+    },
+    {
+      header: 'Empresa',
+      id: 'empresa_info',
+      accessorFn: row => `${row.ruc} - ${row.razon_social}`,
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-slate-700 dark:text-slate-200">{row.original.razon_social}</span>
+          <span className="text-xs text-slate-500 font-mono">RUC: {row.original.ruc}</span>
+        </div>
+      )
+    },
+    {
+      header: 'Ubicación',
+      id: 'ubicacion_info',
+      accessorFn: row => `${row.direccion} ${row.ubigeo_descripcion || ''}`,
+      cell: ({ row }) => (
+        <div className="flex flex-col max-w-[250px]">
+          <span className="text-sm text-slate-700 dark:text-slate-300 truncate" title={row.original.direccion}>
+            {row.original.direccion}
+          </span>
+          {row.original.ubigeo_descripcion && (
+            <span className="text-xs text-slate-500 truncate" title={row.original.ubigeo_descripcion}>
+              {row.original.ubigeo_descripcion}
+            </span>
+          )}
+        </div>
+      )
+    },
+    {
+      header: 'Estado',
+      accessorKey: 'activo',
+      cell: ({ row }) => {
+        const isActive = row.original.activo
+        return (
+          <div className="flex justify-center">
+            <span className={isActive ? 'badge-green' : 'badge-gray'}>
+              {isActive ? 'Activo' : 'Inactivo'}
+            </span>
+          </div>
+        )
+      }
+    },
+    {
+      header: 'Acciones',
+      id: 'acciones',
+      cell: ({ row }) => {
+        const s = row.original
+        return (
+          <div className="flex items-center justify-center gap-1">
+            <Can I="editar" a="sucursales" fallback={
+              <button disabled className="p-1.5 rounded bg-slate-50 text-slate-300 cursor-not-allowed" title="Sin permiso">
+                <PencilIcon className="h-4 w-4" />
+              </button>
+            }>
+              <button onClick={() => handleOpenEdit(s)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors" title="Editar">
+                <PencilIcon className="h-4 w-4" />
+              </button>
+            </Can>
+            
+            <Can I="eliminar" a="sucursales" fallback={
+              <button disabled className="p-1.5 rounded bg-slate-50 text-slate-300 cursor-not-allowed" title="Sin permiso">
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            }>
+              <button
+                onClick={() => handleDelete(s.id)}
+                className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                title="Eliminar"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </Can>
+          </div>
+        )
+      }
+    }
+  ], [])
+
   return (
     <div className="space-y-5 p-6">
       <div className="flex items-center justify-between">
@@ -91,9 +181,11 @@ export function Sucursales() {
           <button onClick={handleExport} className="btn-secondary">
             <ArrowDownTrayIcon className="h-4 w-4" /> Exportar Excel
           </button>
-          <button onClick={handleOpenNew} className="btn-primary">
-            <PlusIcon className="h-4 w-4" /> Nueva Sucursal
-          </button>
+          <Can I="crear" a="sucursales">
+            <button onClick={handleOpenNew} className="btn-primary">
+              <PlusIcon className="h-4 w-4" /> Nueva Sucursal
+            </button>
+          </Can>
         </div>
       </div>
 
@@ -108,58 +200,11 @@ export function Sucursales() {
         </div>
       </div>
 
-      <div className="card p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-              <tr className="text-left text-slate-500 dark:text-slate-400">
-                <th className="px-4 py-3 font-medium">Anexo</th>
-                <th className="px-4 py-3 font-medium">Sucursal</th>
-                <th className="px-4 py-3 font-medium">RUC</th>
-                <th className="px-4 py-3 font-medium">Razón Social</th>
-                <th className="px-4 py-3 font-medium">Dirección</th>
-                <th className="px-4 py-3 font-medium text-center">Estado</th>
-                <th className="px-4 py-3 font-medium text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {loading ? (
-                <tr><td colSpan="7" className="py-8 text-center text-slate-500">Cargando sucursales...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan="7" className="py-8 text-center text-slate-500">No se encontraron sucursales.</td></tr>
-              ) : (
-                filtered.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-slate-700 dark:text-slate-300">
-                    <td className="px-4 py-3 font-mono text-xs">{s.codigo_anexo}</td>
-                    <td className="px-4 py-3 font-medium">{s.sucursal_nombre}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-500">{s.ruc}</td>
-                    <td className="px-4 py-3 text-slate-500">{s.razon_social}</td>
-                    <td className="px-4 py-3 text-slate-500 max-w-[200px] truncate" title={s.direccion}>{s.direccion}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={s.activo ? 'badge-green' : 'badge-gray'}>
-                        {s.activo ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => handleOpenEdit(s)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors">
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(s.id)}
-                          className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {loading ? (
+        <div className="py-8 text-center text-slate-500">Cargando sucursales...</div>
+      ) : (
+        <DataTable data={filtered} columns={columns} />
+      )}
 
       <SucursalModal
         isOpen={isModalOpen}

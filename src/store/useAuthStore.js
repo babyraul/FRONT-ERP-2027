@@ -23,6 +23,20 @@ export const useAuthStore = create(
         }
       },
 
+      switchBranch: async (branch_id) => {
+        try {
+          const response = await api.post('/auth/switch-branch', { branch_id })
+          const { access_token, user } = response.data
+          // Re-hidratamos el usuario con el nuevo contexto y su nuevo array de permisos
+          set({ user, token: access_token })
+          return { success: true }
+        } catch (error) {
+          console.error('Error al cambiar de sucursal:', error)
+          const errorMsg = error.response?.data?.message || 'Error de conexión'
+          return { success: false, message: errorMsg }
+        }
+      },
+
       fetchMenu: async () => {
         try {
           const response = await api.get('/auth/menu')

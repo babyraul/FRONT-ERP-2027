@@ -75,7 +75,7 @@ export default function UsuarioAccesosModal({ isOpen, onClose, user }) {
     if (!formData.empresa_id || !formData.branch_id || !formData.rol_id) {
       return toast.warning('Advertencia', 'Debes seleccionar Empresa, Sucursal y Rol.')
     }
-    
+
     const res = await usuarioController.addAcceso(user.id, formData)
     if (res.success) {
       toast.success('Guardado', 'Acceso agregado correctamente.')
@@ -119,19 +119,19 @@ export default function UsuarioAccesosModal({ isOpen, onClose, user }) {
       noPadding={true}
     >
       <div className="flex-1 overflow-hidden flex flex-col sm:flex-row">
-        
+
         {/* List of accesses */}
         <div className={`flex-1 p-6 overflow-y-auto border-r border-slate-200 dark:border-slate-800 ${showForm ? 'hidden sm:block' : 'block'}`}>
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-medium text-slate-800 dark:text-white">Accesos Actuales</h3>
-            <button 
-              onClick={() => setShowForm(true)} 
+            <button
+              onClick={() => setShowForm(true)}
               className="btn-primary py-1.5 text-xs sm:hidden"
             >
               <PlusIcon className="h-4 w-4" /> Nuevo
             </button>
           </div>
-          
+
           {loading ? (
             <div className="text-center py-10 text-slate-500">Cargando...</div>
           ) : accesos.length === 0 ? (
@@ -154,9 +154,10 @@ export default function UsuarioAccesosModal({ isOpen, onClose, user }) {
                       <div className="text-xs text-slate-500 dark:text-slate-400 space-y-0.5">
                         <p>Empresa: <span className="font-medium">{acc.empresa_nombre}</span></p>
                         <p>Rol Base: <span className="font-medium">{acc.rol_nombre}</span></p>
+                        <p>sucursal: <span className="font-medium">{acc.direccion}</span></p>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col items-end gap-2">
                       <button onClick={() => handleRemove(acc.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Eliminar acceso">
                         <TrashIcon className="h-4 w-4" />
@@ -198,7 +199,7 @@ export default function UsuarioAccesosModal({ isOpen, onClose, user }) {
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Sucursal</label>
               <select required name="branch_id" value={formData.branch_id} onChange={handleChange} className="input-field text-sm py-2" disabled={!formData.empresa_id}>
                 <option value="">Seleccionar...</option>
-                {availableBranches.map(s => <option key={s.id} value={s.id}>{s.nombre_comercial}</option>)}
+                {availableBranches.map(s => <option key={s.id} value={s.id}>{s.sucursal_nombre}</option>)}
               </select>
             </div>
 

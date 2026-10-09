@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore.js'
+import { usePermission } from '../../hooks/usePermission.js'
 
 /**
  * Rutas protegidas basadas en roles o permisos.
@@ -13,7 +14,8 @@ export default function ProtectedRoute({
   requireSuperAdmin = false,
   requirePermission = null
 }) {
-  const { user, isAuthenticated, menu } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
+  const { hasPermission } = usePermission()
   const location = useLocation()
 
   // 1. Si no está autenticado, mandar al login
@@ -27,19 +29,16 @@ export default function ProtectedRoute({
     return <Navigate to="/dashboard" replace />
   }
 
-  // 3. Validación Automática (Inferencia de Permiso por Convención)
-  if (!user.es_super_admin) {
-    // Extraemos el módulo base (ej: /empresas -> empresas)
-    const moduleName = location.pathname.split('/')[1]
-    const ignoredModules = ['dashboard', 'perfil', ''] // Rutas base que no usan la convención estricta
+  // 3. Validación Automática Predictiva (UX Inteligente)
+  const moduleName = location.pathname.split('/')[1]
+  const ignoredModules = ['dashboard', 'perfil', ''] // Rutas base neutras
+  
+  if (moduleName && !ignoredModules.includes(moduleName)) {
+    const required = requirePermission || `${moduleName}.ver`
     
-    if (moduleName && !ignoredModules.includes(moduleName)) {
-      // Si no se pasó un permiso manual, asumimos "modulo.ver" para leer la vista
-      const required = requirePermission || `${moduleName}.ver`
-      
-      if (!user.permisos || !user.permisos.includes(required)) {
-        return <Navigate to="/dashboard" replace />
-      }
+    // El hook hasPermission ya soporta lógica O(1) y atajo para superadmins
+    if (!hasPermission(required)) {
+      return <Navigate to="/dashboard" replace />
     }
   }
 
