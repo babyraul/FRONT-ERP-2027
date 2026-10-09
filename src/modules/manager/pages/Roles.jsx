@@ -129,7 +129,7 @@ export default function Roles() {
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-1.5">
-          <Can I="permisos" a="roles" fallback={
+          <Can I="editar" a="roles" fallback={
             <button disabled className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed" title="Sin permiso">
               <Squares2X2Icon className="h-4 w-4" />
             </button>

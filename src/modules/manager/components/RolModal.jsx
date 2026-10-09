@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Modal from '../../../components/ui/Modal.jsx'
+import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import { empresaController } from '../controllers/empresa.js'
 import { useAuthStore } from '../../../store/useAuthStore'
 
@@ -104,10 +105,30 @@ export default function RolModal({ isOpen, onClose, onSave, rol }) {
 
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nivel de Acceso (Numérico)</label>
-          <input type="number" name="nivel" value={formData.nivel} onChange={handleChange} className="input-field" placeholder="100" />
-          <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-            <strong>Guía de niveles:</strong> El nivel <strong>1</strong> representa la jerarquía más alta (máximos permisos), mientras que el nivel <strong>100</strong> o superior representa la jerarquía más baja (usuarios básicos).
-          </p>
+          <input 
+            type="number" 
+            name="nivel" 
+            value={formData.nivel} 
+            onChange={handleChange} 
+            className="input-field" 
+            placeholder="100"
+            min={user?.es_super_admin ? 1 : (user?.active_acceso?.rol_nivel ? user.active_acceso.rol_nivel + 1 : 2)}
+          />
+          <div className="mt-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-lg p-3 flex gap-3 text-sm text-blue-800 dark:text-blue-200">
+            <InformationCircleIcon className="h-5 w-5 flex-shrink-0 mt-0.5 text-blue-500" />
+            <div>
+              <p className="font-semibold mb-1">Estructura de Jerarquía (Niveles)</p>
+              <p className="text-[13px] opacity-90 leading-relaxed mb-2">
+                Un número <strong>menor</strong> significa mayor poder. Un rol no puede editar ni asignar roles de igual o mayor jerarquía que la suya.
+              </p>
+              <ul className="text-[12px] space-y-1 opacity-80 list-disc pl-4">
+                <li><strong>Nivel 1:</strong> Administradores (Control total)</li>
+                <li><strong>Nivel 10 - 40:</strong> Sub-gerentes o Supervisores</li>
+                <li><strong>Nivel 50 - 90:</strong> Vendedores y Cajeros</li>
+                <li><strong>Nivel 100+:</strong> Usuarios con permisos muy limitados</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-4 mt-2 pt-2">

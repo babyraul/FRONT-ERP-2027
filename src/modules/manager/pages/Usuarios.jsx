@@ -105,7 +105,7 @@ export default function Usuarios() {
       enableColumnFilter: false,
       cell: info => (
         <div className="flex items-center justify-center gap-1">
-          <Can I="accesos" a="usuarios" fallback={
+          <Can I="editar" a="usuarios" fallback={
             <button disabled className="p-1.5 rounded bg-slate-50 text-slate-300 cursor-not-allowed" title="Sin permiso">
               <KeyIcon className="h-4 w-4" />
             </button>
