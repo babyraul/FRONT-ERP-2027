@@ -8,7 +8,7 @@ import { Productos } from '../modules/productos'
 import { Clientes } from '../modules/clientes'
 import { Ventas } from '../modules/ventas'
 import { Reportes } from '../modules/reportes'
-import { Usuarios, Configuracion, Empresas, Sucursales, Almacenes, Modulos, Roles } from '../modules/manager'
+import { Usuarios, Configuracion, Empresas, Sucursales, Almacenes, Modulos, Roles, Cajas } from '../modules/manager'
 
 export const router = createBrowserRouter([
   {
@@ -34,6 +34,7 @@ export const router = createBrowserRouter([
       { path: 'empresas', element: <ProtectedRoute><Empresas /></ProtectedRoute> },
       { path: 'sucursales', element: <ProtectedRoute><Sucursales /></ProtectedRoute> },
       { path: 'almacenes', element: <ProtectedRoute><Almacenes /></ProtectedRoute> },
+      { path: 'cajas', element: <ProtectedRoute><Cajas /></ProtectedRoute> },
       { path: 'modulos', element: <ProtectedRoute><Modulos /></ProtectedRoute> },
       { path: 'roles', element: <ProtectedRoute><Roles /></ProtectedRoute> },
     ],
