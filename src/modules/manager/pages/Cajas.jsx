@@ -22,6 +22,7 @@ import { useAuthStore } from '../../../store/useAuthStore.js'
 export function Cajas() {
   const [cajas, setCajas] = useState([])
   const [tiposComprobante, setTiposComprobante] = useState({})
+  const [usuariosMap, setUsuariosMap] = useState({})
   const [loading, setLoading] = useState(true)
   const [busq, setBusq] = useState('')
   const [isModalOpen, setModalOpen] = useState(false)
@@ -33,9 +34,10 @@ export function Cajas() {
 
   const loadData = useCallback(async () => {
     setLoading(true)
-    const [resCajas, resTipos] = await Promise.all([
+    const [resCajas, resTipos, resUsers] = await Promise.all([
       cajaController.getAll(),
-      cajaController.getTiposComprobante()
+      cajaController.getTiposComprobante(),
+      cajaController.getUsuarios()
     ])
 
     if (resCajas.success) {
@@ -48,6 +50,14 @@ export function Cajas() {
         mapaTipos[t.id] = t.descripcion || t.abreviatura || t.id
       })
       setTiposComprobante(mapaTipos)
+    }
+
+    if (resUsers.success && Array.isArray(resUsers.data)) {
+      const mapaUsers = {}
+      resUsers.data.forEach(u => {
+        mapaUsers[u.id] = u.nombre_completo || u.nombre || u.usuario
+      })
+      setUsuariosMap(mapaUsers)
     }
 
     setLoading(false)
@@ -65,9 +75,10 @@ export function Cajas() {
       c.nombre?.toLowerCase().includes(busq.toLowerCase()) ||
       c.serie?.toLowerCase().includes(busq.toLowerCase()) ||
       c.identificador_caja?.toLowerCase().includes(busq.toLowerCase()) ||
-      c.tipo_caja?.toLowerCase().includes(busq.toLowerCase())
+      c.tipo_caja?.toLowerCase().includes(busq.toLowerCase()) ||
+      (c.usuario_id && usuariosMap[c.usuario_id]?.toLowerCase().includes(busq.toLowerCase()))
     )
-  }, [cajas, busq])
+  }, [cajas, busq, usuariosMap])
 
   // Agrupación por identificador_caja (o clave fallback si no tiene)
   const groupedCajas = useMemo(() => {
@@ -80,9 +91,14 @@ export function Cajas() {
           nombre: item.nombre,
           tipo_caja: item.tipo_caja || 'ADMINISTRATIVA',
           branch_id: item.branch_id,
+          usuario_id: item.usuario_id,
           activo: item.activo,
           series: []
         }
+      }
+      // Mantener actualizado el usuario_id si alguna serie lo tiene
+      if (item.usuario_id && !groups[key].usuario_id) {
+        groups[key].usuario_id = item.usuario_id
       }
       groups[key].series.push(item)
     })
@@ -94,6 +110,7 @@ export function Cajas() {
       'ID Caja': c.identificador_caja || '-',
       Nombre: c.nombre,
       Tipo: c.tipo_caja,
+      'Usuario Asignado': usuariosMap[c.usuario_id] || 'Disponible para todos',
       'Tipo Comprobante': tiposComprobante[c.tipo_comprobante_id] || c.tipo_comprobante_id || '-',
       Serie: c.serie,
       Correlativo: String(c.correlativo ?? 0).padStart(8, '0'),
@@ -129,6 +146,7 @@ export function Cajas() {
       accessorKey: 'identificador_caja',
       cell: (info) => {
         const item = info.row.original
+        const usuarioNombre = item.usuario_id ? (usuariosMap[item.usuario_id] || 'Usuario asignado') : null
         return (
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs tracking-wider border border-blue-100 dark:border-blue-800/40">
@@ -141,9 +159,13 @@ export function Cajas() {
                   {item.tipo_caja}
                 </span>
               </div>
-              <span className="text-xs text-slate-400">
-                {item.series.length} {item.series.length === 1 ? 'comprobante asignado' : 'comprobantes asignados'}
-              </span>
+              <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                <span>{item.series.length} doc{item.series.length > 1 ? 's' : ''}</span>
+                <span>•</span>
+                <span className={usuarioNombre ? 'text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-400 italic'}>
+                  {usuarioNombre ? `Asignada a: ${usuarioNombre}` : 'Sin usuario asignado'}
+                </span>
+              </div>
             </div>
           </div>
         )
@@ -212,7 +234,7 @@ export function Cajas() {
         )
       }
     }
-  ], [tiposComprobante])
+  ], [tiposComprobante, usuariosMap])
 
   return (
     <div className="space-y-6 p-6">
@@ -421,8 +443,13 @@ export function Cajas() {
 
                 {/* Pie de Tarjeta */}
                 <div className="px-5 py-3 bg-slate-50/70 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                  <div className="flex items-center gap-1.5 truncate max-w-[65%]">
+                    <span className="text-slate-400">Asignada:</span>
+                    <span className={`font-medium truncate ${grupo.usuario_id && usuariosMap[grupo.usuario_id] ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 italic'}`}>
+                      {grupo.usuario_id && usuariosMap[grupo.usuario_id] ? usuariosMap[grupo.usuario_id] : 'Disponible'}
+                    </span>
+                  </div>
                   <span>ID: <code className="font-mono text-slate-500 dark:text-slate-400">{grupo.identificador_caja}</code></span>
-                  <span>Sucursal Activa</span>
                 </div>
               </div>
             )

@@ -6,11 +6,14 @@ import { useAuthStore } from '../../../store/useAuthStore.js'
 export default function CajaModal({ isOpen, onClose, caja, onSave }) {
   const [loading, setLoading] = useState(false)
   const [documentos, setDocumentos] = useState([])
+  const [usuarios, setUsuarios] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
   
   const [formData, setFormData] = useState({
     identificador_caja: '',
     nombre: '',
     tipo_caja: 'ADMINISTRATIVA',
+    usuario_id: '',
     activo: true
   })
 
@@ -23,6 +26,7 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
         identificador_caja: caja.identificador_caja || '',
         nombre: caja.nombre || '',
         tipo_caja: caja.tipo_caja || 'ADMINISTRATIVA',
+        usuario_id: caja.usuario_id || '',
         activo: caja.activo ?? true
       })
     } else {
@@ -30,25 +34,36 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
         identificador_caja: '',
         nombre: '',
         tipo_caja: 'ADMINISTRATIVA',
+        usuario_id: '',
         activo: true
       })
     }
   }, [caja, isOpen])
 
   useEffect(() => {
-    const fetchTipos = async () => {
-      const res = await cajaController.getTiposComprobante()
-      if (res.success && res.data.length > 0) {
-        setDocumentos(res.data.map(t => ({
+    const fetchData = async () => {
+      // 1. Cargar tipos de comprobante
+      const resDocs = await cajaController.getTiposComprobante()
+      if (resDocs.success && resDocs.data.length > 0) {
+        setDocumentos(resDocs.data.map(t => ({
           ...t,
           habilitado: caja ? caja.tipo_comprobante_id === t.id : false,
           serie: caja && caja.tipo_comprobante_id === t.id ? caja.serie : '',
           correlativo: caja && caja.tipo_comprobante_id === t.id ? caja.correlativo : 0
         })))
       }
+
+      // 2. Cargar lista de usuarios disponibles
+      setLoadingUsers(true)
+      const resUsers = await cajaController.getUsuarios()
+      if (resUsers.success && Array.isArray(resUsers.data)) {
+        setUsuarios(resUsers.data)
+      }
+      setLoadingUsers(false)
     }
+
     if (isOpen) {
-      fetchTipos()
+      fetchData()
     }
   }, [isOpen, caja])
 
@@ -86,17 +101,25 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
 
     setLoading(true)
 
+    // usuario_id opcional: si está vacío (""), se envía null para no forzar o FK vacía
+    const usuarioAsignado = formData.usuario_id && formData.usuario_id.trim() !== '' 
+      ? formData.usuario_id 
+      : null
+
     try {
       if (caja?.id) {
         // Modo Edición: Actualizamos solo el registro actual
         const doc = docsToSave[0] // En edición solo hay uno visible/habilitado
         const payload = {
-          ...formData,
+          identificador_caja: formData.identificador_caja,
+          nombre: formData.nombre,
+          tipo_caja: formData.tipo_caja,
+          activo: formData.activo,
+          usuario_id: usuarioAsignado,
           serie: doc.serie.toUpperCase(),
           correlativo: doc.correlativo,
           tipo_comprobante_id: doc.id,
-          branch_id: branchId,
-          usuario_id: user?.id
+          branch_id: branchId
         }
         const res = await cajaController.update(caja.id, payload)
         if (!res.success) throw new Error(res.error)
@@ -104,17 +127,19 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
         // Modo Creación: Creamos un registro por cada documento habilitado
         for (const doc of docsToSave) {
           const payload = {
-            ...formData,
+            identificador_caja: formData.identificador_caja,
+            nombre: formData.nombre,
+            tipo_caja: formData.tipo_caja,
+            activo: formData.activo,
+            usuario_id: usuarioAsignado,
             serie: doc.serie.toUpperCase(),
             correlativo: doc.correlativo,
             tipo_comprobante_id: doc.id,
-            branch_id: branchId,
-            usuario_id: user?.id
+            branch_id: branchId
           }
           const res = await cajaController.create(payload)
           if (!res.success) {
             console.error(res.error)
-            // Podríamos detenernos o seguir, por ahora alertamos pero seguimos
             alert(`Error al guardar serie ${doc.serie}: ${res.error}`)
           }
         }
@@ -141,7 +166,7 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
       <form id="cajaForm" onSubmit={handleSubmit} className="p-6 space-y-5">
         
         {/* Cabecera de la Caja */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Identificador *</label>
             <input
@@ -149,13 +174,14 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
               name="identificador_caja"
               value={formData.identificador_caja}
               onChange={handleChange}
-              maxlength={4}
+              maxLength={4}
               inputMode="numeric"
-              apattern="[0-9]*"
               placeholder="Ej. 0001"
+              required
               className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm dark:text-white"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre Caja *</label>
             <input
@@ -164,10 +190,11 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
               required
               value={formData.nombre}
               onChange={handleChange}
-              placeholder="Ej. Caja Principal"
+              placeholder="Ej. Caja Principal o Administrador"
               className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm dark:text-white"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo de Caja</label>
             <select
@@ -180,6 +207,28 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
               <option value="PUNTO_VENTA">Punto de Venta</option>
               <option value="VIRTUAL">Virtual</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Usuario Asignado <span className="text-xs text-slate-400 font-normal">(Opcional)</span>
+            </label>
+            <select
+              name="usuario_id"
+              value={formData.usuario_id}
+              onChange={handleChange}
+              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm dark:text-white"
+            >
+              <option value="">-- Sin usuario asignado (Disponible para todos) --</option>
+              {usuarios.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.nombre_completo || u.nombre || u.usuario} ({u.usuario})
+                </option>
+              ))}
+            </select>
+            {loadingUsers && (
+              <span className="text-[11px] text-slate-400 mt-0.5 block">Cargando usuarios...</span>
+            )}
           </div>
         </div>
 
@@ -224,7 +273,7 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
                           <input
                             type="text"
                             placeholder="Serie"
-                            maxlength={4}
+                            maxLength={4}
                             value={doc.serie}
                             onChange={(e) => updateDoc(index, 'serie', e.target.value)}
                             className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm dark:text-white uppercase"

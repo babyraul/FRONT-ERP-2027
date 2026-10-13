@@ -59,5 +59,16 @@ export const cajaController = {
       console.error('Error al obtener tipos de comprobante:', error)
       return { success: false, data: [] }
     }
+  },
+
+  getUsuarios: async () => {
+    try {
+      const response = await api.get('/usuarios')
+      return { success: true, data: response.data?.data || response.data || [] }
+    } catch (error) {
+      console.error('Error al obtener usuarios:', error)
+      return { success: false, data: [] }
+    }
   }
 }
+
