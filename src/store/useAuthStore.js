@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import api from '../utils/api'
+import { useFactoresStore } from './useFactoresStore'
 
 export const useAuthStore = create(
   persist(
@@ -15,6 +16,8 @@ export const useAuthStore = create(
           const response = await api.post('/auth/login', { usuario, password })
           const { access_token, user } = response.data
           set({ user, token: access_token, isAuthenticated: true })
+          // Cargar factores de conversión del sistema (PRECIO / VOLUMEN)
+          useFactoresStore.getState().fetchFactores()
           return { success: true }
         } catch (error) {
           console.error('Error de login:', error)

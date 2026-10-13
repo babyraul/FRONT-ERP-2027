@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar.jsx'
 import Navbar from './Navbar.jsx'
 import { useAuthStore } from '../../store/useAuthStore.js'
+import { useFactoresStore } from '../../store/useFactoresStore.js'
 
 const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches
 
@@ -25,10 +26,11 @@ export default function Layout() {
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
-  // Cargar el menú global al iniciar
+  // Cargar el menú global y factores del sistema al iniciar
   useEffect(() => {
     if (isAuthenticated) {
       useAuthStore.getState().fetchMenu()
+      useFactoresStore.getState().fetchFactores()
     }
   }, [isAuthenticated])
 

@@ -14,6 +14,7 @@ export default function SearchableSelect({
   emptyOptionLabel = '-- Ninguno / Vacío --',
   allowEmpty = true,
   disabled = false,
+  error = '',
   className = ''
 }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -51,8 +52,9 @@ export default function SearchableSelect({
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-          {label}
+        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+          <span>{label}</span>
+          {error && <span className="text-[10px] text-red-500 font-normal">{error}</span>}
         </label>
       )}
 
@@ -61,7 +63,11 @@ export default function SearchableSelect({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-left text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all disabled:opacity-50"
+        className={`w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 border rounded-lg text-left text-sm dark:text-white focus:outline-none focus:ring-2 transition-all disabled:opacity-50 ${
+          error
+            ? 'border-red-400 dark:border-red-500/80 focus:ring-red-400/30'
+            : 'border-slate-200 dark:border-slate-700 focus:ring-blue-500'
+        }`}
       >
         <span className="truncate block font-normal">
           {selectedOption ? (
