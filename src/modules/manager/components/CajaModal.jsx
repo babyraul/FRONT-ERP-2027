@@ -143,13 +143,16 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
         {/* Cabecera de la Caja */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Identificador</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Identificador *</label>
             <input
               type="text"
               name="identificador_caja"
               value={formData.identificador_caja}
               onChange={handleChange}
-              placeholder="Ej. CAJA-01"
+              maxlength={4}
+              inputMode="numeric"
+              apattern="[0-9]*"
+              placeholder="Ej. 0001"
               className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm dark:text-white"
             />
           </div>
@@ -221,6 +224,7 @@ export default function CajaModal({ isOpen, onClose, caja, onSave }) {
                           <input
                             type="text"
                             placeholder="Serie"
+                            maxlength={4}
                             value={doc.serie}
                             onChange={(e) => updateDoc(index, 'serie', e.target.value)}
                             className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm dark:text-white uppercase"
