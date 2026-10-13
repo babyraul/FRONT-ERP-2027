@@ -32,6 +32,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
   // Estado del Formulario Principal
   const [formData, setFormData] = useState({
     nombre: '',
+    codigo: '',
     descripcion: '',
     palabra_clave: '',
     codigo_barra: '',
@@ -71,6 +72,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
     if (producto) {
       setFormData({
         nombre: producto.nombre || '',
+        codigo: producto.codigo || '',
         descripcion: producto.descripcion || '',
         palabra_clave: producto.palabra_clave || '',
         codigo_barra: producto.codigo_barra || '',
@@ -120,6 +122,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
     } else {
       setFormData({
         nombre: '',
+        codigo: '',
         descripcion: '',
         palabra_clave: '',
         codigo_barra: '',
@@ -452,7 +455,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
               </span>
             ) : null}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2 relative">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 items-center justify-between">
                 <span>Nombre Comercial *</span>
@@ -540,9 +543,6 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
               <h3 className="text-xs font-bold text-blue-950 dark:text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                 2. Presentaciones Comerciales y Estructura de Precios (S/.)
-                <span className="ml-2 text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-mono normal-case font-normal">
-                  Factor: x{factorPrecio} (en céntimos)
-                </span>
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                 La presentación inicial es <strong>PRINCIPAL</strong>. Los precios se ingresan en Soles (decimales) y se guardan como enteros en céntimos con el factor configurado.
