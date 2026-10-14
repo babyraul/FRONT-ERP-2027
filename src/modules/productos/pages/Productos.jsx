@@ -123,7 +123,8 @@ export default function Productos() {
         ) : (
           <span className="text-slate-400 dark:text-slate-500 text-xs italic font-mono">—</span>
         )
-      }
+      },
+      size: 80
     },
     {
       header: 'Cód. Barras',
@@ -137,7 +138,8 @@ export default function Productos() {
         ) : (
           <span className="text-slate-400 text-xs italic">Sin SKU</span>
         )
-      }
+      },
+      size: 120
     },
     {
       header: 'Producto / Descripción',

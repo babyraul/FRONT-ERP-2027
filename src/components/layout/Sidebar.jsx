@@ -13,7 +13,8 @@ import {
   MapPinIcon,
   Square3Stack3DIcon,
   ChevronDownIcon,
-  FolderIcon
+  FolderIcon,
+  TruckIcon
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../../store/useAuthStore'
 import api from '../../utils/api'
@@ -24,6 +25,7 @@ const getIconForModule = (codigo) => {
   if (code.includes('VENTAS')) return ShoppingCartIcon
   if (code.includes('PRODUCTOS') || code.includes('CATALOGOS')) return CubeIcon
   if (code.includes('CLIENTES')) return UsersIcon
+  if (code.includes('PROVEEDORES') || code.includes('PROVEEDOR')) return TruckIcon
   if (code.includes('REPORTES')) return DocumentChartBarIcon
   if (code.includes('USUARIOS')) return UserGroupIcon
   if (code.includes('EMPRESAS')) return BuildingOfficeIcon

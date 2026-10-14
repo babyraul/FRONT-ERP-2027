@@ -76,6 +76,7 @@ La navegación del sistema está centralizada en [`FRONT/src/router/index.jsx`](
 | `/clientes` | `<Clientes />` (`modules/clientes`) | Dentro de `<Layout />` | Directorio de clientes con filtros por RUC/Nombre y exportación. |
 | `/ventas` | `<Ventas />` (`modules/ventas`) | Dentro de `<Layout />` | Histórico y registro de comprobantes (Facturas / Boletas). |
 | `/reportes` | `<Reportes />` (`modules/reportes`) | Dentro de `<Layout />` | Reportes detallados y gráficos analíticos con Recharts. |
+| `/proveedores` | `<Proveedores />` (`modules/proveedores`) | `<ProtectedRoute>` | Directorio de proveedores, clasificación, búsqueda y CRUD con integración a SUNAT. |
 | `/usuarios` | `<Usuarios />` (`modules/manager`) | `<ProtectedRoute>` | Gestión de usuarios del sistema y asignación de accesos por sucursal. |
 | `/configuracion` | `<Configuracion />` (`modules/manager`) | `<ProtectedRoute>` | Preferencias y configuraciones generales del sistema. |
 | `/empresas` | `<Empresas />` (`modules/manager`) | `<ProtectedRoute>` | Administración de empresas multi-tenant y asignación de módulos contratados. |
@@ -164,6 +165,8 @@ Los módulos de gestión (`modules/manager/controllers/`) implementan la arquite
 | **`moduloController`** | [`FRONT/src/modules/manager/controllers/modulo.js`](FRONT/src/modules/manager/controllers/modulo.js) | `GET /modulos`<br>`GET /modulos/:id`<br>`POST /modulos`<br>`PUT /modulos/:id`<br>`DELETE /modulos/:id` |
 | **`permisoController`** | [`FRONT/src/modules/manager/controllers/permiso.js`](FRONT/src/modules/manager/controllers/permiso.js) | `GET /permisos` |
 | **`productoController`** | [`FRONT/src/modules/productos/controllers/producto.js`](FRONT/src/modules/productos/controllers/producto.js) | `GET /productos`<br>`GET /productos/:id`<br>`POST /productos`<br>`PUT /productos/:id`<br>`DELETE /productos/:id` |
+| **`clienteController`** | [`FRONT/src/modules/clientes/controllers/cliente.js`](FRONT/src/modules/clientes/controllers/cliente.js) | `GET /clientes`<br>`GET /clientes/:id`<br>`POST /clientes`<br>`PUT /clientes/:id`<br>`DELETE /clientes/:id` |
+| **`proveedorController`** | [`FRONT/src/modules/proveedores/controllers/proveedor.js`](FRONT/src/modules/proveedores/controllers/proveedor.js) | `GET /proveedores`<br>`GET /proveedores/:id`<br>`POST /proveedores`<br>`PUT /proveedores/:id`<br>`DELETE /proveedores/:id` |
 | **Consultas Sunat / RUC** | [`FRONT/src/modules/manager/components/EmpresaModal.jsx`](FRONT/src/modules/manager/components/EmpresaModal.jsx) | `GET /utils/consulta-documento/RUC/:ruc` |
 | **`tablasFijasService`** | [`FRONT/src/utils/tablasFijas.js`](FRONT/src/utils/tablasFijas.js) | Catálogos públicos y fijos (`/api/tipos-comprobante`, `/api/tipos-documento`, `/api/tipos-afectacion-igv`, `/api/tipos-unidades-medida`, `/api/tipos-moneda`, `/api/tipos-metodo-pago`, `/api/tipos-pago`, `/api/tipos-operacion`, `/api/tipos-tributos`, `/api/tipos-existencia`, `/api/tipos-impuesto`, `/api/tipos-factores`, `/api/tipos-stock`, `/api/tipos-motivo-traslado`, `/api/tipos-detraccion`, `/api/tipos-cambio`). |
 | **Servidor de Correos** | [`FRONT/server/emailServer.js`](FRONT/server/emailServer.js) | `POST /api/email/send`<br>`GET /api/health` |
