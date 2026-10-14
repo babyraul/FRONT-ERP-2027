@@ -82,6 +82,36 @@ export default function Productos() {
 
   const columns = useMemo(() => [
     {
+      id: 'acciones',
+      header: 'Acciones',
+      cell: (info) => {
+        const p = info.row.original
+        return (
+          <div className="flex justify-end gap-1">
+            <Can I="editar" a="productos">
+              <button
+                onClick={() => handleOpenEdit(p)}
+                className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                title="Editar producto"
+              >
+                <PencilIcon className="h-4 w-4" />
+              </button>
+            </Can>
+            <Can I="eliminar" a="productos">
+              <button
+                onClick={() => handleDelete(p.id, p.nombre)}
+                className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                title="Inactivar producto"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </Can>
+          </div>
+        )
+      },
+      className: 'text-right'
+    },
+    {
       header: 'Código',
       accessorKey: 'codigo',
       cell: (info) => {
@@ -274,36 +304,6 @@ export default function Productos() {
           </div>
         )
       }
-    },
-    {
-      id: 'acciones',
-      header: 'Acciones',
-      cell: (info) => {
-        const p = info.row.original
-        return (
-          <div className="flex justify-end gap-1">
-            <Can I="editar" a="productos">
-              <button
-                onClick={() => handleOpenEdit(p)}
-                className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                title="Editar producto"
-              >
-                <PencilIcon className="h-4 w-4" />
-              </button>
-            </Can>
-            <Can I="eliminar" a="productos">
-              <button
-                onClick={() => handleDelete(p.id, p.nombre)}
-                className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                title="Inactivar producto"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </Can>
-          </div>
-        )
-      },
-      className: 'text-right'
     }
   ], [expandedRows])
 
