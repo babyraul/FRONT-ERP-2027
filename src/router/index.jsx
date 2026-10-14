@@ -9,6 +9,7 @@ import { Clientes } from '../modules/clientes'
 import { Ventas } from '../modules/ventas'
 import { Reportes } from '../modules/reportes'
 import { Proveedores } from '../modules/proveedores'
+import { Caja } from '../modules/caja'
 import { Usuarios, Configuracion, Empresas, Sucursales, Almacenes, Modulos, Roles, Cajas } from '../modules/manager'
 
 export const router = createBrowserRouter([
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'productos', element: <Productos /> },
       { path: 'clientes', element: <ProtectedRoute><Clientes /></ProtectedRoute> },
+      { path: 'caja', element: <ProtectedRoute><Caja /></ProtectedRoute> },
       { path: 'ventas', element: <Ventas /> },
       { path: 'reportes', element: <Reportes /> },
       { path: 'proveedores', element: <ProtectedRoute><Proveedores /></ProtectedRoute> },

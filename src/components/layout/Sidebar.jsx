@@ -14,7 +14,8 @@ import {
   Square3Stack3DIcon,
   ChevronDownIcon,
   FolderIcon,
-  TruckIcon
+  TruckIcon,
+  BanknotesIcon
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../../store/useAuthStore'
 import api from '../../utils/api'
@@ -23,6 +24,7 @@ import api from '../../utils/api'
 const getIconForModule = (codigo) => {
   const code = codigo?.toUpperCase() || ''
   if (code.includes('VENTAS')) return ShoppingCartIcon
+  if (code.includes('CAJA')) return BanknotesIcon
   if (code.includes('PRODUCTOS') || code.includes('CATALOGOS')) return CubeIcon
   if (code.includes('CLIENTES')) return UsersIcon
   if (code.includes('PROVEEDORES') || code.includes('PROVEEDOR')) return TruckIcon

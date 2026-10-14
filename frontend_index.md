@@ -75,6 +75,7 @@ La navegación del sistema está centralizada en [`FRONT/src/router/index.jsx`](
 | `/productos` | `<Productos />` (`modules/productos`) | Dentro de `<Layout />` | Catálogo de productos, filtros por categoría, búsqueda y CRUD básico. |
 | `/clientes` | `<Clientes />` (`modules/clientes`) | Dentro de `<Layout />` | Directorio de clientes con filtros por RUC/Nombre y exportación. |
 | `/ventas` | `<Ventas />` (`modules/ventas`) | Dentro de `<Layout />` | Histórico y registro de comprobantes (Facturas / Boletas). |
+| `/caja` | `<Caja />` (`modules/caja`) | `<ProtectedRoute>` | Gestión operativa de turnos de caja, fondo de apertura, ventas y arqueo/cierre de turnos. |
 | `/reportes` | `<Reportes />` (`modules/reportes`) | Dentro de `<Layout />` | Reportes detallados y gráficos analíticos con Recharts. |
 | `/proveedores` | `<Proveedores />` (`modules/proveedores`) | `<ProtectedRoute>` | Directorio de proveedores, clasificación, búsqueda y CRUD con integración a SUNAT. |
 | `/usuarios` | `<Usuarios />` (`modules/manager`) | `<ProtectedRoute>` | Gestión de usuarios del sistema y asignación de accesos por sucursal. |
@@ -82,7 +83,7 @@ La navegación del sistema está centralizada en [`FRONT/src/router/index.jsx`](
 | `/empresas` | `<Empresas />` (`modules/manager`) | `<ProtectedRoute>` | Administración de empresas multi-tenant y asignación de módulos contratados. |
 | `/sucursales` | `<Sucursales />` (`modules/manager`) | `<ProtectedRoute>` | Registro y configuración de sedes / sucursales asociadas a empresas. |
 | `/almacenes` | `<Almacenes />` (`modules/manager`) | `<ProtectedRoute>` | Configuración de almacenes físicos asignados a sucursales. |
-| `/cajas` | `<Cajas />` (`modules/manager`) | `<ProtectedRoute>` | Puntos de venta / cajas registradoras y tipos de comprobantes autorizados. |
+| `/cajas` | `<Cajas />` (`modules/manager`) | `<ProtectedRoute>` | Configuración administrativa de series y correlativos de facturación. |
 | `/modulos` | `<Modulos />` (`modules/manager`) | `<ProtectedRoute>` | Catálogo de módulos y submódulos disponibles en el ERP. |
 | `/roles` | `<Roles />` (`modules/manager`) | `<ProtectedRoute>` | Definición de roles y matriz granular de permisos (RBAC). |
 
