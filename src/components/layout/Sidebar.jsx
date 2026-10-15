@@ -9,6 +9,7 @@ import {
   DocumentChartBarIcon,
   Cog6ToothIcon,
   XMarkIcon,
+  Bars3Icon,
   BuildingOfficeIcon,
   MapPinIcon,
   Square3Stack3DIcon,
@@ -23,7 +24,7 @@ import api from '../../utils/api'
 // A helper function to assign icons based on module code or name
 const getIconForModule = (codigo) => {
   const code = codigo?.toUpperCase() || ''
-  if (code.includes('VENTAS')) return ShoppingCartIcon
+  if (code.includes('VENTAS') || code.includes('VENDER')) return ShoppingCartIcon
   if (code.includes('CAJA')) return BanknotesIcon
   if (code.includes('PRODUCTOS') || code.includes('CATALOGOS')) return CubeIcon
   if (code.includes('CLIENTES')) return UsersIcon
@@ -38,7 +39,7 @@ const getIconForModule = (codigo) => {
   return FolderIcon
 }
 
-export default function Sidebar({ collapsed, mobileOpen, onClose }) {
+export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClose }) {
   const { user, menu } = useAuthStore()
   const [navSections, setNavSections] = useState([])
   
@@ -107,22 +108,53 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
         id="app-sidebar"
         className={`sidebar ${collapsed ? 'is-collapsed' : ''} ${mobileOpen ? 'is-open' : ''}`}
       >
-        {/* Logo */}
+        {/* Logo y Botón de Ocultar/Colapsar Menú */}
         <div className="sidebar-header">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="sidebar-logo">M</span>
-            <span className="sidebar-label font-bold text-lg tracking-tight truncate">
-              Sistema Market
-            </span>
-          </div>
-          <button
-            id="sidebar-close"
-            onClick={onClose}
-            className="icon-btn lg:hidden text-white/70 hover:text-white"
-            aria-label="Cerrar menú"
-          >
-            <XMarkIcon className="h-5 w-5" />
-          </button>
+          {collapsed ? (
+            <div className="w-full flex items-center justify-center">
+              <button
+                id="sidebar-expand-btn"
+                onClick={onToggleCollapse}
+                className="hidden lg:flex items-center justify-center h-9 w-9 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+                title="Mostrar menú"
+                aria-label="Mostrar menú"
+              >
+                <Bars3Icon className="h-5 w-5" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="sidebar-logo">M</span>
+                <span className="sidebar-label font-bold text-lg tracking-tight truncate">
+                  Mi Factura Perú
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-1">
+                {/* Botón para ocultar menú en desktop */}
+                <button
+                  id="sidebar-collapse-btn"
+                  onClick={onToggleCollapse}
+                  className="hidden lg:flex icon-btn text-white/70 hover:text-white hover:bg-white/10"
+                  title="Ocultar menú"
+                  aria-label="Ocultar menú"
+                >
+                  <Bars3Icon className="h-5 w-5" />
+                </button>
+
+                {/* Botón para cerrar menú en móvil */}
+                <button
+                  id="sidebar-close"
+                  onClick={onClose}
+                  className="icon-btn lg:hidden text-white/70 hover:text-white hover:bg-white/10"
+                  aria-label="Cerrar menú"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Nav */}
@@ -141,7 +173,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
                     title={collapsed ? section.title : undefined}
                     className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}
                    >
-                     {section.iconClass ? <i className={`${section.iconClass} w-5 shrink-0 text-center text-[1.125rem]`} /> : <Icon className="h-5 w-5 shrink-0" />}
+                     {section.iconClass ? <i className={`${section.iconClass} w-5 shrink-0 text-center text-[10px]`} /> : <Icon className="h-5 w-5 shrink-0" />}
                      <span className="sidebar-label truncate">{section.title}</span>
                    </NavLink>
                 </div>
@@ -153,7 +185,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
                 {/* Título de la División (Botón Desplegable) */}
                 <button
                   onClick={() => toggleSection(idx)}
-                  className={`w-full flex items-center justify-between px-3 mb-1 text-xs font-semibold uppercase tracking-wider text-white/50 hover:text-white transition-all duration-300 ${
+                  className={`w-full flex items-center justify-between px-3 mb-1 text-xs font-semibold uppercase tracking-wider text-white hover:text-white transition-all duration-300 ${
                     collapsed ? 'opacity-0 h-0 overflow-hidden m-0 p-0' : 'opacity-100'
                   }`}
                   aria-expanded={isOpen}
@@ -181,7 +213,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
                           title={collapsed ? label : undefined}
                           className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}
                         >
-                          {iconClass ? <i className={`${iconClass} w-5 shrink-0 text-center text-[1.125rem]`} /> : <Icon className="h-5 w-5 shrink-0" />}
+                          {iconClass ? <i className={`${iconClass} w-5 shrink-0 text-center text-[10px]`} /> : <Icon className="h-5 w-5 shrink-0" />}
                           <span className="sidebar-label truncate">{label}</span>
                         </NavLink>
                       </li>

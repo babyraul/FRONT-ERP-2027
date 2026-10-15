@@ -60,26 +60,33 @@ export default function Navbar({ onMenuClick }) {
   }
 
   return (
-    <header className="navbar flex items-center justify-between">
-      <button id="navbar-menu" onClick={onMenuClick} className="icon-btn" aria-label="Menú">
-        <Bars3Icon className="h-5 w-5" />
-      </button>
+    <header className="navbar flex items-center justify-between" style={{ backgroundColor: '#01a59c' }}>
+      <div className="flex items-center gap-2">
+        <button
+          id="navbar-menu"
+          onClick={onMenuClick}
+          className="icon-btn lg:hidden text-white hover:bg-white/15 hover:text-white"
+          aria-label="Menú"
+        >
+          <Bars3Icon className="h-5 w-5" />
+        </button>
+      </div>
 
       <div className="flex items-center gap-1 sm:gap-2">
-        <ThemeToggle />
+        <ThemeToggle className="text-white hover:bg-white/15" />
 
         {/* ── TENANT SWITCHER ── */}
         {!user?.es_super_admin && user?.accesos?.length > 1 && (
           <div className="hidden md:flex items-center mx-2">
             <select 
-              className="input-field py-1 px-2 text-xs font-medium cursor-pointer max-w-[200px]"
+              className="bg-white/15 text-white border border-white/20 rounded-lg py-1 px-2 text-xs font-medium cursor-pointer max-w-[200px] outline-none hover:bg-white/20 focus:bg-[#018f87]"
               value={user.active_acceso?.branch_id || ''}
               onChange={handleSwitchBranch}
               disabled={isSwitching}
               title="Cambiar de Sucursal"
             >
               {user.accesos.map(acc => (
-                <option key={acc.branch_id} value={acc.branch_id}>
+                <option key={acc.branch_id} value={acc.branch_id} className="text-slate-800 bg-white">
                   {acc.sucursal_nombre} ({acc.empresa_nombre})
                 </option>
               ))}
@@ -87,24 +94,24 @@ export default function Navbar({ onMenuClick }) {
           </div>
         )}
 
-        <button id="navbar-notifications" className="icon-btn relative" aria-label="Notificaciones">
+        <button id="navbar-notifications" className="icon-btn relative text-white hover:bg-white/15 hover:text-white" aria-label="Notificaciones">
           <BellIcon className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-400 ring-2 ring-[#01a59c]" />
         </button>
 
         <div className="relative ml-1" ref={menuRef}>
           <button
             id="navbar-user-menu"
             onClick={() => setMenuOpen((o) => !o)}
-            className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--bg)]"
+            className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-white/15 text-white"
           >
-            <UserCircleIcon className="h-8 w-8" style={{ color: 'var(--color-secondary)' }} />
+            <UserCircleIcon className="h-8 w-8 text-white/95" />
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-bold leading-none text-slate-800 dark:text-slate-100">{nombre}</p>
-              {rol && <p className="text-xs mt-0.5 text-blue-600 dark:text-blue-400 font-semibold">{rol}</p>}
-              <p className="text-[10px] text-slate-500 truncate max-w-[150px]">{sucursalActiva}</p>
+              <p className="text-sm font-bold leading-none text-white">{nombre}</p>
+              {rol && <p className="text-xs mt-0.5 text-teal-100 font-semibold">{rol}</p>}
+              <p className="text-[10px] text-teal-100/80 truncate max-w-[150px]">{sucursalActiva}</p>
             </div>
-            <ChevronDownIcon className="hidden sm:block h-4 w-4 text-muted" />
+            <ChevronDownIcon className="hidden sm:block h-4 w-4 text-white/80" />
           </button>
 
           {menuOpen && (

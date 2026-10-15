@@ -6,7 +6,8 @@ import { Login } from '../modules/auth'
 import { Dashboard } from '../modules/dashboard'
 import { Productos } from '../modules/productos'
 import { Clientes } from '../modules/clientes'
-import { Ventas } from '../modules/ventas'
+import { Ventas } from '../modules/gestionVentas'
+import { Vender } from '../modules/vender'
 import { Reportes } from '../modules/reportes'
 import { Proveedores } from '../modules/proveedores'
 import { Caja } from '../modules/caja'
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <Dashboard /> },
+      { path: 'vender', element: <Vender /> },
       { path: 'productos', element: <Productos /> },
       { path: 'clientes', element: <ProtectedRoute><Clientes /></ProtectedRoute> },
       { path: 'caja', element: <ProtectedRoute><Caja /></ProtectedRoute> },

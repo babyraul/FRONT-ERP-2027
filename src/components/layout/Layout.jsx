@@ -45,6 +45,7 @@ export default function Layout() {
     <div className="app-shell">
       <Sidebar
         collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed((c) => !c)}
         mobileOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
       />
