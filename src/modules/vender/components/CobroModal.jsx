@@ -8,15 +8,8 @@ import {
   CalendarDaysIcon
 } from '@heroicons/react/24/outline'
 import Modal from '../../../components/ui/Modal.jsx'
+import tablasFijasService from '../../../utils/tablasFijas.js'
 import { toast } from '../../../utils/toast.js'
-
-const METODOS_PAGO = [
-  { id: 'efectivo', label: 'Efectivo', icon: BanknotesIcon },
-  { id: 'yape', label: 'Yape / Plin', icon: QrCodeIcon },
-  { id: 'tarjeta', label: 'Tarjeta', icon: CreditCardIcon },
-  { id: 'transferencia', label: 'Transferencia', icon: ArrowPathIcon },
-  { id: 'credito', label: 'Crédito', icon: CalendarDaysIcon }
-]
 
 const BILLETES_RAPIDOS = [10, 20, 50, 100, 200]
 
@@ -31,17 +24,25 @@ export default function CobroModal({
   onConfirmarVenta,
   isProcessing = false
 }) {
+  const [metodosDisponibles, setMetodosDisponibles] = useState([])
   const [metodoPago, setMetodoPago] = useState('efectivo')
   const [montoRecibido, setMontoRecibido] = useState(total)
   const [referenciaPago, setReferenciaPago] = useState('')
   const [diasCredito, setDiasCredito] = useState(30)
 
-  // Al abrir el modal, resetear el monto recibido con el total actual
+  // Cargar métodos desde Tablas Fijas
   useEffect(() => {
     if (isOpen) {
       setMontoRecibido(total)
-      setMetodoPago('efectivo')
       setReferenciaPago('')
+      tablasFijasService.getTiposMetodoPago().then((res) => {
+        if (res.success && res.data.length > 0) {
+          setMetodosDisponibles(res.data)
+          // Seleccionar primer método o Efectivo
+          const efectivoMatch = res.data.find((m) => m.nombre.toUpperCase().includes('EFECTIVO'))
+          setMetodoPago(efectivoMatch ? efectivoMatch.nombre.toLowerCase() : res.data[0].nombre.toLowerCase())
+        }
+      })
     }
   }, [isOpen, total])
 
@@ -125,25 +126,38 @@ export default function CobroModal({
             Método de Pago
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {METODOS_PAGO.map((m) => {
-              const Icon = m.icon
-              const isSelected = metodoPago === m.id
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setMetodoPago(m.id)}
-                  className={`p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${
-                    isSelected
-                      ? 'border-[#01a59c] bg-[#01a59c]/10 text-[#01a59c] shadow-xs ring-1 ring-[#01a59c]'
-                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{m.label}</span>
-                </button>
-              )
-            })}
+            {[...metodosDisponibles]
+              .filter((m) => m.activo !== false)
+              .sort((a, b) => (Number(a.orden) || 0) - (Number(b.orden) || 0))
+              .map((m) => {
+                const isSelected = metodoPago === m.nombre.toLowerCase()
+                const color = m.color || '#01a59c'
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setMetodoPago(m.nombre.toLowerCase())}
+                    style={{
+                      borderColor: isSelected ? color : undefined,
+                      boxShadow: isSelected ? `0 0 0 1px ${color}` : undefined
+                    }}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${
+                      isSelected
+                        ? 'bg-slate-50 dark:bg-slate-800 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {m.imagen_url ? (
+                      <img src={m.imagen_url} alt={m.nombre} className="h-5 w-5 object-contain shrink-0" />
+                    ) : (
+                      <CreditCardIcon className="h-5 w-5 shrink-0" style={{ color }} />
+                    )}
+                    <span className="truncate" style={{ color: isSelected ? color : undefined }}>
+                      {m.nombre}
+                    </span>
+                  </button>
+                )
+              })}
           </div>
         </div>
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useProductosStore } from '../../../store/useProductosStore.js'
 import { useClientesStore } from '../../../store/useClientesStore.js'
+import { useVentaActivaStore } from '../store/useVentaActivaStore.js'
 import TipoDocumentoSelector from '../components/TipoDocumentoSelector.jsx'
 import ClienteSection from '../components/ClienteSection.jsx'
 import ProductosList from '../components/ProductosList.jsx'
@@ -14,18 +16,30 @@ import { venderController } from '../controllers/venderController.js'
 import { toast } from '../../../utils/toast.js'
 
 export default function Vender() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const store = useVentaActivaStore()
   const { productos, loading: loadingProductos, fetchProductos } = useProductosStore()
 
-  // 1. Estados Principales
-  const [tipoDocumento, setTipoDocumento] = useState('boleta') // 'factura', 'boleta', 'vale'
-  const [cliente, setCliente] = useState({
-    id: 'varios',
-    tipo_documento_id: '0',
-    numero_documento: '99999999',
-    nombre_razon_social: 'VARIOS'
-  })
-  const [placa, setPlaca] = useState('')
-  const [cartItems, setCartItems] = useState([])
+  // 1. Estados Principales (inicializados desde navigation state o store para persistencia)
+  const navState = location.state || {}
+  const [tipoDocumento, setTipoDocumento] = useState(navState.tipoDocumento || store.tipoDocumento || 'boleta')
+  const [cliente, setCliente] = useState(
+    navState.cliente || store.cliente || {
+      id: 'varios',
+      tipo_documento_id: '0',
+      numero_documento: '99999999',
+      nombre_razon_social: 'VARIOS'
+    }
+  )
+  const [placa, setPlaca] = useState(navState.placa || store.placa || '')
+  const [cartItems, setCartItems] = useState(
+    navState.cartItems && navState.cartItems.length > 0
+      ? navState.cartItems
+      : store.cartItems && store.cartItems.length > 0
+      ? store.cartItems
+      : []
+  )
 
   // 2. Modales
   const [isBuscarClienteOpen, setIsBuscarClienteOpen] = useState(false)
@@ -128,6 +142,28 @@ export default function Vender() {
     }
   }, [cartItems])
 
+  // Navegar a la pantalla de Pago / Procesar Preventa
+  const handleIrAPagar = () => {
+    if (cartItems.length === 0) {
+      toast.info('Carrito vacío', 'Agregue al menos un producto para procesar la preventa.')
+      return
+    }
+    // Guardar estado en el store global
+    store.setTipoDocumento(tipoDocumento)
+    store.setCliente(cliente)
+    store.setPlaca(placa)
+    store.setCartItems(cartItems)
+
+    navigate('/vender/pagar', {
+      state: {
+        tipoDocumento,
+        cliente,
+        placa,
+        cartItems
+      }
+    })
+  }
+
   // 5. Atajos de Teclado Globales
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -136,19 +172,15 @@ export default function Vender() {
         e.preventDefault()
         setIsBuscarClienteOpen(true)
       }
-      // F4: Generar Venta / Abrir Cobro
+      // F4: Generar Preventa / Ir a Pagar
       if (e.key === 'F4' || (e.ctrlKey && e.key === 'Enter')) {
         e.preventDefault()
-        if (cartItems.length > 0) {
-          setIsCobroOpen(true)
-        } else {
-          toast.info('Carrito vacío', 'Agregue al menos un producto para generar la venta.')
-        }
+        handleIrAPagar()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [cartItems])
+  }, [cartItems, tipoDocumento, cliente, placa])
 
   // 6. Confirmación y Registro de la Venta
   const handleConfirmarVenta = async (payload) => {
@@ -247,7 +279,7 @@ export default function Vender() {
         redondeo={totales.redondeo}
         total={totales.total}
         itemCount={cartItems.length}
-        onGenerarVenta={() => setIsCobroOpen(true)}
+        onGenerarVenta={handleIrAPagar}
         disabled={isProcessing}
       />
 
