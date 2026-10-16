@@ -6,6 +6,7 @@ import MetodosPagoCarrusel from '../components/MetodosPagoCarrusel.jsx'
 import DetallePagosList from '../components/DetallePagosList.jsx'
 import InfoComplementaria from '../components/InfoComplementaria.jsx'
 import { venderController } from '../controllers/venderController.js'
+import { clienteController } from '../../clientes/controllers/cliente.js'
 import tablasFijasService from '../../../utils/tablasFijas.js'
 import { toast } from '../../../utils/toast.js'
 
@@ -246,9 +247,46 @@ export default function Pagar() {
 
     setIsProcessing(true)
 
+    // Lazy Registration: Si el cliente es nuevo (proviene de SUNAT/RENIEC temporal), registrarlo antes de emitir la venta
+    let finalClienteId = cliente?.id || null
+    const esClienteNuevo =
+      cliente?.isNuevo ||
+      cliente?.source === 'externo' ||
+      (cliente?.id && String(cliente.id).startsWith('temp_'))
+
+    if (esClienteNuevo && cliente?.numero_documento && cliente?.numero_documento !== '99999999') {
+      try {
+        const payloadCliente = {
+          tipo_documento_id: cliente.tipo_documento_id || (cliente.numero_documento.length === 11 ? '6' : '1'),
+          numero_documento: cliente.numero_documento,
+          nombre_razon_social: cliente.nombre_razon_social || cliente.razonSocial,
+          direccion_1: cliente.direccion_1 || cliente.direccion || '',
+          direccion: cliente.direccion_1 || cliente.direccion || '',
+          estado_sunat: cliente.estado_sunat || null,
+          condicion_sunat: cliente.condicion_sunat || null
+        }
+
+        const resCliente = await clienteController.create(payloadCliente)
+        if (resCliente.success && resCliente.data?.id) {
+          finalClienteId = resCliente.data.id
+        } else {
+          // Mecanismo de autorecuperación si ya se registró concurrentemente
+          const resLocal = await venderController.buscarClientes(cliente.numero_documento)
+          const existente = resLocal.data?.find(
+            (c) => String(c.numero_documento).trim() === String(cliente.numero_documento).trim()
+          )
+          if (existente?.id) {
+            finalClienteId = existente.id
+          }
+        }
+      } catch (err) {
+        console.warn('Error en lazy registration del cliente:', err)
+      }
+    }
+
     const payload = {
       tipo_documento: tipoDocumento,
-      cliente_id: cliente?.id || null,
+      cliente_id: finalClienteId,
       placa: placa || null,
       observaciones,
       orden_compra: ordenCompra,

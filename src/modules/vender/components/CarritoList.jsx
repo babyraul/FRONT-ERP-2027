@@ -1,7 +1,5 @@
 import React from 'react'
 import {
-  PlusIcon,
-  MinusIcon,
   TrashIcon,
   ShoppingCartIcon,
   TagIcon
@@ -132,26 +130,6 @@ export default function CarritoList({
                     </div>
                   </div>
 
-                  {/* Botón Disminuir (-) */}
-                  <button
-                    type="button"
-                    onClick={() => onUpdateCantidad(item.uniqueId, Math.max(0.01, item.cantidad - 1))}
-                    className="w-7 h-7 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center justify-center transition-colors shadow-xs shrink-0"
-                    title="Disminuir cantidad"
-                  >
-                    <MinusIcon className="h-4 w-4" strokeWidth={4}/>
-                  </button>
-
-                  {/* Botón Aumentar (+) */}
-                  <button
-                    type="button"
-                    onClick={() => onUpdateCantidad(item.uniqueId, item.cantidad + 1)}
-                    className="w-7 h-7 rounded-lg bg-[#01a59c] hover:bg-[#008f87] text-white font-bold flex items-center justify-center transition-colors shadow-xs shrink-0"
-                    title="Aumentar cantidad"
-                  >
-                    <PlusIcon className="h-3.5 w-3.5"  strokeWidth={4}/>
-                  </button>
-
                   {/* Botón Eliminar (Trash) */}
                   <button
                     type="button"
@@ -159,7 +137,7 @@ export default function CarritoList({
                     className="w-7 h-7 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold flex items-center justify-center transition-colors shadow-xs shrink-0"
                     title="Eliminar del carrito"
                   >
-                    <TrashIcon className="h-3.5 w-3.5"  strokeWidth={4}/>
+                    <TrashIcon className="h-3.5 w-3.5" strokeWidth={4} />
                   </button>
                 </div>
               </div>

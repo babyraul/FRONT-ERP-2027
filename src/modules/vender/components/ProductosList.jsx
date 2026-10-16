@@ -128,7 +128,7 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
       </div>
       {/* Cabecera de la tabla */}
       <div className="grid grid-cols-[1fr_90px_70px] bg-[#01473d] text-white px-4 py-3 text-sm border rounded-t-xl font-bold tracking-wider uppercase select-none shrink-0">
-      <div>Producto / Presentación</div>
+        <div>Producto / Presentación</div>
         <div className="text-right">Precio</div>
         <div className="text-right">Stock</div>
       </div>
@@ -151,18 +151,17 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
               stock > 5
                 ? 'text-emerald-700 dark:text-emerald-400 font-semibold'
                 : stock > 0
-                ? 'text-amber-600 dark:text-amber-400 font-semibold'
-                : 'text-rose-600 dark:text-rose-400 font-bold'
+                  ? 'text-amber-600 dark:text-amber-400 font-semibold'
+                  : 'text-rose-600 dark:text-rose-400 font-bold'
 
             return (
               <div
                 key={item.uniqueId}
                 onClick={() => onAgregarItem(item)}
-                className={`grid grid-cols-[1fr_90px_70px] items-center px-4 py-2.5 text-sm cursor-pointer transition-colors select-none ${
-                  isSelected
-                    ? 'bg-teal-50/80 dark:bg-teal-950/40 ring-1 ring-[#01a59c]/50'
-                    : 'hover:bg-slate-200/80 dark:hover:bg-slate-800/40'
-                }`}
+                className={`grid grid-cols-[1fr_90px_70px] items-center px-4 py-2.5 text-sm cursor-pointer transition-colors select-none ${isSelected
+                  ? 'dark:bg-teal-950/40 ring-1 ring-[#01a59c]/50'
+                  : 'hover:bg-slate-200/80 dark:hover:bg-slate-800/40'
+                  }`}
               >
                 {/* Nombre de producto con presentación */}
                 <div className="flex items-center gap-2 min-w-0 pr-2">

@@ -37,8 +37,8 @@ export default function Vender() {
     navState.cartItems && navState.cartItems.length > 0
       ? navState.cartItems
       : store.cartItems && store.cartItems.length > 0
-      ? store.cartItems
-      : []
+        ? store.cartItems
+        : []
   )
 
   // 2. Modales
@@ -228,6 +228,17 @@ export default function Vender() {
         <div className="lg:col-span-7 flex flex-col gap-2.5 h-full min-h-0 overflow-hidden">
           {/* Fila Superior: Selector de Documento + Sección de Cliente */}
           <div className=" backdrop-blur-md dark:border-slate-800 shadow-sm shrink-0 space-y-2.5">
+            {/* Selección de Cliente y Placa */}
+            <ClienteSection
+              cliente={cliente}
+              setCliente={setCliente}
+              tipoDocumento={tipoDocumento}
+              setTipoDocumento={setTipoDocumento}
+              placa={placa}
+              setPlaca={setPlaca}
+              onOpenBuscarModal={() => setIsBuscarClienteOpen(true)}
+              onOpenNuevoModal={() => setIsNuevoClienteOpen(true)}
+            />
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               {/* Selector de Tipo de Documento */}
               <div className="w-full">
@@ -237,16 +248,6 @@ export default function Vender() {
                 />
               </div>
             </div>
-
-            {/* Selección de Cliente y Placa */}
-            <ClienteSection
-              cliente={cliente}
-              setCliente={setCliente}
-              placa={placa}
-              setPlaca={setPlaca}
-              onOpenBuscarModal={() => setIsBuscarClienteOpen(true)}
-              onOpenNuevoModal={() => setIsNuevoClienteOpen(true)}
-            />
           </div>
 
           {/* Tabla de Productos con Buscador */}
