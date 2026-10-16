@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useProductosStore } from '../../../store/useProductosStore.js'
-import { useClientesStore } from '../../../store/useClientesStore.js'
 import { useVentaActivaStore } from '../store/useVentaActivaStore.js'
 import TipoDocumentoSelector from '../components/TipoDocumentoSelector.jsx'
 import ClienteSection from '../components/ClienteSection.jsx'
@@ -9,10 +8,7 @@ import ProductosList from '../components/ProductosList.jsx'
 import CarritoList from '../components/CarritoList.jsx'
 import VentaFooter from '../components/VentaFooter.jsx'
 import BuscarClienteModal from '../components/BuscarClienteModal.jsx'
-import CobroModal from '../components/CobroModal.jsx'
-import ClienteModal from '../../clientes/components/ClienteModal.jsx'
-import { clienteController } from '../../clientes/controllers/cliente.js'
-import { venderController } from '../controllers/venderController.js'
+import { calcularTotalesVenta } from '../../../utils/Operaciones.js'
 import { toast } from '../../../utils/toast.js'
 
 export default function Vender() {
@@ -43,9 +39,6 @@ export default function Vender() {
 
   // 2. Modales
   const [isBuscarClienteOpen, setIsBuscarClienteOpen] = useState(false)
-  const [isNuevoClienteOpen, setIsNuevoClienteOpen] = useState(false)
-  const [isCobroOpen, setIsCobroOpen] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
 
   // Cargar productos al montar
   useEffect(() => {
@@ -121,25 +114,9 @@ export default function Vender() {
     setCartItems([])
   }
 
-  // 4. Cálculos Matemáticos de Facturación (Gravado, IGV 18%, Redondeo, Total)
+  // 4. Cálculos Matemáticos Centralizados en Operaciones.js (sin redondeo)
   const totales = useMemo(() => {
-    const rawTotal = cartItems.reduce(
-      (sum, item) => sum + Number(item.cantidad) * Number(item.precio_unitario),
-      0
-    )
-
-    // Redondeo legal a 2 decimales
-    const total = Math.round(rawTotal * 100) / 100
-    const gravado = Math.round((total / 1.18) * 100) / 100
-    const igv = Math.round((total - gravado) * 100) / 100
-    const redondeo = 0.0
-
-    return {
-      gravado,
-      igv,
-      redondeo,
-      total
-    }
+    return calcularTotalesVenta(cartItems)
   }, [cartItems])
 
   // Navegar a la pantalla de Pago / Procesar Preventa
@@ -172,7 +149,7 @@ export default function Vender() {
         e.preventDefault()
         setIsBuscarClienteOpen(true)
       }
-      // F4: Generar Preventa / Ir a Pagar
+      // F4 o Ctrl+Enter: Generar Preventa / Ir a Pagar
       if (e.key === 'F4' || (e.ctrlKey && e.key === 'Enter')) {
         e.preventDefault()
         handleIrAPagar()
@@ -182,44 +159,6 @@ export default function Vender() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [cartItems, tipoDocumento, cliente, placa])
 
-  // 6. Confirmación y Registro de la Venta
-  const handleConfirmarVenta = async (payload) => {
-    setIsProcessing(true)
-    const res = await venderController.registrarVenta(payload)
-    setIsProcessing(false)
-
-    if (res.success) {
-      toast.success(
-        'Venta generada con éxito',
-        `Comprobante emitido correctamente por S/ ${totales.total.toFixed(2)}`
-      )
-      // Resetear para la siguiente venta
-      setCartItems([])
-      setPlaca('')
-      setCliente({
-        id: 'varios',
-        tipo_documento_id: '0',
-        numero_documento: '99999999',
-        nombre_razon_social: 'VARIOS'
-      })
-      setIsCobroOpen(false)
-    } else {
-      toast.error('Error al emitir venta', res.message || 'No se pudo registrar la venta.')
-    }
-  }
-
-  // Guardar nuevo cliente desde modal
-  const handleGuardarNuevoCliente = async (clienteData) => {
-    const res = await clienteController.create(clienteData)
-    if (res.success) {
-      toast.success('Cliente registrado', 'El cliente fue guardado y seleccionado.')
-      setCliente(res.data)
-      setIsNuevoClienteOpen(false)
-    } else {
-      toast.error('Error al guardar cliente', res.message || 'No se pudo crear el cliente.')
-    }
-  }
-
   return (
     <div className="flex flex-col h-[calc(100vh-4.25rem)] -m-4 sm:-m-6 overflow-hidden">
       {/* ── CUERPO PRINCIPAL (2 PANELES: PRODUCTOS IZQ, CARRITO DER) ── */}
@@ -227,7 +166,7 @@ export default function Vender() {
         {/* PANEL IZQUIERDO: Configuración de Documento + Cliente + Lista de Productos */}
         <div className="lg:col-span-7 flex flex-col gap-2.5 h-full min-h-0 overflow-hidden">
           {/* Fila Superior: Selector de Documento + Sección de Cliente */}
-          <div className=" backdrop-blur-md dark:border-slate-800 shadow-sm shrink-0 space-y-2.5">
+          <div className="backdrop-blur-md dark:border-slate-800 shadow-sm shrink-0 space-y-2.5">
             {/* Selección de Cliente y Placa */}
             <ClienteSection
               cliente={cliente}
@@ -237,7 +176,6 @@ export default function Vender() {
               placa={placa}
               setPlaca={setPlaca}
               onOpenBuscarModal={() => setIsBuscarClienteOpen(true)}
-              onOpenNuevoModal={() => setIsNuevoClienteOpen(true)}
             />
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               {/* Selector de Tipo de Documento */}
@@ -273,48 +211,22 @@ export default function Vender() {
         </div>
       </div>
 
-      {/* ── FOOTER TOTALIZADOR FIJO AL PIE (NO TAPA CONTENIDO) ── */}
+      {/* ── FOOTER TOTALIZADOR FIJO AL PIE ── */}
       <VentaFooter
         gravado={totales.gravado}
         igv={totales.igv}
-        redondeo={totales.redondeo}
         total={totales.total}
         itemCount={cartItems.length}
         onGenerarVenta={handleIrAPagar}
-        disabled={isProcessing}
       />
 
-      {/* ── MODALES AUXILIARES ── */}
-      {/* 1. Modal Buscar Cliente */}
+      {/* ── MODAL AUXILIAR DE BÚSQUEDA GENERAL DE CLIENTE ── */}
       <BuscarClienteModal
         isOpen={isBuscarClienteOpen}
         onClose={() => setIsBuscarClienteOpen(false)}
         onSelectCliente={setCliente}
-        onOpenNuevoCliente={() => setIsNuevoClienteOpen(true)}
-      />
-
-      {/* 2. Modal Registrar Nuevo Cliente */}
-      {isNuevoClienteOpen && (
-        <ClienteModal
-          isOpen={isNuevoClienteOpen}
-          onClose={() => setIsNuevoClienteOpen(false)}
-          onSave={handleGuardarNuevoCliente}
-          isProcessing={isProcessing}
-        />
-      )}
-
-      {/* 3. Modal de Cobro y Métodos de Pago */}
-      <CobroModal
-        isOpen={isCobroOpen}
-        onClose={() => setIsCobroOpen(false)}
-        total={totales.total}
-        tipoDocumento={tipoDocumento}
-        cliente={cliente}
-        placa={placa}
-        cartItems={cartItems}
-        onConfirmarVenta={handleConfirmarVenta}
-        isProcessing={isProcessing}
       />
     </div>
   )
 }
+

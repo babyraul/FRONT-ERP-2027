@@ -4,7 +4,6 @@ import { CheckCircleIcon } from '@heroicons/react/24/solid'
 export default function VentaFooter({
   gravado = 0,
   igv = 0,
-  redondeo = 0,
   total = 0,
   onGenerarVenta,
   itemCount = 0,
@@ -22,11 +21,6 @@ export default function VentaFooter({
         <div>
           <span className="text-slate-600 font-semibold dark:text-slate-500 mr-1">IGV</span>
           <strong className="font-bold text-slate-900 dark:text-white">{igv.toFixed(2)}</strong>
-        </div>
-
-        <div>
-          <span className="text-slate-600 font-semibold dark:text-slate-500 mr-1">Redondeo</span>
-          <strong className="font-bold text-slate-900 dark:text-white">{redondeo.toFixed(2)}</strong>
         </div>
       </div>
 

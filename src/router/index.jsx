@@ -6,7 +6,7 @@ import { Login } from '../modules/auth'
 import { Dashboard } from '../modules/dashboard'
 import { Productos } from '../modules/productos'
 import { Clientes } from '../modules/clientes'
-import { Ventas } from '../modules/gestionVentas'
+import { Ventas, Preventas } from '../modules/gestionVentas'
 import { Vender, Pagar } from '../modules/vender'
 import { Reportes } from '../modules/reportes'
 import { Proveedores } from '../modules/proveedores'
@@ -32,10 +32,11 @@ export const router = createBrowserRouter([
       { path: 'productos', element: <Productos /> },
       { path: 'clientes', element: <ProtectedRoute><Clientes /></ProtectedRoute> },
       { path: 'caja', element: <ProtectedRoute><Caja /></ProtectedRoute> },
-      { path: 'ventas', element: <Ventas /> },
+      { path: 'listventas', element: <Ventas /> },
+      { path: 'gespreventas', element: <Preventas /> },
       { path: 'reportes', element: <Reportes /> },
       { path: 'proveedores', element: <ProtectedRoute><Proveedores /></ProtectedRoute> },
-      
+
       // Rutas de gestión protegidas (validadas 100% dinámicamente)
       { path: 'usuarios', element: <ProtectedRoute><Usuarios /></ProtectedRoute> },
       { path: 'configuracion', element: <ProtectedRoute><Configuracion /></ProtectedRoute> },

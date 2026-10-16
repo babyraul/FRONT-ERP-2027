@@ -8,6 +8,7 @@ import InfoComplementaria from '../components/InfoComplementaria.jsx'
 import { venderController } from '../controllers/venderController.js'
 import { clienteController } from '../../clientes/controllers/cliente.js'
 import tablasFijasService from '../../../utils/tablasFijas.js'
+import { calcularTotalesVenta } from '../../../utils/Operaciones.js'
 import { toast } from '../../../utils/toast.js'
 
 export default function Pagar() {
@@ -34,69 +35,16 @@ export default function Pagar() {
   }
   const placa = initialData.placa || storePlaca || ''
 
-  // Productos en preventa (si está vacío, proveer items de muestra o redirigir)
+  // Productos en preventa
   const cartItems = useMemo(() => {
     if (initialData.cartItems && initialData.cartItems.length > 0) return initialData.cartItems
     if (storeCartItems && storeCartItems.length > 0) return storeCartItems
-
-    // Items de demostración basados en el mockup proporcionado por el usuario
-    return [
-      {
-        uniqueId: 'demo-1',
-        nombre_completo: 'MGHMGHK 12 UNIDAD',
-        cantidad: 1,
-        precio_unitario: 24.0,
-        descuento: 0
-      },
-      {
-        uniqueId: 'demo-2',
-        nombre_completo: 'COCA COLA UNIDAD',
-        cantidad: 1,
-        precio_unitario: 14.0,
-        descuento: 0
-      },
-      {
-        uniqueId: 'demo-3',
-        nombre_completo: 'CHUPETIN PAQUETE',
-        cantidad: 1,
-        precio_unitario: 12.98,
-        descuento: 0
-      },
-      {
-        uniqueId: 'demo-4',
-        nombre_completo: 'CABLE 14 METRO',
-        cantidad: 4,
-        precio_unitario: 4.5,
-        descuento: 0
-      },
-      {
-        uniqueId: 'demo-5',
-        nombre_completo: 'MINI BARBIE UNIDAD',
-        cantidad: 1,
-        precio_unitario: 8.4,
-        descuento: 0
-      }
-    ]
+    return []
   }, [initialData.cartItems, storeCartItems])
 
-  // Totales de la preventa
+  // Totales calculados con Operaciones.js (sin redondeo)
   const totales = useMemo(() => {
-    const rawTotal = cartItems.reduce((acc, item) => {
-      const sub = Number(item.cantidad) * Number(item.precio_unitario) - Number(item.descuento || 0)
-      return acc + Math.max(0, sub)
-    }, 0)
-
-    const total = Math.round(rawTotal * 100) / 100
-    const gravado = Math.round((total / 1.18) * 100) / 100
-    const igv = Math.round((total - gravado) * 100) / 100
-    const redondeo = Math.round(Math.abs(rawTotal - total) * 100) / 100
-
-    return {
-      gravado,
-      igv,
-      redondeo,
-      total
-    }
+    return calcularTotalesVenta(cartItems)
   }, [cartItems])
 
   // ── Métodos de Pago Disponibles desde Tablas Fijas (SUNAT / BD) ──

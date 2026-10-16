@@ -58,7 +58,7 @@ FRONT/
 | `FRONT/src/modules/` | Organización modular del ERP. Cada módulo contiene sus páginas (`pages/`), controladores (`controllers/`) y componentes locales (`components/`). |
 | `FRONT/src/router/` | Definición de rutas declarativas con `createBrowserRouter`, jerarquía de layouts y rutas protegidas. |
 | `FRONT/src/store/` | Stores globales con Zustand para autenticación, notificaciones y entidades de negocio. |
-| `FRONT/src/utils/` | Cliente Axios configurado (`api.js`), exportación a hojas de cálculo (`exportExcel.js`) y utilidades de alertas (`toast.js`). |
+| `FRONT/src/utils/` | Cliente Axios configurado (`api.js`), cálculos globales de facturación (`Operaciones.js`), exportación a hojas de cálculo (`exportExcel.js`) y utilidades de alertas (`toast.js`). |
 | `FRONT/tests/` | Pruebas unitarias y de integración ejecutadas con Vitest y `@testing-library/react`. |
 
 ---
@@ -74,7 +74,8 @@ La navegación del sistema está centralizada en [`FRONT/src/router/index.jsx`](
 | `/dashboard` | `<Dashboard />` (`modules/dashboard`) | Dentro de `<Layout />` | Métricas de ventas, accesos directos y gráficos estadísticos. |
 | `/productos` | `<Productos />` (`modules/productos`) | Dentro de `<Layout />` | Catálogo de productos, filtros por categoría, búsqueda y CRUD básico. |
 | `/clientes` | `<Clientes />` (`modules/clientes`) | Dentro de `<Layout />` | Directorio de clientes con filtros por RUC/Nombre y exportación. |
-| `/ventas` | `<Ventas />` (`modules/ventas`) | Dentro de `<Layout />` | Histórico y registro de comprobantes (Facturas / Boletas). |
+| `/ventas` / `/listventas` | `<Ventas />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Histórico y listado de comprobantes emitidos con DataTable y filtros de fecha. |
+| `/preventas` | `<Preventas />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Listado y gestión de órdenes pre-ventas pendientes de liquidación y cobro. |
 | `/caja` | `<Caja />` (`modules/caja`) | `<ProtectedRoute>` | Gestión operativa de turnos de caja, fondo de apertura, ventas y arqueo/cierre de turnos. |
 | `/reportes` | `<Reportes />` (`modules/reportes`) | Dentro de `<Layout />` | Reportes detallados y gráficos analíticos con Recharts. |
 | `/proveedores` | `<Proveedores />` (`modules/proveedores`) | `<ProtectedRoute>` | Directorio de proveedores, clasificación, búsqueda y CRUD con integración a SUNAT. |
