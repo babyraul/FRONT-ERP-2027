@@ -108,8 +108,8 @@ export function useClienteSmartSearch({
     // Caso cliente VARIOS rápido
     if (normalized === '99999999') {
       seleccionarCliente({
-        id: 'varios',
-        tipo_documento_id: '0',
+        id: '00000000-0000-0000-0000-000000000000',
+        tipo_documento_id: '1',
         numero_documento: '99999999',
         nombre_razon_social: 'VARIOS',
         isNuevo: false

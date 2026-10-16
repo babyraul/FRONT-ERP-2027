@@ -18,6 +18,7 @@ export default function Pagar() {
   // Estado global de la venta en curso
   const store = useVentaActivaStore()
   const {
+    preventaId: storePreventaId,
     tipoDocumento: storeTipoDoc,
     cliente: storeCliente,
     placa: storePlaca,
@@ -28,8 +29,11 @@ export default function Pagar() {
 
   // Si se pasaron datos por navigation state, priorizarlos o sincronizar
   const initialData = location.state || {}
+  const preventaId = initialData.preventaId || storePreventaId || null
   const tipoDocumento = initialData.tipoDocumento || storeTipoDoc || 'vale'
   const cliente = initialData.cliente || storeCliente || {
+    id: '00000000-0000-0000-0000-000000000000',
+    tipo_documento_id: '1',
     numero_documento: '99999999',
     nombre_razon_social: 'VARIOS'
   }
@@ -233,6 +237,7 @@ export default function Pagar() {
     }
 
     const payload = {
+      preventa_id: preventaId || null,
       tipo_documento: tipoDocumento,
       cliente_id: finalClienteId,
       placa: placa || null,
@@ -278,6 +283,7 @@ export default function Pagar() {
   const handleEditarVenta = () => {
     navigate('/vender', {
       state: {
+        preventaId,
         tipoDocumento,
         cliente,
         placa,
@@ -361,11 +367,6 @@ export default function Pagar() {
           <div>
             <span className="text-slate-600 font-semibold dark:text-slate-500 mr-1">IGV</span>
             <strong className="font-bold text-slate-900 dark:text-white">{totales.igv.toFixed(2)}</strong>
-          </div>
-
-          <div>
-            <span className="text-slate-600 font-semibold dark:text-slate-500 mr-1">Redondeo</span>
-            <strong className="font-bold text-slate-900 dark:text-white">{totales.redondeo.toFixed(2)}</strong>
           </div>
         </div>
 

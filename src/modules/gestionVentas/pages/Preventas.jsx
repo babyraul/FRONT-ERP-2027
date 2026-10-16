@@ -95,6 +95,7 @@ export default function Preventas() {
     // Redirigir a /vender/pagar con los datos precargados de la preventa
     navigate('/vender/pagar', {
       state: {
+        preventaId: preventa.id,
         tipoDocumento: preventa.tipo_documento || 'boleta',
         cliente: {
           id: preventa.cliente_id || 'varios',

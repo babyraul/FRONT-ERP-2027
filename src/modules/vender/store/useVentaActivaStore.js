@@ -1,16 +1,19 @@
 import { create } from 'zustand'
+import { calcularTotalesVenta } from '../../../utils/Operaciones.js'
 
 export const useVentaActivaStore = create((set, get) => ({
+  preventaId: null,
   tipoDocumento: 'boleta', // 'factura', 'boleta', 'vale'
   cliente: {
-    id: 'varios',
-    tipo_documento_id: '0',
+    id: '00000000-0000-0000-0000-000000000000',
+    tipo_documento_id: '1',
     numero_documento: '99999999',
     nombre_razon_social: 'VARIOS'
   },
   placa: '',
   cartItems: [],
 
+  setPreventaId: (preventaId) => set({ preventaId }),
   setTipoDocumento: (tipoDocumento) => set({ tipoDocumento }),
   setCliente: (cliente) => set({ cliente }),
   setPlaca: (placa) => set({ placa }),
@@ -84,11 +87,12 @@ export const useVentaActivaStore = create((set, get) => ({
 
   clearVenta: () => {
     set({
+      preventaId: null,
       cartItems: [],
       placa: '',
       cliente: {
-        id: 'varios',
-        tipo_documento_id: '0',
+        id: '00000000-0000-0000-0000-000000000000',
+        tipo_documento_id: '1',
         numero_documento: '99999999',
         nombre_razon_social: 'VARIOS'
       }
@@ -96,22 +100,6 @@ export const useVentaActivaStore = create((set, get) => ({
   },
 
   getTotales: () => {
-    const items = get().cartItems
-    const rawTotal = items.reduce((sum, item) => {
-      const lineSub = Number(item.cantidad) * Number(item.precio_unitario) - Number(item.descuento || 0)
-      return sum + Math.max(0, lineSub)
-    }, 0)
-
-    const total = Math.round(rawTotal * 100) / 100
-    const gravado = Math.round((total / 1.18) * 100) / 100
-    const igv = Math.round((total - gravado) * 100) / 100
-    const redondeo = Math.round((rawTotal - total) * 100) / 100
-
-    return {
-      gravado,
-      igv,
-      redondeo: Math.abs(redondeo),
-      total
-    }
+    return calcularTotalesVenta(get().cartItems)
   }
 }))

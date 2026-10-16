@@ -8,6 +8,7 @@ import ProductosList from '../components/ProductosList.jsx'
 import CarritoList from '../components/CarritoList.jsx'
 import VentaFooter from '../components/VentaFooter.jsx'
 import BuscarClienteModal from '../components/BuscarClienteModal.jsx'
+import { venderController } from '../controllers/venderController.js'
 import { calcularTotalesVenta } from '../../../utils/Operaciones.js'
 import { toast } from '../../../utils/toast.js'
 
@@ -19,11 +20,12 @@ export default function Vender() {
 
   // 1. Estados Principales (inicializados desde navigation state o store para persistencia)
   const navState = location.state || {}
+  const [preventaId, setPreventaId] = useState(navState.preventaId || store.preventaId || null)
   const [tipoDocumento, setTipoDocumento] = useState(navState.tipoDocumento || store.tipoDocumento || 'boleta')
   const [cliente, setCliente] = useState(
     navState.cliente || store.cliente || {
-      id: 'varios',
-      tipo_documento_id: '0',
+      id: '00000000-0000-0000-0000-000000000000',
+      tipo_documento_id: '1',
       numero_documento: '99999999',
       nombre_razon_social: 'VARIOS'
     }
@@ -36,6 +38,7 @@ export default function Vender() {
         ? store.cartItems
         : []
   )
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // 2. Modales
   const [isBuscarClienteOpen, setIsBuscarClienteOpen] = useState(false)
@@ -119,13 +122,91 @@ export default function Vender() {
     return calcularTotalesVenta(cartItems)
   }, [cartItems])
 
-  // Navegar a la pantalla de Pago / Procesar Preventa
-  const handleIrAPagar = () => {
-    if (cartItems.length === 0) {
+  // Helper para validar si un string es un UUID válido
+  const isValidUUID = (str) => {
+    if (!str || typeof str !== 'string') return false
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)
+  }
+
+  // Navegar a la pantalla de Pago / Procesar Preventa en BD
+  const handleIrAPagar = async () => {
+    // A. Validar carrito
+    if (!cartItems || cartItems.length === 0) {
       toast.info('Carrito vacío', 'Agregue al menos un producto para procesar la preventa.')
       return
     }
+
+    // B. Validar tipo de comprobante vs cliente
+    if (tipoDocumento === 'factura') {
+      const doc = String(cliente?.numero_documento || '').trim()
+      if (doc.length !== 11) {
+        toast.error('Cliente no válido para Factura', 'Para emitir Factura debe seleccionar o ingresar un cliente con RUC (11 dígitos).')
+        return
+      }
+    }
+
+    setIsSubmitting(true)
+
+    // C. Sanitizar cliente_id para evitar error de sintaxis UUID en PostgreSQL
+    let sanitizedClienteId = null
+    if (cliente?.id && isValidUUID(cliente.id)) {
+      sanitizedClienteId = cliente.id
+    }
+
+    // Formatear payload de preventa
+    const preventaPayload = {
+      cliente_id: sanitizedClienteId,
+      tipo_documento: tipoDocumento,
+      placa: placa || null,
+      gravado: totales.gravado,
+      igv: totales.igv,
+      total: totales.total,
+      items: cartItems.map((item) => ({
+        producto_id: item.producto_id,
+        presentacion_id: item.presentacion_id || null,
+        cantidad: Number(item.cantidad),
+        precio_unitario: Number(item.precio_unitario),
+        descuento: Number(item.descuento || 0)
+      }))
+    }
+
+    let activePreventaId = preventaId
+    let success = false
+
+    try {
+      if (activePreventaId) {
+        // Actualizar preventa existente
+        const res = await venderController.actualizarPreventa(activePreventaId, preventaPayload)
+        if (res.success) {
+          success = true
+        } else {
+          toast.error('Error al actualizar pre-venta', res.message || 'No se pudo actualizar la preventa.')
+        }
+      } else {
+        // Registrar nueva preventa
+        const res = await venderController.crearPreventa(preventaPayload)
+        if (res.success && res.data?.id) {
+          activePreventaId = res.data.id
+          setPreventaId(activePreventaId)
+          success = true
+        } else {
+          toast.error('Error al generar pre-venta', res.message || 'No se pudo registrar la preventa en base de datos.')
+        }
+      }
+    } catch (err) {
+      console.error('Error al procesar preventa:', err)
+      toast.error('Error de conexión', err.message || 'Error al comunicarse con el servidor.')
+    } finally {
+      setIsSubmitting(false)
+    }
+
+    // VALIDACIÓN ESTRICTA: Si falló la creación/actualización de la preventa, NO continuar a pagos
+    if (!success || !activePreventaId) {
+      return
+    }
+
     // Guardar estado en el store global
+    store.setPreventaId(activePreventaId)
     store.setTipoDocumento(tipoDocumento)
     store.setCliente(cliente)
     store.setPlaca(placa)
@@ -133,6 +214,7 @@ export default function Vender() {
 
     navigate('/vender/pagar', {
       state: {
+        preventaId: activePreventaId,
         tipoDocumento,
         cliente,
         placa,
