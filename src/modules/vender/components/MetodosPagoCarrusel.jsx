@@ -9,7 +9,8 @@ export default function MetodosPagoCarrusel({
   metodos = [],
   loading = false,
   onSelectMetodo,
-  selectedMetodos = []
+  selectedMetodos = [],
+  isPagoCompleto = false
 }) {
   const scrollRef = useRef(null)
   const [imgErrors, setImgErrors] = useState({})
@@ -61,22 +62,30 @@ export default function MetodosPagoCarrusel({
             )
             const color = m.color || '#01a59c'
             const hasImgError = imgErrors[m.id]
+            const estaBloqueado = isPagoCompleto && !isActivo
 
             return (
               <button
                 key={m.id}
                 type="button"
+                disabled={estaBloqueado}
                 onClick={() => onSelectMetodo(m)}
                 style={{
                   borderColor: isActivo ? color : undefined,
                   boxShadow: isActivo ? `0 0 0 2px ${color}` : undefined
                 }}
-                className={`flex flex-col items-center justify-center min-w-[76px] h-[70px] rounded-xl border-2 transition-all p-1.5 shrink-0 bg-white dark:bg-slate-800 ${
+                className={`flex flex-col items-center justify-center min-w-[76px] h-[70px] rounded-xl border-1 transition-all p-1.5 shrink-0 dark:bg-slate-800 ${
                   isActivo
                     ? 'scale-105 shadow-md font-bold'
+                    : estaBloqueado
+                    ? 'opacity-40 cursor-not-allowed border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50'
                     : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:scale-102 hover:shadow-xs'
                 }`}
-                title={`Agregar pago con ${m.nombre}`}
+                title={
+                  estaBloqueado
+                    ? 'Pago ya completo. Modifique los montos para agregar otro método.'
+                    : `Agregar pago con ${m.nombre}`
+                }
               >
                 {m.imagen_url && !hasImgError ? (
                   <img

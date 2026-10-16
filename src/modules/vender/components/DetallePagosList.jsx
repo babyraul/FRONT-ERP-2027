@@ -39,11 +39,11 @@ export default function DetallePagosList({
             return (
               <div
                 key={pago.id || index}
-                className="flex items-center gap-3 p-2 bg-white/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 rounded-xl shadow-2xs"
+                className="flex items-center gap-3 p-2 dark:bg-slate-800/90 border dark:border-slate-700 rounded-xl shadow-2xs"
               >
                 {/* Ícono / Imagen del método */}
                 <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border bg-slate-50 dark:bg-slate-900/60 p-1"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border dark:bg-slate-900/60 p-1"
                   style={{ borderColor: color }}
                   title={pago.metodo_nombre}
                 >
@@ -77,15 +77,21 @@ export default function DetallePagosList({
                   </div>
                 </div>
 
-                {/* Input de Referencia */}
+                {/* Input de Referencia (No aplica para Efectivo) */}
                 <div className="flex-1 min-w-[90px]">
-                  <input
-                    type="text"
-                    value={pago.referencia || ''}
-                    onChange={(e) => onUpdateReferenciaPago(index, e.target.value)}
-                    placeholder="Ref. / N° Op."
-                    className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border-b-2 border-slate-300 dark:border-slate-600 focus:border-[#01a59c] outline-none text-slate-700 dark:text-slate-200"
-                  />
+                  {pago.metodo_nombre && pago.metodo_nombre.toUpperCase().includes('EFECTIVO') ? (
+                    <div className="w-full px-2.5 py-1.5 text-xs text-center text-slate-400 dark:text-slate-500 italic bg-slate-100/50 dark:bg-slate-900/40 rounded border border-transparent select-none">
+                      Sin N° Op.
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      value={pago.referencia || ''}
+                      onChange={(e) => onUpdateReferenciaPago(index, e.target.value)}
+                      placeholder="Ref. / N° Op."
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border-b-2 border-slate-300 dark:border-slate-600 focus:border-[#01a59c] outline-none text-slate-700 dark:text-slate-200"
+                    />
+                  )}
                 </div>
 
                 {/* Botón Eliminar Método */}

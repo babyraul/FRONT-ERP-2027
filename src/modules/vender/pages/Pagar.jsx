@@ -178,6 +178,15 @@ export default function Pagar() {
       return
     }
 
+    // Validar si el pago ingresado ya está completo en comparación con la venta total
+    if (totalPagado >= totales.total && totales.total > 0) {
+      toast.warning(
+        'Pago completo',
+        'El total de la venta ya ha sido cubierto. Modifique los montos existentes si desea agregar otro método.'
+      )
+      return
+    }
+
     // El monto por defecto del nuevo método será el saldo pendiente
     const montoInicial = saldoPendiente > 0 ? saldoPendiente : 0
 
@@ -203,7 +212,11 @@ export default function Pagar() {
 
   const handleUpdateReferenciaPago = (index, nuevaRef) => {
     setPagos((prev) =>
-      prev.map((p, idx) => (idx === index ? { ...p, referencia: nuevaRef } : p))
+      prev.map((p, idx) => {
+        if (idx !== index) return p
+        const esEfectivo = (p.metodo_nombre || '').toUpperCase().includes('EFECTIVO')
+        return { ...p, referencia: esEfectivo ? '' : nuevaRef }
+      })
     )
   }
 
@@ -240,12 +253,15 @@ export default function Pagar() {
       observaciones,
       orden_compra: ordenCompra,
       guia_remision: guiaRemision,
-      pagos: pagos.map((p) => ({
-        tipo_metodo_pago_id: p.metodo_id,
-        metodo: p.metodo_nombre,
-        monto: p.monto,
-        referencia: p.referencia
-      })),
+      pagos: pagos.map((p) => {
+        const esEfectivo = (p.metodo_nombre || '').toUpperCase().includes('EFECTIVO')
+        return {
+          tipo_metodo_pago_id: p.metodo_id,
+          metodo: p.metodo_nombre,
+          monto: p.monto,
+          referencia: esEfectivo ? null : (p.referencia || null)
+        }
+      }),
       total: totales.total,
       vuelto: vuelto,
       items: cartItems.map((item) => ({
@@ -312,14 +328,22 @@ export default function Pagar() {
 
           {/* 2. Carrusel Horizontal de Métodos de Pago */}
           <div className="shrink-0 pt-2 border-t border-slate-200/80 dark:border-slate-800">
-            <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-              Métodos Disponibles (Haga clic para agregar)
-            </span>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Métodos Disponibles (Haga clic para agregar)
+              </span>
+              {totalPagado >= totales.total && totales.total > 0 && (
+                <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded">
+                  Pago completo
+                </span>
+              )}
+            </div>
             <MetodosPagoCarrusel
               metodos={metodosDisponibles}
               loading={loadingMetodos}
               onSelectMetodo={handleSelectMetodoCarrusel}
               selectedMetodos={pagos}
+              isPagoCompleto={totalPagado >= totales.total && totales.total > 0}
             />
           </div>
 
@@ -339,49 +363,43 @@ export default function Pagar() {
         </div>
       </div>
 
-      {/* ── FOOTER TOTALIZADOR FIJO (IDÉNTICO AL MOCKUP) ── */}
-      <div className="bg-slate-200/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-300 dark:border-slate-800 px-6 py-2.5 flex items-center justify-between gap-4 shrink-0 shadow-lg z-20">
-        {/* Desglose a la Izquierda */}
-        <div className="flex items-center gap-6 sm:gap-10 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
+      {/* ── FOOTER TOTALIZADOR (IDÉNTICO AL DISEÑO DE VENTAFOOTER) ── */}
+      <div className="bg-slate-300/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-300/70 dark:border-slate-800 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4 shrink-0 shadow-lg z-20">
+        {/* Desglose de Totales a la Izquierda */}
+        <div className="flex-1 flex items-center gap-4 sm:gap-8 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 min-w-0">
           <div>
-            <span className="text-slate-500 block text-[11px]">Gravado</span>
-            <strong className="font-mono text-slate-900 dark:text-white text-sm sm:text-base">
-              S/. {totales.gravado.toFixed(2)}
-            </strong>
+            <span className="text-slate-600 font-semibold dark:text-slate-500 mr-1">Gravado</span>
+            <strong className="font-bold text-slate-900 dark:text-white">{totales.gravado.toFixed(2)}</strong>
           </div>
 
           <div>
-            <span className="text-slate-500 block text-[11px]">IGV</span>
-            <strong className="font-mono text-slate-900 dark:text-white text-sm sm:text-base">
-              S/. {totales.igv.toFixed(2)}
-            </strong>
+            <span className="text-slate-600 font-semibold dark:text-slate-500 mr-1">IGV</span>
+            <strong className="font-bold text-slate-900 dark:text-white">{totales.igv.toFixed(2)}</strong>
           </div>
 
           <div>
-            <span className="text-slate-500 block text-[11px]">Redondeo</span>
-            <strong className="font-mono text-slate-900 dark:text-white text-sm sm:text-base">
-              S/. {totales.redondeo.toFixed(2)}
-            </strong>
+            <span className="text-slate-600 font-semibold dark:text-slate-500 mr-1">Redondeo</span>
+            <strong className="font-bold text-slate-900 dark:text-white">{totales.redondeo.toFixed(2)}</strong>
           </div>
         </div>
 
-        {/* Centro: Total Destacado en Caja Verde Aqua Gigante */}
-        <div className="flex items-center justify-center">
-          <div className="bg-[#01a59c] text-white px-6 sm:px-10 py-2.5 rounded-2xl shadow-md flex items-center gap-2">
-            <span className="text-xl sm:text-2xl font-black font-mono">S/</span>
-            <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight">
+        {/* Centro: Total Destacado (Caja Verde Aqua con ancho fijo) */}
+        <div className="flex items-center justify-center shrink-0">
+          <div className="bg-[#01a59c] text-white w-48 sm:w-64 py-3 rounded-2xl shadow-md flex items-center justify-center gap-1.5 transition-transform">
+            <span className="text-base sm:text-lg font-bold opacity-80">S/</span>
+            <span className="text-2xl sm:text-4xl font-extrabold tracking-tight">
               {totales.total.toFixed(2)}
             </span>
           </div>
         </div>
 
-        {/* Derecha: Botón de Acción Principal "PAGAR" */}
-        <div>
+        {/* Derecha: Botón de Acción Principal "PAGAR" con ancho fijo */}
+        <div className="flex-1 flex justify-end shrink-0">
           <button
             type="button"
             onClick={handlePagar}
             disabled={isProcessing}
-            className="bg-[#01473d] hover:bg-[#025a4d] disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 sm:px-12 py-3.5 sm:py-4 rounded-2xl text-xl sm:text-2xl font-black tracking-wider shadow-lg hover:shadow-xl transition-all duration-200 transform active:scale-95"
+            className="w-44 sm:w-64 justify-center bg-[#01473d] hover:bg-[#025a4d] disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 sm:py-3.5 rounded-2xl text-lg sm:text-3xl font-black tracking-wide shadow-[0_6px_16px_rgba(1,71,61,0.35)] hover:shadow-[0_10px_24px_rgba(1,71,61,0.45)] transition-all duration-200 flex items-center gap-2 transform active:scale-95"
             title="Confirmar y Registrar Pago"
           >
             {isProcessing ? 'Procesando...' : 'PAGAR'}

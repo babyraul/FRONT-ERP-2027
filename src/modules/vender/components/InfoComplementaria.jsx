@@ -11,7 +11,7 @@ export default function InfoComplementaria({
   setGuiaRemision
 }) {
   return (
-    <div className="space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800 text-xs">
+    <div className="space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800 text-sm">
       {/* Vuelto / Saldo Pendiente */}
       <div className="flex items-center justify-between pb-1">
         <span className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px]">
@@ -32,7 +32,7 @@ export default function InfoComplementaria({
 
       {/* Input Observaciones */}
       <div className="flex items-center gap-3">
-        <label className="w-28 text-slate-500 font-medium shrink-0">Observaciones</label>
+        <label className="w-28 text-slate-700 font-medium shrink-0">Observaciones</label>
         <input
           type="text"
           value={observaciones}
@@ -44,7 +44,7 @@ export default function InfoComplementaria({
 
       {/* Input Orden de Compra */}
       <div className="flex items-center gap-3">
-        <label className="w-28 text-slate-500 font-medium shrink-0">Orden Compra</label>
+        <label className="w-28 text-slate-700 font-medium shrink-0">Orden Compra</label>
         <input
           type="text"
           value={ordenCompra}
@@ -56,7 +56,7 @@ export default function InfoComplementaria({
 
       {/* Input Guía de Remisión */}
       <div className="flex items-center gap-3">
-        <label className="w-28 text-slate-500 font-medium shrink-0">Guía Remisión</label>
+        <label className="w-28 text-slate-700 font-medium shrink-0">Guía Remisión</label>
         <input
           type="text"
           value={guiaRemision}
