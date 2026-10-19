@@ -24,7 +24,7 @@ import { cajaController } from '../controllers/caja.js'
 import { toast } from '../../../utils/toast.js'
 import Can from '../../../components/ui/Can.jsx'
 import { useAuthStore } from '../../../store/useAuthStore.js'
-import { imprimirTicketMovimiento, imprimirTicketCierre } from '../utils/ticketPrint.js'
+import { imprimirTicketMovimiento, imprimirTicketCierre } from '../../../utils/ticketPrint.js'
 
 export default function Caja() {
   const [turnoActivo, setTurnoActivo] = useState(null)
@@ -283,11 +283,10 @@ export default function Caja() {
             <div className="flex items-center gap-4 border-b border-slate-200 dark:border-slate-800 px-5 pt-3">
               <button
                 onClick={() => setActiveTab('metodos')}
-                className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
-                  activeTab === 'metodos'
+                className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${activeTab === 'metodos'
                     ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <CurrencyDollarIcon className="h-4 w-4" />
                 Métodos de Pago y Balance ({turnoActivo.totales?.length || 0})
@@ -295,11 +294,10 @@ export default function Caja() {
 
               <button
                 onClick={() => setActiveTab('movimientos')}
-                className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
-                  activeTab === 'movimientos'
+                className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${activeTab === 'movimientos'
                     ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <ArrowTrendingUpIcon className="h-4 w-4" />
                 Movimientos de Gaveta ({movimientosTurno.length})
@@ -307,11 +305,10 @@ export default function Caja() {
 
               <button
                 onClick={() => setActiveTab('ventas')}
-                className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
-                  activeTab === 'ventas'
+                className={`pb-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${activeTab === 'ventas'
                     ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <ShoppingBagIcon className="h-4 w-4" />
                 Comprobantes del Turno ({ventasTurno.length})

@@ -6,7 +6,7 @@ import { Login } from '../modules/auth'
 import { Dashboard } from '../modules/dashboard'
 import { Productos } from '../modules/productos'
 import { Clientes } from '../modules/clientes'
-import { Ventas, Preventas } from '../modules/gestionVentas'
+import { Ventas, Preventas, Vales } from '../modules/gestionVentas'
 import { Vender, Pagar } from '../modules/vender'
 import { Reportes } from '../modules/reportes'
 import { Proveedores } from '../modules/proveedores'
@@ -33,6 +33,8 @@ export const router = createBrowserRouter([
       { path: 'clientes', element: <ProtectedRoute><Clientes /></ProtectedRoute> },
       { path: 'caja', element: <ProtectedRoute><Caja /></ProtectedRoute> },
       { path: 'listventas', element: <Ventas /> },
+      { path: 'vales', element: <Vales /> },
+      { path: 'listvales', element: <Vales /> },
       { path: 'gespreventas', element: <Preventas /> },
       { path: 'reportes', element: <Reportes /> },
       { path: 'proveedores', element: <ProtectedRoute><Proveedores /></ProtectedRoute> },

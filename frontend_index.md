@@ -75,6 +75,7 @@ La navegación del sistema está centralizada en [`FRONT/src/router/index.jsx`](
 | `/productos` | `<Productos />` (`modules/productos`) | Dentro de `<Layout />` | Catálogo de productos, filtros por categoría, búsqueda y CRUD básico. |
 | `/clientes` | `<Clientes />` (`modules/clientes`) | Dentro de `<Layout />` | Directorio de clientes con filtros por RUC/Nombre y exportación. |
 | `/ventas` / `/listventas` | `<Ventas />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Histórico y listado de comprobantes emitidos con DataTable y filtros de fecha. |
+| `/vales` / `/listvales` | `<Vales />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Histórico y listado de vales / notas de venta internas con DataTable y filtros de fecha. |
 | `/preventas` | `<Preventas />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Listado y gestión de órdenes pre-ventas pendientes de liquidación y cobro. |
 | `/caja` | `<Caja />` (`modules/caja`) | `<ProtectedRoute>` | Gestión operativa de turnos de caja, fondo de apertura, ventas y arqueo/cierre de turnos. |
 | `/reportes` | `<Reportes />` (`modules/reportes`) | Dentro de `<Layout />` | Reportes detallados y gráficos analíticos con Recharts. |
