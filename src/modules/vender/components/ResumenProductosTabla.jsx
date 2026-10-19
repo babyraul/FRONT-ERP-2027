@@ -1,21 +1,31 @@
 import React, { useState, useMemo } from 'react'
-import { PencilSquareIcon, UserCircleIcon } from '@heroicons/react/24/solid'
+import {
+  TrashIcon,
+  PlusIcon
+} from '@heroicons/react/24/outline'
+import ClienteSection from './ClienteSection.jsx'
 
 export default function ResumenProductosTabla({
   cartItems = [],
   cliente,
-  onEditarVenta
+  setCliente,
+  tipoDocumento = 'boleta',
+  setTipoDocumento,
+  placa = '',
+  setPlaca,
+  onOpenBuscarCliente,
+  onOpenAgregarProducto,
+  onUpdateCantidad,
+  onUpdatePrecio,
+  onUpdateDescuento,
+  onRemoveItem
 }) {
-  // Filtros por columna como en el mockup
+  // Filtros por columna
   const [filtroDesc, setFiltroDesc] = useState('')
   const [filtroCant, setFiltroCant] = useState('')
   const [filtroPrecio, setFiltroPrecio] = useState('')
   const [filtroDescMonto, setFiltroDescMonto] = useState('')
   const [filtroTotal, setFiltroTotal] = useState('')
-
-  // Paginación
-  const [pageSize, setPageSize] = useState(8)
-  const [currentPage, setCurrentPage] = useState(1)
 
   // Filtrado
   const itemsFiltrados = useMemo(() => {
@@ -31,63 +41,61 @@ export default function ResumenProductosTabla({
     })
   }, [cartItems, filtroDesc, filtroCant, filtroPrecio, filtroDescMonto, filtroTotal])
 
-  // Paginación calculada
-  const totalPages = Math.max(1, Math.ceil(itemsFiltrados.length / pageSize))
-  const pageActual = Math.min(currentPage, totalPages)
-  const itemsPaginados = useMemo(() => {
-    const start = (pageActual - 1) * pageSize
-    return itemsFiltrados.slice(start, start + pageSize)
-  }, [itemsFiltrados, pageActual, pageSize])
-
   return (
-    <div className="flex flex-col h-full dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border dark:border-slate-800 shadow-sm p-4 overflow-hidden">
-      {/* ── Cabecera: Botón Editar y Datos de Cliente ── */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-slate-800 shrink-0">
-        <button
-          type="button"
-          onClick={onEditarVenta}
-          className="w-10 h-10 rounded-xl bg-amber-600 hover:bg-amber-600 text-white flex items-center justify-center shadow-md transition-transform active:scale-95"
-          title="Regresar a editar productos / cliente"
-        >
-          <PencilSquareIcon className="h-6 w-6" />
-        </button>
-
-        <div className="flex items-center gap-2.5 text-right">
-          <div className="flex flex-col items-end">
-            <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
-              {cliente?.numero_documento || '99999999'}
-            </span>
-            <span className="text-xs uppercase font-extrabold text-slate-600 dark:text-slate-300 tracking-wider">
-              {cliente?.nombre_razon_social || 'VARIOS'}
-            </span>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-[#01a59c]/20 text-[#01a59c] flex items-center justify-center">
-            <UserCircleIcon className="h-8 w-8" />
-          </div>
-        </div>
+    <div className="flex flex-col h-full dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border dark:border-slate-800 shadow-sm p-3 sm:p-4 overflow-hidden">
+      {/* ── Cabecera: Diseño Idéntico de ClienteSection para Mantener Orden y Consistencia ── */}
+      <div className="pb-2 border-b border-slate-200/80 dark:border-slate-800 shrink-0">
+        <ClienteSection
+          cliente={cliente}
+          setCliente={setCliente}
+          tipoDocumento={tipoDocumento}
+          setTipoDocumento={setTipoDocumento}
+          placa={placa}
+          setPlaca={setPlaca}
+          onOpenBuscarModal={onOpenBuscarCliente}
+        />
       </div>
 
-      {/* ── Tabla de Resumen de Productos ── */}
-      <div className="flex-1 overflow-y-auto mt-3 border border-slate-200/90 dark:border-slate-800 rounded-xl overflow-hidden flex flex-col">
+      {/* ── Barra de Acciones: Botón Agregar Producto y Contador ── */}
+      <div className="flex items-center justify-between mt-2.5 mb-1 shrink-0">
+        <button
+          type="button"
+          onClick={onOpenAgregarProducto}
+          className="inline-flex items-center gap-1.5 bg-[#01a59c] hover:bg-[#008f87] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+          title="Agregar producto a esta preventa"
+        >
+          <PlusIcon className="h-4 w-4 stroke-[2.5]" />
+          <span>Agregar Producto</span>
+        </button>
+
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+          {cartItems.length} {cartItems.length === 1 ? 'producto' : 'productos'} en total
+        </span>
+      </div>
+
+      {/* ── Tabla de Resumen de Productos con Edición En Línea ── */}
+      <div className="flex-1 overflow-y-auto mt-1 border border-slate-200/90 dark:border-slate-800 rounded-xl overflow-hidden flex flex-col">
         <div className="overflow-x-auto flex-1">
           <table className="w-full text-xs text-left border-collapse">
             {/* Headers */}
-            <thead className="bg-[#01473d] text-sm text-white dark:text-slate-200 uppercase font-bold sticky top-0 backdrop-blur-sm z-10">
+            <thead className="bg-[#01473d] text-xs text-white dark:text-slate-200 uppercase font-bold sticky top-0 backdrop-blur-sm z-10">
               <tr>
                 <th className="py-2.5 px-3 border-b border-slate-200 dark:border-slate-700">Producto / Presentación</th>
-                <th className="py-2.5 px-3 border-b border-slate-200 dark:border-slate-700 text-center w-28">Cantidad</th>
-                <th className="py-2.5 px-3 border-b border-slate-200 dark:border-slate-700 text-right w-28">Precio</th>
-                <th className="py-2.5 px-3 border-b border-slate-200 dark:border-slate-700 text-right w-28">Descuento</th>
-                <th className="py-2.5 px-3 border-b border-slate-200 dark:border-slate-700 text-right w-28">Total</th>
+                <th className="py-2.5 px-3 border-b border-slate-200 dark:border-slate-700 text-center w-24">Cantidad</th>
+                <th className="py-2.5 px-3 border-b border-slate-200 dark:border-slate-700 text-right w-24">Precio</th>
+                <th className="py-2.5 px-3 border-b border-slate-200 dark:border-slate-700 text-right w-20">Desc.</th>
+                <th className="py-2.5 px-3 border-b border-slate-200 dark:border-slate-700 text-right w-24">Total</th>
+                <th className="py-2.5 px-2 border-b border-slate-200 dark:border-slate-700 text-center w-12">Acción</th>
               </tr>
-              {/* Fila de Filtros por columna como en la imagen */}
+              {/* Fila de Filtros */}
               <tr className="bg-slate-50/90 dark:bg-slate-800/80">
                 <th className="p-1 border-b border-slate-200 dark:border-slate-700">
                   <input
                     type="text"
                     value={filtroDesc}
                     onChange={(e) => setFiltroDesc(e.target.value)}
-                    className="w-full px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-normal outline-none focus:ring-1 focus:ring-[#01a59c]"
+                    placeholder="Filtrar..."
+                    className="w-full px-2 py-0.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-normal outline-none focus:ring-1 focus:ring-[#01a59c]"
                   />
                 </th>
                 <th className="p-1 border-b border-slate-200 dark:border-slate-700">
@@ -95,7 +103,7 @@ export default function ResumenProductosTabla({
                     type="text"
                     value={filtroCant}
                     onChange={(e) => setFiltroCant(e.target.value)}
-                    className="w-full px-1.5 py-1 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-normal outline-none focus:ring-1 focus:ring-[#01a59c]"
+                    className="w-full px-1 py-0.5 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-normal outline-none focus:ring-1 focus:ring-[#01a59c]"
                   />
                 </th>
                 <th className="p-1 border-b border-slate-200 dark:border-slate-700">
@@ -103,7 +111,7 @@ export default function ResumenProductosTabla({
                     type="text"
                     value={filtroPrecio}
                     onChange={(e) => setFiltroPrecio(e.target.value)}
-                    className="w-full px-1.5 py-1 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-normal outline-none focus:ring-1 focus:ring-[#01a59c]"
+                    className="w-full px-1 py-0.5 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-normal outline-none focus:ring-1 focus:ring-[#01a59c]"
                   />
                 </th>
                 <th className="p-1 border-b border-slate-200 dark:border-slate-700">
@@ -111,7 +119,7 @@ export default function ResumenProductosTabla({
                     type="text"
                     value={filtroDescMonto}
                     onChange={(e) => setFiltroDescMonto(e.target.value)}
-                    className="w-full px-1.5 py-1 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-normal outline-none focus:ring-1 focus:ring-[#01a59c]"
+                    className="w-full px-1 py-0.5 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-normal outline-none focus:ring-1 focus:ring-[#01a59c]"
                   />
                 </th>
                 <th className="p-1 border-b border-slate-200 dark:border-slate-700">
@@ -119,42 +127,85 @@ export default function ResumenProductosTabla({
                     type="text"
                     value={filtroTotal}
                     onChange={(e) => setFiltroTotal(e.target.value)}
-                    className="w-full px-1.5 py-1 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-normal outline-none focus:ring-1 focus:ring-[#01a59c]"
+                    className="w-full px-1 py-0.5 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-normal outline-none focus:ring-1 focus:ring-[#01a59c]"
                   />
                 </th>
+                <th className="p-1 border-b border-slate-200 dark:border-slate-700"></th>
               </tr>
             </thead>
 
             {/* Body */}
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {itemsPaginados.length === 0 ? (
+              {itemsFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400">
-                    No hay productos en esta preventa.
+                  <td colSpan={6} className="py-10 text-center text-slate-400">
+                    No hay productos en esta preventa. Haga clic en "+ Agregar Producto" para añadir ítems.
                   </td>
                 </tr>
               ) : (
-                itemsPaginados.map((item) => {
+                itemsFiltrados.map((item) => {
                   const subtotal = Number(item.cantidad) * Number(item.precio_unitario) - Number(item.descuento || 0)
                   return (
                     <tr
                       key={item.uniqueId}
-                      className="hover:bg-slate-200/80 text-sm dark:hover:bg-slate-800/50 transition-colors"
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                     >
-                      <td className="py-2 px-3 font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[200px]" title={item.nombre_completo}>
-                        {item.nombre_completo}
+                      {/* Nombre del Producto */}
+                      <td className="py-2 px-3 font-semibold text-slate-800 dark:text-slate-100" title={item.nombre_completo}>
+                        <div className="truncate max-w-[220px] font-medium">{item.nombre_completo}</div>
                       </td>
-                      <td className="py-2 px-3 text-center font-bold text-slate-700 dark:text-slate-300">
-                        {item.cantidad}
+
+                      {/* Cantidad Editable */}
+                      <td className="py-1 px-1.5 text-center">
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.01"
+                          value={item.cantidad}
+                          onChange={(e) => onUpdateCantidad && onUpdateCantidad(item.uniqueId, parseFloat(e.target.value) || 0)}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md py-1 text-center font-bold text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-1 focus:ring-[#01a59c]"
+                        />
                       </td>
-                      <td className="py-2 px-3 text-right font-bold text-slate-700 dark:text-slate-300">
-                        S/. {Number(item.precio_unitario).toFixed(2)}
+
+                      {/* Precio Editable */}
+                      <td className="py-1 px-1.5 text-right">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={item.precio_unitario}
+                          onChange={(e) => onUpdatePrecio && onUpdatePrecio(item.uniqueId, parseFloat(e.target.value) || 0)}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md py-1 text-right font-bold text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-1 focus:ring-[#01a59c]"
+                        />
                       </td>
-                      <td className="py-2 px-3 text-right font-bold text-slate-700 dark:text-slate-300">
-                        S/. {Number(item.descuento || 0).toFixed(2)}
+
+                      {/* Descuento Editable */}
+                      <td className="py-1 px-1.5 text-right">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={item.descuento || 0}
+                          onChange={(e) => onUpdateDescuento && onUpdateDescuento(item.uniqueId, parseFloat(e.target.value) || 0)}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md py-1 text-right text-xs text-slate-600 dark:text-slate-300 outline-none focus:ring-1 focus:ring-[#01a59c]"
+                        />
                       </td>
-                      <td className="py-2 px-3 text-right font-bold text-slate-700 dark:text-white">
+
+                      {/* Total */}
+                      <td className="py-2 px-3 text-right font-bold text-slate-900 dark:text-white">
                         S/. {subtotal.toFixed(2)}
+                      </td>
+
+                      {/* Botón Eliminar Producto */}
+                      <td className="py-2 px-1 text-center">
+                        <button
+                          type="button"
+                          onClick={() => onRemoveItem && onRemoveItem(item.uniqueId)}
+                          className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors cursor-pointer"
+                          title="Eliminar producto"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
                       </td>
                     </tr>
                   )
@@ -163,53 +214,6 @@ export default function ResumenProductosTabla({
             </tbody>
           </table>
         </div>
-
-        {/* ── Paginación Inferior idéntica al Mockup ── */}
-        {/* <div className="bg-slate-100/70 dark:bg-slate-800/70 p-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={pageActual <= 1}
-            className="bg-[#01a59c] hover:bg-[#008f87] disabled:opacity-40 disabled:cursor-not-allowed text-white px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs"
-          >
-            Anterior
-          </button>
-
-          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-            <span>Página</span>
-            <input
-              type="number"
-              min={1}
-              max={totalPages}
-              value={pageActual}
-              onChange={(e) => setCurrentPage(Math.max(1, Math.min(totalPages, parseInt(e.target.value) || 1)))}
-              className="w-12 text-center py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold font-mono text-xs outline-none"
-            />
-            <span>de {totalPages}</span>
-
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value))
-                setCurrentPage(1)
-              }}
-              className="ml-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-medium cursor-pointer"
-            >
-              <option value={8}>8 filas</option>
-              <option value={15}>15 filas</option>
-              <option value={25}>25 filas</option>
-            </select>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={pageActual >= totalPages}
-            className="bg-[#01a59c] hover:bg-[#008f87] disabled:opacity-40 disabled:cursor-not-allowed text-white px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs"
-          >
-            Siguiente
-          </button>
-        </div> */}
       </div>
     </div>
   )

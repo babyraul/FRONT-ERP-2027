@@ -8,11 +8,11 @@ import {
   EyeIcon,
   ArrowPathIcon,
   CreditCardIcon,
-  TrashIcon,
-  DocumentCheckIcon
+  UserIcon,
+  TagIcon
 } from '@heroicons/react/24/outline'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
-import Modal from '../../../components/ui/Modal.jsx'
+import DetallePreventaModal from '../components/DetallePreventaModal.jsx'
 import { ventaController } from '../controllers/ventaController.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
 import { toast } from '../../../utils/toast.js'
@@ -22,7 +22,7 @@ export default function Preventas() {
   const [preventas, setPreventas] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Filtros de fecha y búsqueda
+  // Filtros de fecha y búsqueda (Widget centrado)
   const [fechaInicio, setFechaInicio] = useState(() => {
     const d = new Date()
     d.setDate(1) // Primer día del mes actual
@@ -31,22 +31,27 @@ export default function Preventas() {
   const [fechaFin, setFechaFin] = useState(() => new Date().toISOString().split('T')[0])
   const [busqueda, setBusqueda] = useState('')
 
-  // Modal de Detalle
+  // Modal especializado de Detalle
   const [selectedPreventa, setSelectedPreventa] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Cargar preventas desde el backend
+  // Cargar preventas desde el backend (solo PENDIENTE)
   const loadPreventas = useCallback(async () => {
     setLoading(true)
     const params = {
       fecha_inicio: fechaInicio || undefined,
       fecha_fin: fechaFin || undefined,
+      estado: 'PENDIENTE',
       q: busqueda.trim() || undefined
     }
 
     const res = await ventaController.getPreventas(params)
     if (res.success && Array.isArray(res.data)) {
-      setPreventas(res.data)
+      // Filtrar adicionalmente en frontend para garantizar solo preventas PENDIENTE
+      const soloPendientes = res.data.filter(
+        (p) => String(p.estado || '').toUpperCase() === 'PENDIENTE'
+      )
+      setPreventas(soloPendientes)
     } else {
       toast.error('Error al cargar preventas', res.message || 'No se pudieron obtener las preventas.')
     }
@@ -77,37 +82,43 @@ export default function Preventas() {
       return
     }
 
-    const data = preventas.map((p) => ({
-      'Código / N°': p.codigo || p.id,
-      'Fecha Creación': p.created_at ? new Date(p.created_at).toLocaleString() : (p.fecha || ''),
-      'Tipo Doc': (p.tipo_documento || 'BOLETA').toUpperCase(),
-      'Cliente': p.cliente_nombre || p.nombre_razon_social || p.cliente || 'VARIOS',
-      'Placa': p.placa || '-',
-      'Total (S/)': Number(p.total || p.total_preventa || 0).toFixed(2),
-      'Estado': (p.estado || 'PENDIENTE').toUpperCase()
-    }))
+    const data = preventas.map((p) => {
+      const codigo = p.codigo || (p.id ? `PV-${String(p.id).slice(0, 4)}` : 'PV-0001')
+      return {
+        'Código / N°': codigo,
+        'Fecha Creación': p.created_at ? new Date(p.created_at).toLocaleString() : (p.fecha || ''),
+        'Tipo Doc': (p.tipo_documento || 'BOLETA').toUpperCase(),
+        'Cliente': p.cliente_nombre || p.nombre_razon_social || p.cliente || 'VARIOS',
+        'Doc. Cliente': p.cliente_numero_documento || p.numero_documento || '99999999',
+        'Alias': p.alias || p.placa || '-',
+        'Usuario': p.usuario_nombre || p.usuario || 'Sistema',
+        'Total (S/)': Number(p.total || p.total_preventa || 0).toFixed(2),
+        'Estado': (p.estado || 'PENDIENTE').toUpperCase()
+      }
+    })
 
-    exportToExcel(data, `preventas_${fechaInicio}_al_${fechaFin}`, 'Preventas')
+    exportToExcel(data, `preventas_pendientes_${fechaInicio}_al_${fechaFin}`, 'Preventas Pendientes')
   }
 
   // Cobrar preventa en el módulo de ventas
   const handleCobrar = (preventa) => {
-    // Redirigir a /vender/pagar con los datos precargados de la preventa
     navigate('/vender/pagar', {
       state: {
         preventaId: preventa.id,
         tipoDocumento: preventa.tipo_documento || 'boleta',
         cliente: {
-          id: preventa.cliente_id || 'varios',
-          numero_documento: preventa.cliente_numero_documento || '99999999',
+          id: preventa.cliente_id || '00000000-0000-0000-0000-000000000000',
+          tipo_documento_id: preventa.cliente_numero_documento?.length === 11 ? '6' : '1',
+          numero_documento: preventa.cliente_numero_documento || preventa.numero_documento || '99999999',
           nombre_razon_social: preventa.cliente_nombre || preventa.nombre_razon_social || 'VARIOS',
           direccion_1: preventa.cliente_direccion || ''
         },
-        placa: preventa.placa || '',
+        placa: preventa.alias || preventa.placa || '',
+        alias: preventa.alias || preventa.placa || '',
         cartItems: (preventa.detalles || preventa.items || []).map((it, idx) => ({
           uniqueId: it.uniqueId || `it-${it.id || idx}`,
           producto_id: it.producto_id,
-          nombre_completo: it.nombre || it.producto_nombre || it.descripcion,
+          nombre_completo: it.nombre_completo || it.producto_nombre || it.nombre || it.descripcion,
           cantidad: Number(it.cantidad || 1),
           precio_unitario: Number(it.precio_unitario || it.precio || 0),
           descuento: Number(it.descuento || 0)
@@ -131,50 +142,53 @@ export default function Preventas() {
         <div className="flex items-center justify-center gap-1.5">
           <button
             onClick={() => handleVerDetalle(row.original)}
-            className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors"
+            className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-[#01a59c] hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors cursor-pointer"
             title="Ver detalle de preventa"
           >
             <EyeIcon className="h-4 w-4" />
           </button>
           <button
             onClick={() => handleCobrar(row.original)}
-            className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-1"
-            title="Cobrar / Convertir a Venta"
+            className="p-1.5 rounded-lg bg-[#01473d] hover:bg-[#025a4d] text-white transition-all flex items-center gap-1 shadow-2xs active:scale-95 cursor-pointer"
+            title="Cobrar / Proceder a Pagar"
           >
             <CreditCardIcon className="h-4 w-4" />
             <span className="text-[11px] font-bold hidden sm:inline">Cobrar</span>
           </button>
         </div>
       ),
-      size: 130,
+      size: 110,
       enableColumnFilter: false
     },
     {
       accessorKey: 'codigo',
-      header: 'Código / Preventa',
+      header: 'Código',
       cell: ({ row }) => {
         const p = row.original
-        const codigo = p.codigo || (p.id ? `PRE-${String(p.id).slice(0, 8)}` : 'PRE-0001')
+        // Código formateado a 4 caracteres del id: PV-XXXX
+        const codigo = p.codigo && p.codigo.startsWith('PV-')
+          ? p.codigo
+          : (p.id ? `PV-${String(p.id).slice(0, 4)}` : 'PV-0001')
         const tipo = (p.tipo_documento || 'boleta').toLowerCase()
 
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span
-              className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${
+              className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border uppercase ${
                 tipo.includes('factura')
                   ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800'
                   : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
               }`}
             >
-              {tipo.includes('factura') ? 'FAC' : 'BOL'}
+              {tipo.includes('factura') ? 'FAC' : tipo.includes('boleta') ? 'BOL' : 'VAL'}
             </span>
-            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+            <span className="font-mono text-xs font-black text-slate-800 dark:text-slate-100 tracking-tight">
               {codigo}
             </span>
           </div>
         )
       },
-      size: 160
+      size: 130
     },
     {
       accessorKey: 'created_at',
@@ -195,7 +209,7 @@ export default function Preventas() {
           </div>
         )
       },
-      size: 120
+      size: 110
     },
     {
       accessorKey: 'cliente_nombre',
@@ -207,32 +221,51 @@ export default function Preventas() {
 
         return (
           <div className="flex flex-col min-w-0">
-            <span className="font-semibold text-xs text-slate-800 dark:text-slate-100 truncate" title={nombre}>
+            <span className="font-semibold text-xs text-slate-800 dark:text-slate-100 truncate max-w-[200px]" title={nombre}>
               {nombre}
             </span>
             {doc && (
-              <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+              <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-medium">
                 {doc}
               </span>
             )}
           </div>
         )
       },
-      size: 240
+      size: 200
     },
     {
-      accessorKey: 'placa',
-      header: 'Placa',
-      cell: ({ row }) => (
-        <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-300">
-          {row.original.placa || '-'}
-        </span>
-      ),
-      size: 100
+      accessorKey: 'alias',
+      header: 'Alias',
+      cell: ({ row }) => {
+        const val = row.original.alias || row.original.placa
+        return (
+          <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+            {val || '-'}
+          </span>
+        )
+      },
+      size: 110
+    },
+    {
+      accessorKey: 'usuario_nombre',
+      header: 'Usuario',
+      cell: ({ row }) => {
+        const u = row.original.usuario_nombre || row.original.usuario || 'Sistema'
+        return (
+          <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
+            <UserIcon className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <span className="truncate max-w-[120px] font-medium" title={u}>
+              {u}
+            </span>
+          </div>
+        )
+      },
+      size: 140
     },
     {
       accessorKey: 'total',
-      header: 'Total Preventa',
+      header: 'Total',
       cell: ({ row }) => {
         const total = Number(row.original.total || row.original.total_preventa || 0)
         return (
@@ -243,7 +276,7 @@ export default function Preventas() {
           </div>
         )
       },
-      size: 130
+      size: 110
     },
     {
       accessorKey: 'estado',
@@ -252,50 +285,68 @@ export default function Preventas() {
         const est = String(row.original.estado || 'PENDIENTE').toUpperCase()
         return (
           <div className="text-center">
-            <span
-              className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                est === 'PROCESADA' || est === 'COBRADA'
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
-              }`}
-            >
+            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-300 dark:border-amber-700">
               {est}
             </span>
           </div>
         )
       },
-      size: 120
+      size: 100
     }
   ], [navigate])
 
   return (
     <div className="space-y-4">
-      {/* ── ENCABEZADO ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <ClockIcon className="h-6 w-6 text-amber-500" />
-            Listado de Pre-Ventas
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Pedidos y cotizaciones en espera de liquidación o cobro en caja
-          </p>
+      {/* ── ENCABEZADO CON WIDGET DE FECHAS EN EL CENTRO ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        {/* Lado Izquierdo: Título y Totalizador */}
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              Pre-Ventas Pendientes
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              Reservas activas listas para facturar o cobrar
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* CENTRO: Widget General de Filtro de Fechas */}
+        <div className="flex items-center justify-center">
+          <div className="inline-flex items-center gap-2 p-1.5 px-3 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs">
+            <CalendarIcon className="h-4 w-4 text-[#01a59c] shrink-0" />
+            <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Fecha:</span>
+            <input
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="text-xs font-semibold py-1 px-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c] cursor-pointer"
+            />
+            <span className="text-xs text-slate-400 font-bold">-</span>
+            <input
+              type="date"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="text-xs font-semibold py-1 px-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c] cursor-pointer"
+            />
+          </div>
+        </div>
+
+        {/* Lado Derecho: Acciones (Refrescar y Exportar) */}
+        <div className="flex items-center gap-2 justify-end">
           <button
             type="button"
             onClick={loadPreventas}
             disabled={loading}
-            className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
-            title="Refrescar lista"
+            className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+            title="Refrescar preventas pendientes"
           >
             <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin text-[#01a59c]' : ''}`} />
           </button>
           <button
             type="button"
             onClick={handleExport}
-            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-sm transition-all"
+            className="px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
           >
             <ArrowDownTrayIcon className="h-4 w-4 text-emerald-600" />
             <span>Exportar Excel</span>
@@ -303,155 +354,32 @@ export default function Preventas() {
         </div>
       </div>
 
-      {/* ── TARJETAS DE RESUMEN DE PREVENTAS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
-        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Total Pendiente</span>
-          <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">
+      {/* ── TARJETAS DE RESUMEN DE PREVENTAS PENDIENTES ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-xl">
+        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Pendiente</span>
+          <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-0.5 font-mono">
             S/ {metricas.totalMonto.toFixed(2)}
           </p>
         </div>
-        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Pre-Ventas Activas</span>
-          <p className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">
+        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Reservas Activas</span>
+          <p className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">
             {metricas.totalItems}
           </p>
         </div>
       </div>
 
-      {/* ── BARRA DE FILTROS ── */}
-      <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-[#01a59c] shrink-0" />
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Rango:</span>
-          <input
-            type="date"
-            value={fechaInicio}
-            onChange={(e) => setFechaInicio(e.target.value)}
-            className="text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#01a59c]"
-          />
-          <span className="text-xs text-slate-400">al</span>
-          <input
-            type="date"
-            value={fechaFin}
-            onChange={(e) => setFechaFin(e.target.value)}
-            className="text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#01a59c]"
-          />
-        </div>
-
-        <div className="relative flex-1 min-w-[200px]">
-          <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por cliente, documento o código de preventa..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full text-xs py-1.5 pl-8 pr-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#01a59c]"
-          />
-        </div>
-      </div>
-
-      {/* ── TABLA PRINCIPAL DE PREVENTAS CON TANSTACK DATATABLE ── */}
+      {/* ── TABLA PRINCIPAL DE PREVENTAS CON TANSTACK DATATABLE Y FILTROS INTEGRADOS ── */}
       <DataTable data={preventas} columns={columns} pagination={true} />
 
-      {/* ── MODAL DETALLE DE PREVENTA ── */}
-      {selectedPreventa && (
-        <Modal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title={`Detalle de Pre-Venta: ${selectedPreventa.codigo || selectedPreventa.id}`}
-          size="2xl"
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs">
-              <div>
-                <span className="text-slate-400 block font-medium">Cliente:</span>
-                <span className="font-bold text-slate-800 dark:text-slate-100">
-                  {selectedPreventa.cliente_nombre || selectedPreventa.nombre_razon_social || selectedPreventa.cliente || 'VARIOS'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Documento:</span>
-                <span className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                  {selectedPreventa.cliente_numero_documento || selectedPreventa.numero_documento || '-'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Fecha:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-100">
-                  {selectedPreventa.created_at ? new Date(selectedPreventa.created_at).toLocaleString() : selectedPreventa.fecha}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Placa:</span>
-                <span className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                  {selectedPreventa.placa || '-'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Estado:</span>
-                <span className="font-bold text-amber-600 uppercase">
-                  {selectedPreventa.estado || 'PENDIENTE'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Total:</span>
-                <span className="font-mono font-black text-sm text-slate-900 dark:text-white">
-                  S/ {Number(selectedPreventa.total || selectedPreventa.total_preventa || 0).toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            {/* Ítems de la Preventa */}
-            <div>
-              <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                Productos Seleccionados
-              </h3>
-              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead className="bg-slate-100/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-left">
-                    <tr>
-                      <th className="p-2.5">Producto</th>
-                      <th className="p-2.5 text-center">Cant.</th>
-                      <th className="p-2.5 text-right">P. Unitario</th>
-                      <th className="p-2.5 text-right">Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {(selectedPreventa.detalles || selectedPreventa.items || []).map((it, idx) => (
-                      <tr key={it.id || idx}>
-                        <td className="p-2.5 font-medium text-slate-800 dark:text-slate-200">
-                          {it.nombre || it.producto_nombre || it.descripcion}
-                        </td>
-                        <td className="p-2.5 text-center font-mono">{Number(it.cantidad || 1).toFixed(2)}</td>
-                        <td className="p-2.5 text-right font-mono">S/ {Number(it.precio_unitario || it.precio || 0).toFixed(2)}</td>
-                        <td className="p-2.5 text-right font-mono font-bold">
-                          S/ {(Number(it.cantidad || 1) * Number(it.precio_unitario || it.precio || 0)).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Botón de Acción rápida dentro del modal */}
-            <div className="flex justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsModalOpen(false)
-                  handleCobrar(selectedPreventa)
-                }}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 transition-colors"
-              >
-                <CreditCardIcon className="h-4 w-4" />
-                <span>Proceder al Cobro</span>
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
+      {/* ── MODAL ESPECIALIZADO DE DETALLE DE PREVENTA ── */}
+      <DetallePreventaModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        preventa={selectedPreventa}
+        onCobrar={handleCobrar}
+      />
     </div>
   )
 }

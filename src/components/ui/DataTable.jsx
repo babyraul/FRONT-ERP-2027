@@ -14,19 +14,18 @@ import {
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
 
-// Componente para filtro por columna con un diseño más limpio
+// Componente para filtro por columna con diseño integrado en la cabecera
 function Filter({ column, table }) {
   const columnFilterValue = column.getFilterValue()
 
   return (
-    <div className="relative mt-2">
-      <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+    <div className="relative w-full">
       <input
         type="text"
         value={(columnFilterValue ?? '')}
         onChange={e => column.setFilterValue(e.target.value)}
-        placeholder={`Buscar...`}
-        className="w-full text-xs py-1.5 pl-8 pr-2 border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-normal placeholder:text-slate-400"
+        placeholder="Filtrar..."
+        className="w-full text-[11px] py-1 px-2 border border-slate-200 dark:border-slate-700/80 rounded-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c] focus:border-[#01a59c] transition-all font-normal placeholder:text-slate-400/80 shadow-2xs"
       />
     </div>
   )
@@ -63,12 +62,14 @@ export function DataTable({ data, columns, pagination = true }) {
                     style={{ width: header.getSize() !== 150 ? header.getSize() : 'auto' }}
                   >
                     {header.isPlaceholder ? null : (
-                      <div className="flex flex-col h-full justify-between">
-                        <div className="flex items-center gap-2 uppercase tracking-wider text-[11px] mb-1">
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                      <div className="flex flex-col h-full gap-1.5 justify-start">
+                        <div className="flex items-center justify-between gap-1 uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                          <span className="truncate">
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                          </span>
                         </div>
                         {header.column.getCanFilter() ? (
                           <div className="w-full">

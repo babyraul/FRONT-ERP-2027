@@ -126,9 +126,9 @@ export default function ClienteSection({
         </div>
 
         {/* Información del Cliente Seleccionado y Etiquetas */}
-        <div className="flex items-center gap-2 px-1 text-xs flex-wrap min-w-0">
+        <div className="flex items-center gap-2 px-1 text-xs flex-wrap min-w-0 flex-1">
           <span
-            className="font-bold text-slate-800 dark:text-slate-100 truncate max-w-[260px] sm:max-w-md"
+            className="font-bold text-slate-800 dark:text-slate-100 truncate max-w-[220px] sm:max-w-xs"
             title={cliente?.nombre_razon_social}
           >
             {cliente?.nombre_razon_social || 'VARIOS'}
@@ -141,7 +141,18 @@ export default function ClienteSection({
               <span>Cliente nuevo</span>
             </span>
           )}
+        </div>
 
+        {/* Input de Alias / Placa */}
+        <div className="shrink-0 w-28 sm:w-36">
+          <input
+            type="text"
+            placeholder="Alias / Placa..."
+            value={placa || ''}
+            onChange={(e) => setPlaca && setPlaca(e.target.value.toUpperCase())}
+            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold uppercase text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-[#01a59c] placeholder-slate-400 placeholder:normal-case shadow-2xs"
+            title="Alias o Placa del cliente para la venta"
+          />
         </div>
       </div>
 

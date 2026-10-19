@@ -35,13 +35,18 @@ export function useClienteSmartSearch({
   // Sincronizar input si el cliente cambia externamente (ej: desde modal de búsqueda)
   useEffect(() => {
     if (isInternalSelectionRef.current) return
-    setDocInput(cliente?.numero_documento || '')
-    if (cliente?.numero_documento && cliente?.numero_documento !== '99999999') {
+    const numDoc = cliente?.numero_documento || ''
+    setDocInput(numDoc)
+    if (numDoc && numDoc !== '99999999') {
       setSearchStatus('success')
+      const docTipo = numDoc.length === 11 ? 'ruc' : numDoc.length === 8 ? 'dni' : null
+      if (docTipo) {
+        sincronizarTipoComprobante(docTipo)
+      }
     } else {
       setSearchStatus('idle')
     }
-  }, [cliente])
+  }, [cliente, sincronizarTipoComprobante])
 
   // Click outside para cerrar sugerencias
   useEffect(() => {
@@ -57,12 +62,12 @@ export function useClienteSmartSearch({
   // Auto-ajustar comprobante según el documento
   const sincronizarTipoComprobante = useCallback((docTipo) => {
     if (!setTipoDocumento) return
-    if (docTipo === 'ruc' && tipoDocumento === 'boleta') {
+    if (docTipo === 'ruc') {
       setTipoDocumento('factura')
-    } else if (docTipo === 'dni' && tipoDocumento === 'factura') {
+    } else if (docTipo === 'dni') {
       setTipoDocumento('boleta')
     }
-  }, [setTipoDocumento, tipoDocumento])
+  }, [setTipoDocumento])
 
   // Seleccionar cliente (de sugerencia, local o API)
   const seleccionarCliente = useCallback((clienteData, options = {}) => {

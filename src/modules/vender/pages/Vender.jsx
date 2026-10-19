@@ -158,6 +158,7 @@ export default function Vender() {
       cliente_id: sanitizedClienteId,
       tipo_documento: tipoDocumento,
       placa: placa || null,
+      alias: placa || null,
       gravado: totales.gravado,
       igv: totales.igv,
       total: totales.total,
@@ -179,6 +180,10 @@ export default function Vender() {
         const res = await venderController.actualizarPreventa(activePreventaId, preventaPayload)
         if (res.success) {
           success = true
+          toast.success(
+            'Pre-venta actualizada',
+            `Pre-venta ${res.data?.codigo || `PRE-${String(activePreventaId).slice(0, 8)}`} actualizada correctamente.`
+          )
         } else {
           toast.error('Error al actualizar pre-venta', res.message || 'No se pudo actualizar la preventa.')
         }
@@ -189,6 +194,10 @@ export default function Vender() {
           activePreventaId = res.data.id
           setPreventaId(activePreventaId)
           success = true
+          toast.success(
+            'Pre-venta generada',
+            `Pre-venta ${res.data?.codigo || `PRE-${String(activePreventaId).slice(0, 8)}`} registrada con éxito.`
+          )
         } else {
           toast.error('Error al generar pre-venta', res.message || 'No se pudo registrar la preventa en base de datos.')
         }
@@ -218,6 +227,7 @@ export default function Vender() {
         tipoDocumento,
         cliente,
         placa,
+        alias: placa,
         cartItems
       }
     })
