@@ -11,6 +11,7 @@ import {
   PayRowButton
 } from '../../../components/ui/ActionButtons.jsx'
 import DateRangeFilter, { getTodayStr } from '../../../components/ui/DateRangeFilter.jsx'
+import PageHeader from '../../../components/ui/PageHeader.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import Modal from '../../../components/ui/Modal.jsx'
 import DetallePreventaModal from '../components/DetallePreventaModal.jsx'
@@ -401,32 +402,24 @@ export default function Preventas() {
   return (
     <div className="space-y-4">
       {/* ── ENCABEZADO CON WIDGET DE FECHAS EN EL CENTRO ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        {/* Lado Izquierdo: Título y Nueva Preventa */}
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              Gestion Pre Ventas
-            </h1>
-          </div>
-        </div>
-
-        {/* CENTRO: Widget General de Filtro de Fechas (RN-01, RN-02) */}
-        <div className="flex items-center justify-center">
-          <DateRangeFilter
-            from={fechaInicio}
-            to={fechaFin}
-            onChange={({ from, to }) => { setFechaInicio(from); setFechaFin(to) }}
-          />
-        </div>
-
-        {/* Lado Derecho: Acciones (Refrescar y Exportar) */}
-        <div className="flex items-center gap-2 justify-end">
-          <RefreshButton onClick={loadPreventas} loading={loading} title="Refrescar preventas pendientes" />
-          <ExportExcelButton onClick={handleExport} />
-          <NewButton label="Nueva Pre-Venta" onClick={() => navigate('/vender')} className="hidden sm:inline-flex" />
-        </div>
-      </div>
+      <PageHeader
+        title="Gestion Pre Ventas"
+        dateRange={{
+          from: fechaInicio,
+          to: fechaFin,
+          onChange: ({ from, to }) => {
+            setFechaInicio(from)
+            setFechaFin(to)
+          }
+        }}
+        actions={
+          <>
+            <RefreshButton onClick={loadPreventas} loading={loading} title="Refrescar preventas pendientes" />
+            <ExportExcelButton onClick={handleExport} />
+            <NewButton label="Nueva Pre-Venta" onClick={() => navigate('/vender')} className="hidden sm:inline-flex" />
+          </>
+        }
+      />
 
       {/* ── TARJETAS DE RESUMEN DE PREVENTAS PENDIENTES ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-xl">

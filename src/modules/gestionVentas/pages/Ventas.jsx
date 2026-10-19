@@ -1,17 +1,17 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ArrowDownTrayIcon,
-  CalendarIcon,
-  EyeIcon,
-  ArrowPathIcon,
   ShoppingBagIcon,
+  EyeIcon,
   PrinterIcon,
   DocumentDuplicateIcon,
   CheckCircleIcon,
   XCircleIcon,
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline'
+import PageHeader from '../../../components/ui/PageHeader.jsx'
+import { ExportExcelButton, RefreshButton } from '../../../components/ui/ActionButtons.jsx'
+import { getTodayStr } from '../../../components/ui/DateRangeFilter.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import VentaDetalleModal from '../components/VentaDetalleModal.jsx'
 import { ventaController } from '../controllers/ventaController.js'
@@ -36,12 +36,9 @@ export default function Ventas() {
   const [filteredVentas, setFilteredVentas] = useState([])
   const [loading, setLoading] = useState(false)
 
-  // Filtros de fecha (por defecto fecha actual)
-  const [fechaInicio, setFechaInicio] = useState(() => {
-    const d = new Date()
-    return d.toISOString().split('T')[0]
-  })
-  const [fechaFin, setFechaFin] = useState(() => new Date().toISOString().split('T')[0])
+  // Filtros de fecha (por defecto fecha actual local)
+  const [fechaInicio, setFechaInicio] = useState(getTodayStr)
+  const [fechaFin, setFechaFin] = useState(getTodayStr)
 
   // Modal de Detalle de Venta
   const [selectedVenta, setSelectedVenta] = useState(null)
@@ -400,11 +397,10 @@ export default function Ventas() {
           const isAnulada = est === 'ANULADA' || est === 'ANULADO'
           return (
             <span
-              className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                isAnulada
-                  ? 'bg-red-200 text-red-800 border border-red-300'
-                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400'
-              }`}
+              className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isAnulada
+                ? 'bg-red-200 text-red-800 border border-red-300'
+                : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400'
+                }`}
             >
               {isAnulada ? 'ANULADA' : 'Aceptado'}
             </span>
@@ -511,66 +507,35 @@ export default function Ventas() {
 
   return (
     <div className="space-y-4">
-      {/* ── ENCABEZADO ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <ShoppingBagIcon className="h-6 w-6 text-[#01a59c]" />
-            Reporte de Ventas
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Consulta comprobantes de venta emitidos y auditoría financiera
-          </p>
-        </div>
-
-        {canSeeTotalOnVentas && (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleExportExcel}
-              disabled={loading || ventas.length === 0}
-              className="px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
-              title="Descarga reporte de Ventas en EXCEL"
-            >
-              <ArrowDownTrayIcon className="h-4 w-4 text-emerald-600" />
-              <span>Descargar Excel</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── BARRA DE FILTROS DE CONSULTA ── */}
-      <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-200/60 dark:border-slate-700">
-            <CalendarIcon className="h-4 w-4 text-[#01a59c] shrink-0" />
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Desde:</span>
-            <input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              className="text-xs py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c]"
+      {/* ── ENCABEZADO Y FILTROS GLOBALES ── */}
+      <PageHeader
+        title="Reporte de Ventas"
+        dateRange={{
+          from: fechaInicio,
+          to: fechaFin,
+          onChange: ({ from, to }) => {
+            setFechaInicio(from)
+            setFechaFin(to)
+          }
+        }}
+        actions={
+          <>
+            <RefreshButton
+              onClick={loadVentas}
+              loading={loading}
+              title="Actualizar ventas"
             />
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Hasta:</span>
-            <input
-              type="date"
-              value={fechaFin}
-              onChange={(e) => setFechaFin(e.target.value)}
-              className="text-xs py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c]"
-            />
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={loadVentas}
-          disabled={loading}
-          className="px-5 py-2 bg-[#01a59c] hover:bg-[#018e86] text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
-        >
-          <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          <span>{loading ? 'Cargando...' : 'Generar'}</span>
-        </button>
-      </div>
+            {canSeeTotalOnVentas && (
+              <ExportExcelButton
+                onClick={handleExportExcel}
+                disabled={loading || ventas.length === 0}
+                label="Descargar Excel"
+                title="Descarga reporte de Ventas en EXCEL"
+              />
+            )}
+          </>
+        }
+      />
 
       {/* ── TARJETAS DE RESUMEN DE TOTALES (Sin redondeos) ── */}
       {canSeeTotalOnVentas && (
