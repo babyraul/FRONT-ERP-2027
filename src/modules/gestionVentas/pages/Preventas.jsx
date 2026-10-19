@@ -1,41 +1,51 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { UserIcon } from '@heroicons/react/24/outline'
 import {
-  ClockIcon,
-  ArrowDownTrayIcon,
-  MagnifyingGlassIcon,
-  CalendarIcon,
-  EyeIcon,
-  ArrowPathIcon,
-  CreditCardIcon,
-  UserIcon,
-  TagIcon
-} from '@heroicons/react/24/outline'
+  ExportExcelButton,
+  RefreshButton,
+  NewButton,
+  ViewRowButton,
+  EditRowButton,
+  DeleteRowButton,
+  PayRowButton
+} from '../../../components/ui/ActionButtons.jsx'
+import DateRangeFilter, { getTodayStr } from '../../../components/ui/DateRangeFilter.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
+import Modal from '../../../components/ui/Modal.jsx'
 import DetallePreventaModal from '../components/DetallePreventaModal.jsx'
 import { ventaController } from '../controllers/ventaController.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
 import { toast } from '../../../utils/toast.js'
+import { usePermission } from '../../../hooks/usePermission.js'
+import { useBarcodeScanner } from '../hooks/useBarcodeScanner.js'
 
 export default function Preventas() {
   const navigate = useNavigate()
+  const { hasPermission } = usePermission()
+
   const [preventas, setPreventas] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Filtros de fecha y búsqueda (Widget centrado)
-  const [fechaInicio, setFechaInicio] = useState(() => {
-    const d = new Date()
-    d.setDate(1) // Primer día del mes actual
-    return d.toISOString().split('T')[0]
-  })
-  const [fechaFin, setFechaFin] = useState(() => new Date().toISOString().split('T')[0])
+  // RN-02: Fecha por defecto = hoy (YYYY-MM-DD)
+  const [fechaInicio, setFechaInicio] = useState(getTodayStr)
+  const [fechaFin, setFechaFin] = useState(getTodayStr)
   const [busqueda, setBusqueda] = useState('')
 
-  // Modal especializado de Detalle
+  // Modales
   const [selectedPreventa, setSelectedPreventa] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [preventaParaAnular, setPreventaParaAnular] = useState(null)
+  const [isAnularModalOpen, setIsAnularModalOpen] = useState(false)
+  const [anulando, setAnulando] = useState(false)
 
-  // Cargar preventas desde el backend (solo PENDIENTE)
+  // Permisos según especificación
+  // RN-05 / RN-06: tienePermisoCaja permite procesar / cobrar.
+  const tienePermisoCaja = hasPermission('caja.editar') || hasPermission('cajas.editar') || hasPermission('ventas.crear') || hasPermission('caja.ver')
+  const canUpdate = hasPermission('gespreventas.editar') || hasPermission('preventas.editar') || hasPermission('vender.crear')
+  const canDelete = hasPermission('gespreventas.eliminar') || hasPermission('preventas.eliminar')
+
+  // Cargar preventas desde el backend (RN-01, RN-03)
   const loadPreventas = useCallback(async () => {
     setLoading(true)
     const params = {
@@ -47,7 +57,7 @@ export default function Preventas() {
 
     const res = await ventaController.getPreventas(params)
     if (res.success && Array.isArray(res.data)) {
-      // Filtrar adicionalmente en frontend para garantizar solo preventas PENDIENTE
+      // Filtrar adicionalmente en frontend para garantizar solo PENDIENTE
       const soloPendientes = res.data.filter(
         (p) => String(p.estado || '').toUpperCase() === 'PENDIENTE'
       )
@@ -61,6 +71,24 @@ export default function Preventas() {
   useEffect(() => {
     loadPreventas()
   }, [loadPreventas])
+
+  // RN-16: Escaneo global de código de barras PV-<n>
+  const handleBarcodeScan = useCallback((rawCode) => {
+    const found = preventas.find((p) => {
+      const cod = (p.codigo || '').toUpperCase()
+      const formatted = `PV-${String(p.id).slice(0, 4)}`.toUpperCase()
+      return cod === rawCode || formatted === rawCode
+    })
+
+    if (found) {
+      toast.info('Código detectado', `Abriendo pre-venta ${rawCode}`)
+      handleEditar(found)
+    } else {
+      toast.warning('Código no encontrado', `No se encontró una preventa activa con código ${rawCode}`)
+    }
+  }, [preventas])
+
+  useBarcodeScanner(handleBarcodeScan, true)
 
   // Métricas rápidas
   const metricas = useMemo(() => {
@@ -100,24 +128,35 @@ export default function Preventas() {
     exportToExcel(data, `preventas_pendientes_${fechaInicio}_al_${fechaFin}`, 'Preventas Pendientes')
   }
 
-  // Cobrar preventa en el módulo de ventas
-  const handleCobrar = (preventa) => {
+  // Cobrar preventa en el módulo de ventas (RN-05)
+  const handleCobrar = async (preventa) => {
+    let preventaCompleta = preventa
+    if (!preventaCompleta.detalles && !preventaCompleta.items) {
+      const res = await ventaController.getPreventaById(preventa.id)
+      if (res.success && res.data) {
+        preventaCompleta = res.data
+      }
+    }
+
+    const items = preventaCompleta.detalles || preventaCompleta.items || []
+
     navigate('/vender/pagar', {
       state: {
-        preventaId: preventa.id,
-        tipoDocumento: preventa.tipo_documento || 'boleta',
+        preventaId: preventaCompleta.id,
+        tipoDocumento: preventaCompleta.tipo_documento || 'boleta',
         cliente: {
-          id: preventa.cliente_id || '00000000-0000-0000-0000-000000000000',
-          tipo_documento_id: preventa.cliente_numero_documento?.length === 11 ? '6' : '1',
-          numero_documento: preventa.cliente_numero_documento || preventa.numero_documento || '99999999',
-          nombre_razon_social: preventa.cliente_nombre || preventa.nombre_razon_social || 'VARIOS',
-          direccion_1: preventa.cliente_direccion || ''
+          id: preventaCompleta.cliente_id || '00000000-0000-0000-0000-000000000000',
+          tipo_documento_id: preventaCompleta.cliente_numero_documento?.length === 11 ? '6' : '1',
+          numero_documento: preventaCompleta.cliente_numero_documento || preventaCompleta.numero_documento || '99999999',
+          nombre_razon_social: preventaCompleta.cliente_nombre || preventaCompleta.nombre_razon_social || 'VARIOS',
+          direccion_1: preventaCompleta.cliente_direccion || ''
         },
-        placa: preventa.alias || preventa.placa || '',
-        alias: preventa.alias || preventa.placa || '',
-        cartItems: (preventa.detalles || preventa.items || []).map((it, idx) => ({
+        placa: preventaCompleta.alias || preventaCompleta.placa || '',
+        alias: preventaCompleta.alias || preventaCompleta.placa || '',
+        cartItems: items.map((it, idx) => ({
           uniqueId: it.uniqueId || `it-${it.id || idx}`,
           producto_id: it.producto_id,
+          presentacion_id: it.presentacion_id || null,
           nombre_completo: it.nombre_completo || it.producto_nombre || it.nombre || it.descripcion,
           cantidad: Number(it.cantidad || 1),
           precio_unitario: Number(it.precio_unitario || it.precio || 0),
@@ -127,10 +166,78 @@ export default function Preventas() {
     })
   }
 
-  // Ver Detalle
-  const handleVerDetalle = (preventa) => {
+  // Editar preventa en /vender
+  const handleEditar = async (preventa) => {
+    let preventaCompleta = preventa
+    if (!preventaCompleta.detalles && !preventaCompleta.items) {
+      const res = await ventaController.getPreventaById(preventa.id)
+      if (res.success && res.data) {
+        preventaCompleta = res.data
+      }
+    }
+
+    const items = preventaCompleta.detalles || preventaCompleta.items || []
+
+    navigate('/vender', {
+      state: {
+        preventaId: preventaCompleta.id,
+        tipoDocumento: preventaCompleta.tipo_documento || 'boleta',
+        cliente: {
+          id: preventaCompleta.cliente_id || '00000000-0000-0000-0000-000000000000',
+          tipo_documento_id: preventaCompleta.cliente_numero_documento?.length === 11 ? '6' : '1',
+          numero_documento: preventaCompleta.cliente_numero_documento || preventaCompleta.numero_documento || '99999999',
+          nombre_razon_social: preventaCompleta.cliente_nombre || preventaCompleta.nombre_razon_social || 'VARIOS',
+          direccion_1: preventaCompleta.cliente_direccion || ''
+        },
+        placa: preventaCompleta.alias || preventaCompleta.placa || '',
+        cartItems: items.map((it, idx) => ({
+          uniqueId: it.uniqueId || `it-${it.id || idx}`,
+          producto_id: it.producto_id,
+          presentacion_id: it.presentacion_id || null,
+          nombre_completo: it.nombre_completo || it.producto_nombre || it.nombre || it.descripcion,
+          cantidad: Number(it.cantidad || 1),
+          precio_unitario: Number(it.precio_unitario || it.precio || 0),
+          descuento: Number(it.descuento || 0)
+        }))
+      }
+    })
+  }
+
+  // Solicitar anulación (abre modal de confirmación)
+  const handleSolicitarAnulacion = (preventa) => {
+    setPreventaParaAnular(preventa)
+    setIsAnularModalOpen(true)
+  }
+
+  // Confirmar Anulación lógica (RN-07, RN-08)
+  const handleConfirmarAnulacion = async () => {
+    if (!preventaParaAnular) return
+    setAnulando(true)
+
+    const res = await ventaController.anularPreventa(preventaParaAnular.id)
+    if (res.success) {
+      toast.success('Pre-venta Anulada', 'La pre-venta fue anulada correctamente.')
+      setIsAnularModalOpen(false)
+      setPreventaParaAnular(null)
+      loadPreventas()
+    } else {
+      toast.error('Error al anular', res.message || 'No se pudo anular la pre-venta.')
+    }
+    setAnulando(false)
+  }
+
+  // Ver Detalle (consulta API para traer items/detalles completos)
+  const handleVerDetalle = async (preventa) => {
     setSelectedPreventa(preventa)
     setIsModalOpen(true)
+
+    // Si ya trae items, los usamos; si no, consultamos por ID
+    if (!preventa.detalles && !preventa.items) {
+      const res = await ventaController.getPreventaById(preventa.id)
+      if (res.success && res.data) {
+        setSelectedPreventa(res.data)
+      }
+    }
   }
 
   // Columnas para DataTable
@@ -138,26 +245,24 @@ export default function Preventas() {
     {
       id: 'acciones',
       header: 'Acciones',
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-1.5">
-          <button
-            onClick={() => handleVerDetalle(row.original)}
-            className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-[#01a59c] hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors cursor-pointer"
-            title="Ver detalle de preventa"
-          >
-            <EyeIcon className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => handleCobrar(row.original)}
-            className="p-1.5 rounded-lg bg-[#01473d] hover:bg-[#025a4d] text-white transition-all flex items-center gap-1 shadow-2xs active:scale-95 cursor-pointer"
-            title="Cobrar / Proceder a Pagar"
-          >
-            <CreditCardIcon className="h-4 w-4" />
-            <span className="text-[11px] font-bold hidden sm:inline">Cobrar</span>
-          </button>
-        </div>
-      ),
-      size: 110,
+      cell: ({ row }) => {
+        const p = row.original
+        return (
+          <div className="flex items-center justify-left gap-1">
+            <ViewRowButton onClick={() => handleVerDetalle(p)} title="Ver detalle de preventa" />
+            {tienePermisoCaja && (
+              <PayRowButton onClick={() => handleCobrar(p)} title="Cobrar / Procesar Preventa" />
+            )}
+            {canUpdate && (
+              <EditRowButton onClick={() => handleEditar(p)} title="Editar Pre-venta" />
+            )}
+            {canDelete && (
+              <DeleteRowButton onClick={() => handleSolicitarAnulacion(p)} label="Anular" title="Anular pre-venta" />
+            )}
+          </div>
+        )
+      },
+      size: 100,
       enableColumnFilter: false
     },
     {
@@ -165,7 +270,6 @@ export default function Preventas() {
       header: 'Código',
       cell: ({ row }) => {
         const p = row.original
-        // Código formateado a 4 caracteres del id: PV-XXXX
         const codigo = p.codigo && p.codigo.startsWith('PV-')
           ? p.codigo
           : (p.id ? `PV-${String(p.id).slice(0, 4)}` : 'PV-0001')
@@ -174,11 +278,10 @@ export default function Preventas() {
         return (
           <div className="flex items-center gap-1.5">
             <span
-              className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border uppercase ${
-                tipo.includes('factura')
-                  ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800'
-                  : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-              }`}
+              className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border uppercase ${tipo.includes('factura')
+                ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800'
+                : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
+                }`}
             >
               {tipo.includes('factura') ? 'FAC' : tipo.includes('boleta') ? 'BOL' : 'VAL'}
             </span>
@@ -188,7 +291,7 @@ export default function Preventas() {
           </div>
         )
       },
-      size: 130
+      size: 140
     },
     {
       accessorKey: 'created_at',
@@ -293,76 +396,47 @@ export default function Preventas() {
       },
       size: 100
     }
-  ], [navigate])
+  ], [tienePermisoCaja, canUpdate, canDelete, navigate])
 
   return (
     <div className="space-y-4">
       {/* ── ENCABEZADO CON WIDGET DE FECHAS EN EL CENTRO ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        {/* Lado Izquierdo: Título y Totalizador */}
+        {/* Lado Izquierdo: Título y Nueva Preventa */}
         <div className="flex items-center gap-3">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              Pre-Ventas Pendientes
+              Gestion Pre Ventas
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              Reservas activas listas para facturar o cobrar
-            </p>
           </div>
         </div>
 
-        {/* CENTRO: Widget General de Filtro de Fechas */}
+        {/* CENTRO: Widget General de Filtro de Fechas (RN-01, RN-02) */}
         <div className="flex items-center justify-center">
-          <div className="inline-flex items-center gap-2 p-1.5 px-3 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs">
-            <CalendarIcon className="h-4 w-4 text-[#01a59c] shrink-0" />
-            <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Fecha:</span>
-            <input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              className="text-xs font-semibold py-1 px-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c] cursor-pointer"
-            />
-            <span className="text-xs text-slate-400 font-bold">-</span>
-            <input
-              type="date"
-              value={fechaFin}
-              onChange={(e) => setFechaFin(e.target.value)}
-              className="text-xs font-semibold py-1 px-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c] cursor-pointer"
-            />
-          </div>
+          <DateRangeFilter
+            from={fechaInicio}
+            to={fechaFin}
+            onChange={({ from, to }) => { setFechaInicio(from); setFechaFin(to) }}
+          />
         </div>
 
         {/* Lado Derecho: Acciones (Refrescar y Exportar) */}
         <div className="flex items-center gap-2 justify-end">
-          <button
-            type="button"
-            onClick={loadPreventas}
-            disabled={loading}
-            className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
-            title="Refrescar preventas pendientes"
-          >
-            <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin text-[#01a59c]' : ''}`} />
-          </button>
-          <button
-            type="button"
-            onClick={handleExport}
-            className="px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-          >
-            <ArrowDownTrayIcon className="h-4 w-4 text-emerald-600" />
-            <span>Exportar Excel</span>
-          </button>
+          <RefreshButton onClick={loadPreventas} loading={loading} title="Refrescar preventas pendientes" />
+          <ExportExcelButton onClick={handleExport} />
+          <NewButton label="Nueva Pre-Venta" onClick={() => navigate('/vender')} className="hidden sm:inline-flex" />
         </div>
       </div>
 
       {/* ── TARJETAS DE RESUMEN DE PREVENTAS PENDIENTES ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-xl">
-        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+        <div className="p-3 bg-zinc-100/50 dark:bg-slate-900 rounded-xl border border-slate-100/80 dark:border-slate-800 shadow-2xs">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Pendiente</span>
           <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-0.5 font-mono">
             S/ {metricas.totalMonto.toFixed(2)}
           </p>
         </div>
-        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+        <div className="p-3 bg-zinc-100/50 dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Reservas Activas</span>
           <p className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">
             {metricas.totalItems}
@@ -378,8 +452,35 @@ export default function Preventas() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         preventa={selectedPreventa}
-        onCobrar={handleCobrar}
+        onCobrar={tienePermisoCaja ? handleCobrar : undefined}
+        onEditar={canUpdate ? handleEditar : undefined}
       />
+
+      {/* ── MODAL DE CONFIRMACIÓN DE ANULACIÓN (RN-08) ── */}
+      <Modal
+        isOpen={isAnularModalOpen}
+        onClose={() => {
+          if (!anulando) {
+            setIsAnularModalOpen(false)
+            setPreventaParaAnular(null)
+          }
+        }}
+        title="¿Desea anular esta pre-venta?"
+        subtitle={
+          preventaParaAnular
+            ? `Código: ${preventaParaAnular.codigo || `PV-${String(preventaParaAnular.id).slice(0, 4)}`} · Cliente: ${preventaParaAnular.cliente_nombre || 'VARIOS'}`
+            : ''
+        }
+        confirmText={anulando ? 'Anulando...' : 'Sí, anular'}
+        cancelText="Cancelar"
+        isProcessing={anulando}
+        onConfirm={handleConfirmarAnulacion}
+        maxWidth="max-w-md"
+      >
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          Esta acción marcará la pre-venta como <strong className="text-rose-600 dark:text-rose-400">ANULADA</strong> y ya no estará disponible para facturación ni cobro.
+        </p>
+      </Modal>
     </div>
   )
 }

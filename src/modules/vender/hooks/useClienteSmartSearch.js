@@ -32,6 +32,16 @@ export function useClienteSmartSearch({
   const containerRef = useRef(null)
   const isInternalSelectionRef = useRef(false)
 
+  // Auto-ajustar comprobante según el documento
+  const sincronizarTipoComprobante = useCallback((docTipo) => {
+    if (!setTipoDocumento) return
+    if (docTipo === 'ruc') {
+      setTipoDocumento('factura')
+    } else if (docTipo === 'dni') {
+      setTipoDocumento('boleta')
+    }
+  }, [setTipoDocumento])
+
   // Sincronizar input si el cliente cambia externamente (ej: desde modal de búsqueda)
   useEffect(() => {
     if (isInternalSelectionRef.current) return
@@ -58,16 +68,6 @@ export function useClienteSmartSearch({
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  // Auto-ajustar comprobante según el documento
-  const sincronizarTipoComprobante = useCallback((docTipo) => {
-    if (!setTipoDocumento) return
-    if (docTipo === 'ruc') {
-      setTipoDocumento('factura')
-    } else if (docTipo === 'dni') {
-      setTipoDocumento('boleta')
-    }
-  }, [setTipoDocumento])
 
   // Seleccionar cliente (de sugerencia, local o API)
   const seleccionarCliente = useCallback((clienteData, options = {}) => {

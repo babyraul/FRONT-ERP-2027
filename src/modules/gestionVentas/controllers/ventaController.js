@@ -74,6 +74,23 @@ export const ventaController = {
     }
   },
 
+  // Anular pre-venta
+  anularPreventa: async (id) => {
+    try {
+      const response = await api.delete(`/preventas/${id}`)
+      return {
+        success: true,
+        message: response.data?.message || 'Pre-venta anulada correctamente'
+      }
+    } catch (error) {
+      console.error(`Error al anular preventa ${id}:`, error)
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || 'Error al anular pre-venta'
+      }
+    }
+  },
+
   // Anular venta
   anularVenta: async (id, motivo = '') => {
     try {

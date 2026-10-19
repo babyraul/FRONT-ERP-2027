@@ -7,7 +7,8 @@ import {
   CreditCardIcon,
   ClockIcon,
   TagIcon,
-  CalendarDaysIcon
+  CalendarDaysIcon,
+  PencilSquareIcon
 } from '@heroicons/react/24/outline'
 import Modal from '../../../components/ui/Modal.jsx'
 
@@ -15,7 +16,8 @@ export default function DetallePreventaModal({
   isOpen,
   onClose,
   preventa,
-  onCobrar
+  onCobrar,
+  onEditar
 }) {
   if (!preventa) return null
 
@@ -175,7 +177,7 @@ export default function DetallePreventaModal({
           </div>
         </div>
 
-        {/* Footer del Modal con Acción de Cobro */}
+        {/* Footer del Modal con Acción de Cobro y Edición */}
         <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
           <button
             type="button"
@@ -185,17 +187,35 @@ export default function DetallePreventaModal({
             Cerrar
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              onClose()
-              if (onCobrar) onCobrar(preventa)
-            }}
-            className="px-5 py-2.5 bg-[#01473d] hover:bg-[#025a4d] text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
-          >
-            <CreditCardIcon className="h-4 w-4" />
-            <span>Proceder a Cobrar (Pagar)</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {onEditar && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onEditar(preventa)
+                }}
+                className="px-4 py-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <PencilSquareIcon className="h-4 w-4" />
+                <span>Editar Pre-Venta</span>
+              </button>
+            )}
+
+            {onCobrar && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onCobrar(preventa)
+                }}
+                className="px-5 py-2.5 bg-[#01473d] hover:bg-[#025a4d] text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
+              >
+                <CreditCardIcon className="h-4 w-4" />
+                <span>Proceder a Cobrar</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </Modal>
