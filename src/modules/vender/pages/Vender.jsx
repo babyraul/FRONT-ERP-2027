@@ -9,14 +9,24 @@ import CarritoList from '../components/CarritoList.jsx'
 import VentaFooter from '../components/VentaFooter.jsx'
 import BuscarClienteModal from '../components/BuscarClienteModal.jsx'
 import { venderController } from '../controllers/venderController.js'
+import { cajaController } from '../../caja/controllers/caja.js'
 import { calcularTotalesVenta } from '../../../utils/Operaciones.js'
 import { toast } from '../../../utils/toast.js'
+import { ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 
 export default function Vender() {
   const navigate = useNavigate()
   const location = useLocation()
   const store = useVentaActivaStore()
   const { productos, loading: loadingProductos, fetchProductos } = useProductosStore()
+
+  // 0. Control de Caja Activa (RN-V01 y RN-V02)
+  const [cajaStatus, setCajaStatus] = useState({
+    verificado: false,
+    bloqueado: false,
+    motivo: null, // 'SIN_TURNO' | 'TURNO_VENCIDO'
+    mensaje: ''
+  })
 
   // 1. Estados Principales (inicializados desde navigation state o store para persistencia)
   const navState = location.state || {}
@@ -43,9 +53,50 @@ export default function Vender() {
   // 2. Modales
   const [isBuscarClienteOpen, setIsBuscarClienteOpen] = useState(false)
 
-  // Cargar productos al montar
+  // Cargar productos y verificar turno de caja al montar
   useEffect(() => {
     fetchProductos()
+
+    const verificarCajaActiva = async () => {
+      try {
+        const res = await cajaController.getTurnoActivo()
+        if (!res.success || !res.data) {
+          setCajaStatus({
+            verificado: true,
+            bloqueado: true,
+            motivo: 'SIN_TURNO',
+            mensaje: 'No cuenta con un turno de caja abierto para registrar ventas. Debe aperturar una caja antes de continuar.'
+          })
+          return
+        }
+
+        const turno = res.data
+        if (turno.fecha_apertura) {
+          const fechaApertura = new Date(turno.fecha_apertura)
+          const ahora = new Date()
+          const limite = new Date(fechaApertura)
+          limite.setDate(limite.getDate() + 1)
+          limite.setHours(3, 30, 0, 0)
+
+          if (ahora > limite) {
+            setCajaStatus({
+              verificado: true,
+              bloqueado: true,
+              motivo: 'TURNO_VENCIDO',
+              mensaje: 'Su turno de caja activo está vencido (superó las 03:30 AM del día siguiente). Debe realizar el arqueo y cierre en el módulo Caja antes de generar nuevas ventas.'
+            })
+            return
+          }
+        }
+
+        setCajaStatus({ verificado: true, bloqueado: false, motivo: null, mensaje: '' })
+      } catch (err) {
+        console.error('Error al verificar turno de caja:', err)
+        setCajaStatus({ verificado: true, bloqueado: false, motivo: null, mensaje: '' })
+      }
+    }
+
+    verificarCajaActiva()
   }, [fetchProductos])
 
   // Validación automática de tipo de comprobante vs cliente
@@ -130,6 +181,12 @@ export default function Vender() {
 
   // Navegar a la pantalla de Pago / Procesar Preventa en BD
   const handleIrAPagar = async () => {
+    // 0. Validar estado de caja (RN-V01 y RN-V02)
+    if (cajaStatus.bloqueado) {
+      toast.error('Caja no disponible', cajaStatus.mensaje)
+      return
+    }
+
     // A. Validar carrito
     if (!cartItems || cartItems.length === 0) {
       toast.info('Carrito vacío', 'Agregue al menos un producto para procesar la preventa.')
@@ -143,6 +200,18 @@ export default function Vender() {
         toast.error('Cliente no válido para Factura', 'Para emitir Factura debe seleccionar o ingresar un cliente con RUC (11 dígitos).')
         return
       }
+    }
+
+    // C. Validar Regla Fiscal SUNAT (RN-V03): Total >= 700 exige identificar al cliente
+    const docCliente = String(cliente?.numero_documento || '').trim()
+    const esClienteGenerico = !docCliente || docCliente === '99999999' || docCliente === '00000000'
+    if (totales.total >= 700 && esClienteGenerico && tipoDocumento !== 'vale') {
+      toast.error(
+        'Identificación obligatoria (SUNAT)',
+        'Para ventas mayores o iguales a S/. 700.00 SUNAT exige identificar al cliente con DNI o RUC.'
+      )
+      setIsBuscarClienteOpen(true)
+      return
     }
 
     setIsSubmitting(true)
@@ -252,7 +321,36 @@ export default function Vender() {
   }, [cartItems, tipoDocumento, cliente, placa])
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4.25rem)] -m-4 sm:-m-6 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-4.25rem)] -m-4 sm:-m-6 overflow-hidden relative">
+      {/* ── BANNER BLOQUEANTE DE CAJA (RN-V01 y RN-V02) ── */}
+      {cajaStatus.bloqueado && (
+        <div className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-6 max-w-lg w-full shadow-2xl text-center space-y-4">
+            <div className="mx-auto w-14 h-14 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+              <LockClosedIcon className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                {cajaStatus.motivo === 'TURNO_VENCIDO' ? 'Turno de Caja Vencido' : 'Caja Cerrada / Sin Turno'}
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                {cajaStatus.mensaje}
+              </p>
+            </div>
+            <div className="pt-2 flex justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/caja')}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+              >
+                <span>Ir al Módulo Caja</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── CUERPO PRINCIPAL (2 PANELES: PRODUCTOS IZQ, CARRITO DER) ── */}
       <div className="flex-1 p-3 sm:p-4 overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">
         {/* PANEL IZQUIERDO: Configuración de Documento + Cliente + Lista de Productos */}

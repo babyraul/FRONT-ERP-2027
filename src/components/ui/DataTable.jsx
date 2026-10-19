@@ -31,7 +31,7 @@ function Filter({ column, table }) {
   )
 }
 
-export function DataTable({ data, columns, pagination = true }) {
+export function DataTable({ data, columns, pagination = true, getRowClassName, onFilteredData }) {
   const [columnFilters, setColumnFilters] = useState([])
 
   const table = useReactTable({
@@ -46,6 +46,14 @@ export function DataTable({ data, columns, pagination = true }) {
     getPaginationRowModel: pagination ? getPaginationRowModel() : undefined,
     columnResizeMode: 'onChange',
   })
+
+  // Notificar al componente padre cuando cambien los datos filtrados en la tabla
+  React.useEffect(() => {
+    if (onFilteredData) {
+      const filteredRows = table.getFilteredRowModel().rows.map(r => r.original)
+      onFilteredData(filteredRows)
+    }
+  }, [table.getFilteredRowModel().rows, onFilteredData])
 
   return (
     <div className="w-full flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60 overflow-hidden transition-all">
@@ -96,21 +104,24 @@ export function DataTable({ data, columns, pagination = true }) {
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {table.getRowModel().rows.length > 0 ? (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors group/row"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className="px-5 py-3.5 text-slate-600 dark:text-slate-300"
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const customClass = getRowClassName ? getRowClassName(row.original) : ''
+                return (
+                  <tr
+                    key={row.id}
+                    className={`transition-colors group/row ${customClass || 'hover:bg-blue-50/40 dark:hover:bg-blue-900/10'}`}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td
+                        key={cell.id}
+                        className="px-5 py-3.5 text-slate-600 dark:text-slate-300"
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                )
+              })
             ) : (
               <tr>
                 <td

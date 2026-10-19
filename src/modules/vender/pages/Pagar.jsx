@@ -362,6 +362,18 @@ export default function Pagar() {
       }
     }
 
+    // Validar Regla Fiscal SUNAT (RN-V03): Total >= 700 exige identificar al cliente
+    const docCliente = String(cliente?.numero_documento || '').trim()
+    const esClienteGenerico = !docCliente || docCliente === '99999999' || docCliente === '00000000'
+    if (totales.total >= 700 && esClienteGenerico && tipoDocumento !== 'vale') {
+      toast.error(
+        'Identificación obligatoria (SUNAT)',
+        'Para ventas mayores o iguales a S/. 700.00 SUNAT exige identificar al cliente con DNI o RUC.'
+      )
+      setIsBuscarClienteOpen(true)
+      return
+    }
+
     setIsProcessing(true)
 
     // Si hubo modificaciones en items/cliente/tipoDoc, sincronizar la preventa en BD antes de facturar

@@ -13,7 +13,8 @@ import {
   ReceiptPercentIcon,
   ShieldCheckIcon,
   CheckCircleIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  PrinterIcon
 } from '@heroicons/react/24/outline'
 import AperturaTurnoModal from '../components/AperturaTurnoModal.jsx'
 import CierreTurnoModal from '../components/CierreTurnoModal.jsx'
@@ -23,6 +24,7 @@ import { cajaController } from '../controllers/caja.js'
 import { toast } from '../../../utils/toast.js'
 import Can from '../../../components/ui/Can.jsx'
 import { useAuthStore } from '../../../store/useAuthStore.js'
+import { imprimirTicketMovimiento, imprimirTicketCierre } from '../utils/ticketPrint.js'
 
 export default function Caja() {
   const [turnoActivo, setTurnoActivo] = useState(null)
@@ -105,6 +107,19 @@ export default function Caja() {
     if (res.success) {
       toast.success(res.message || 'Turno cerrado exitosamente')
       setCierreOpen(false)
+
+      // Impresión de Ticket de Cierre / Arqueo 80mm
+      const infoEmpresa = {
+        razon_social: user?.empresa_nombre || user?.active_acceso?.empresa_nombre || 'EMPRESA',
+        ruc: user?.empresa_ruc || user?.active_acceso?.empresa_ruc || '',
+        direccion: user?.sucursal_direccion || user?.active_acceso?.sucursal_nombre || ''
+      }
+      imprimirTicketCierre({
+        ...turnoActivo,
+        ...(res.data || {}),
+        totales: formData.totales_cierre || turnoActivo.totales
+      }, infoEmpresa)
+
       loadData()
     } else {
       toast.error(res.error || res.message || 'Error al cerrar turno')
@@ -120,6 +135,16 @@ export default function Caja() {
     if (res.success) {
       toast.success(res.message || 'Movimiento registrado')
       setMovimientoOpen(false)
+
+      // Impresión automática de Ticket Térmico de Movimiento 80mm
+      const infoEmpresa = {
+        razon_social: user?.empresa_nombre || user?.active_acceso?.empresa_nombre || 'EMPRESA',
+        ruc: user?.empresa_ruc || user?.active_acceso?.empresa_ruc || '',
+        direccion: user?.sucursal_direccion || user?.active_acceso?.sucursal_nombre || '',
+        identificador_caja: turnoActivo.identificador_caja
+      }
+      imprimirTicketMovimiento(res.data, infoEmpresa)
+
       loadData()
     } else {
       toast.error(res.error || 'Error al registrar movimiento')
@@ -387,8 +412,26 @@ export default function Caja() {
                             </div>
                           </div>
 
-                          <div className={`font-mono text-sm font-black ${m.tipo_movimiento === 'INGRESO' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {m.tipo_movimiento === 'INGRESO' ? '+' : '-'} S/ {Number(m.monto_total || 0).toFixed(2)}
+                          <div className="flex items-center gap-3">
+                            <div className={`font-mono text-sm font-black ${m.tipo_movimiento === 'INGRESO' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {m.tipo_movimiento === 'INGRESO' ? '+' : '-'} S/ {Number(m.monto_total || 0).toFixed(2)}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const infoEmpresa = {
+                                  razon_social: user?.empresa_nombre || user?.active_acceso?.empresa_nombre || 'EMPRESA',
+                                  ruc: user?.empresa_ruc || user?.active_acceso?.empresa_ruc || '',
+                                  direccion: user?.sucursal_direccion || user?.active_acceso?.sucursal_nombre || '',
+                                  identificador_caja: turnoActivo?.identificador_caja
+                                }
+                                imprimirTicketMovimiento(m, infoEmpresa)
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title="Reimprimir Ticket de Movimiento (80mm)"
+                            >
+                              <PrinterIcon className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
                       ))}

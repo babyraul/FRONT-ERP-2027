@@ -14,7 +14,7 @@ const VARIANTS = {
   ghost: 'bg-transparent border border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800',
   soft: 'bg-teal-50 dark:bg-teal-900/20 text-[#01a59c] hover:bg-teal-100 dark:hover:bg-teal-900/40 border border-transparent',
   danger: 'bg-red-500 hover:bg-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-white border border-transparent',
-  warning: 'bg-orange-400 hover:bg-orange-500 dark:bg-amber-900/20 dark:hover:bg-orange-900/40 text-white border border-transparent'
+  warning: 'bg-orange-400 hover:bg-orange-500 text-white border border-transparent'
 }
 
 const SIZES = {

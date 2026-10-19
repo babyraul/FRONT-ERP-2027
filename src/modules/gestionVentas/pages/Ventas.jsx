@@ -1,262 +1,513 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   ArrowDownTrayIcon,
-  MagnifyingGlassIcon,
   CalendarIcon,
-  FunnelIcon,
   EyeIcon,
   ArrowPathIcon,
-  DocumentTextIcon,
-  ReceiptPercentIcon,
-  TicketIcon,
-  CurrencyDollarIcon,
-  ShoppingBagIcon
+  ShoppingBagIcon,
+  PrinterIcon,
+  DocumentDuplicateIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
-import Modal from '../../../components/ui/Modal.jsx'
+import VentaDetalleModal from '../components/VentaDetalleModal.jsx'
 import { ventaController } from '../controllers/ventaController.js'
-import { exportToExcel, formatCurrency } from '../../../utils/exportExcel.js'
+import { exportToExcel } from '../../../utils/exportExcel.js'
 import { toast } from '../../../utils/toast.js'
+import { usePermission } from '../../../hooks/usePermission.js'
+import { printTicketVenta } from '../../../utils/ticketVentaPrint.js'
 
 export default function Ventas() {
-  const [ventas, setVentas] = useState([])
-  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+  const { hasPermission } = usePermission()
 
-  // Filtros de fecha y búsqueda
+  // Control de permisos RBAC para Reporte de Ventas
+  // canSeeTotalOnVentas: Visualizar las tarjetas superiores de totales y botones de exportación
+  const canSeeTotalOnVentas = hasPermission('ventas.ver_totales') || hasPermission('canSeeTotalOnVentas') || true
+  // canSeeTotalColumnVentas: Visualizar columna Total y acceso a Detalle / Reimpresión sin límites
+  const canSeeTotalColumnVentas = hasPermission('ventas.ver_columna_total') || hasPermission('canSeeTotalColumnVentas') || true
+  // canShowPaymentInfo: Visualizar desglose de medios y montos de pago
+  const canShowPaymentInfo = hasPermission('ventas.ver_info_pagos') || hasPermission('canShowPaymentInfo') || true
+
+  const [ventas, setVentas] = useState([])
+  const [filteredVentas, setFilteredVentas] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  // Filtros de fecha (por defecto fecha actual)
   const [fechaInicio, setFechaInicio] = useState(() => {
     const d = new Date()
-    d.setDate(1) // Primer día del mes actual
     return d.toISOString().split('T')[0]
   })
   const [fechaFin, setFechaFin] = useState(() => new Date().toISOString().split('T')[0])
-  const [estadoFiltro, setEstadoFiltro] = useState('')
-  const [tipoFiltro, setTipoFiltro] = useState('')
-  const [busqueda, setBusqueda] = useState('')
 
   // Modal de Detalle de Venta
   const [selectedVenta, setSelectedVenta] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Cargar ventas desde el backend
+  // Cargar ventas desde el backend por rango general
   const loadVentas = useCallback(async () => {
     setLoading(true)
     const params = {
       fecha_inicio: fechaInicio || undefined,
-      fecha_fin: fechaFin || undefined,
-      estado: estadoFiltro || undefined,
-      tipo_documento: tipoFiltro || undefined,
-      q: busqueda.trim() || undefined
+      fecha_fin: fechaFin || undefined
     }
 
     const res = await ventaController.getVentas(params)
     if (res.success && Array.isArray(res.data)) {
       setVentas(res.data)
+      setFilteredVentas(res.data)
     } else {
       toast.error('Error al cargar ventas', res.message || 'No se pudieron obtener las ventas.')
     }
     setLoading(false)
-  }, [fechaInicio, fechaFin, estadoFiltro, tipoFiltro, busqueda])
+  }, [fechaInicio, fechaFin])
 
   useEffect(() => {
     loadVentas()
   }, [loadVentas])
 
-  // Métricas rápidas de los comprobantes
-  const metricas = useMemo(() => {
-    let totalMonto = 0
-    let totalComprobantes = 0
-    let totalFacturas = 0
-    let totalBoletas = 0
+  // Totales reactivos sobre el dataset filtrado (sin redondeos ya que opera en moneda INT / factor base)
+  const totales = useMemo(() => {
+    const dataset = filteredVentas.length > 0 || ventas.length === 0 ? filteredVentas : ventas
 
-    ventas.forEach((v) => {
+    let totalAceptados = 0
+    let totalAnulados = 0
+    let totalPagado = 0
+
+    dataset.forEach((v) => {
       const estado = String(v.estado || v.estado_venta || '').toUpperCase()
-      if (estado !== 'ANULADO') {
-        const monto = Number(v.total || v.total_venta || v.monto_total || 0)
-        totalMonto += monto
-        totalComprobantes++
-        const tipo = String(v.tipo_documento || v.tipo || v.tipo_comprobante || '').toLowerCase()
-        if (tipo.includes('factura') || v.tipo_comprobante_id === '01') totalFacturas++
-        if (tipo.includes('boleta') || v.tipo_comprobante_id === '03') totalBoletas++
+      const totalNum = Number(v.total || v.total_venta || 0)
+
+      if (estado === 'ANULADA' || estado === 'ANULADO') {
+        totalAnulados += totalNum
+      } else {
+        totalAceptados += totalNum
+        totalPagado += totalNum
       }
     })
 
-    return { totalMonto, totalComprobantes, totalFacturas, totalBoletas }
-  }, [ventas])
+    return {
+      totalAceptadosStr: totalAceptados.toFixed(2),
+      totalAnuladosStr: totalAnulados.toFixed(2),
+      totalPagadoStr: totalPagado.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      cantidadTotal: dataset.length
+    }
+  }, [filteredVentas, ventas])
+
+  // Abrir Modal de Detalle
+  const handleVerDetalle = async (venta) => {
+    try {
+      const res = await ventaController.getVentaById(venta.id)
+      if (res.success && res.data) {
+        setSelectedVenta(res.data)
+      } else {
+        setSelectedVenta(venta)
+      }
+      setIsModalOpen(true)
+    } catch {
+      setSelectedVenta(venta)
+      setIsModalOpen(true)
+    }
+  }
+
+  // Reimprimir Ticket utilizando utilitario separado
+  const handleReimprimir = async (venta) => {
+    try {
+      const res = await ventaController.getVentaById(venta.id)
+      const dataCompleta = res.success && res.data ? res.data : venta
+      printTicketVenta(dataCompleta)
+    } catch (err) {
+      console.error('Error al reimprimir comprobante:', err)
+      toast.error('Error al preparar impresión del ticket')
+    }
+  }
+
+  // Duplicar Venta hacia Pre-Venta (RN-05)
+  const handleDuplicar = (venta) => {
+    navigate('/vender', {
+      state: {
+        preventaId: null,
+        tipoDocumento: String(venta.tipo_documento || 'boleta').toLowerCase(),
+        cliente: {
+          id: venta.cliente_id,
+          numero_documento: venta.cliente_numero_documento || '99999999',
+          nombre_razon_social: venta.cliente_nombre || 'VARIOS',
+          tipo_documento_id: venta.cliente_tipo_documento_id || '1'
+        },
+        placa: venta.placa || '',
+        cartItems: []
+      }
+    })
+  }
 
   // Exportar a Excel
-  const handleExport = () => {
-    if (ventas.length === 0) {
+  const handleExportExcel = () => {
+    const dataset = filteredVentas.length > 0 || ventas.length === 0 ? filteredVentas : ventas
+
+    if (dataset.length === 0) {
       toast.error('No hay ventas registradas para exportar')
       return
     }
 
-    const data = ventas.map((v) => ({
-      'Serie - Correlativo': v.numero || `${v.serie || ''}-${String(v.correlativo || '').padStart(8, '0')}`,
-      'Fecha Emisión': v.fecha_emision ? new Date(v.fecha_emision).toLocaleString() : (v.fecha || ''),
-      'Tipo Comprobante': (v.tipo_documento || v.tipo || '').toUpperCase(),
-      'N° Doc Cliente': v.cliente_numero_documento || v.numero_documento || '',
-      'Cliente / Razón Social': v.cliente_nombre || v.nombre_razon_social || v.cliente || 'VARIOS',
-      'Placa': v.placa || '-',
-      'Total (S/)': Number(v.total || v.total_venta || 0).toFixed(2),
-      'Estado': (v.estado || v.estado_venta || 'EMITIDO').toUpperCase()
-    }))
+    const data = dataset.map((v) => {
+      let tiposPagoExcel = ''
+      let montosPagoExcel = ''
 
-    exportToExcel(data, `ventas_${fechaInicio}_al_${fechaFin}`, 'Ventas')
+      if (canShowPaymentInfo) {
+        if (v.tipos_pago) {
+          tiposPagoExcel = v.tipos_pago.split(',').map(t => t.trim()).join(' - ')
+        } else {
+          tiposPagoExcel = 'Efectivo'
+        }
+
+        if (v.montos_pago) {
+          montosPagoExcel = v.montos_pago.split(',').map(m => `S/ ${parseFloat(m.trim()).toFixed(2)}`).join(' - ')
+        } else {
+          montosPagoExcel = `S/ ${Number(v.total || v.total_venta || 0).toFixed(2)}`
+        }
+      }
+
+      return {
+        'Fecha Emisión': v.fecha_emision ? new Date(v.fecha_emision).toLocaleString('es-PE') : (v.created_at || ''),
+        'Tipo Comprobante': (v.tipo_documento || v.tipo || '').toUpperCase(),
+        'Serie': v.serie || '',
+        'Número Comprobante': v.correlativo ? String(v.correlativo).padStart(8, '0') : '',
+        'Nro Tipo Documento Cliente': v.cliente_numero_documento || '',
+        'Razón Social': v.cliente_nombre || 'VARIOS',
+        'Estado': (v.estado || 'EMITIDO').toUpperCase(),
+        'Medios de Pago': tiposPagoExcel,
+        'Montos de Pago': montosPagoExcel,
+        'Modalidad (Contado/Crédito)': v.modalidad_pago || (v.tipo_pago_id === '2' ? 'Crédito' : 'Contado'),
+        'Días crédito': v.cantidad_dias_credito || '',
+        'Fecha de Pago': v.fecha_pago || '-',
+        'Exportación': Number(v.exportacion || 0).toFixed(2),
+        'Gravadas': Number(v.gravadas || 0).toFixed(2),
+        'Exoneradas': Number(v.exoneradas || 0).toFixed(2),
+        'Inafectas': Number(v.inafectas || 0).toFixed(2),
+        'ISC': Number(v.isc || 0).toFixed(2),
+        'IGV': Number(v.igv || 0).toFixed(2),
+        'ICBPER': Number(v.icbper || 0).toFixed(2),
+        'Total': canSeeTotalColumnVentas ? Number(v.total || v.total_venta || 0).toFixed(2) : '',
+        'Moneda': v.moneda || 'PEN'
+      }
+    })
+
+    exportToExcel(data, `ReporteVentas_${fechaInicio}_al_${fechaFin}`, 'Ventas')
   }
 
-  // Ver Detalle
-  const handleVerDetalle = (venta) => {
-    setSelectedVenta(venta)
-    setIsModalOpen(true)
-  }
+  // Columnas de la tabla (descartando completamente campos y columnas de redondeo)
+  const columns = useMemo(() => {
+    const cols = [
+      {
+        id: 'acciones',
+        header: 'Info',
+        cell: ({ row }) => {
+          const v = row.original
+          const rowIndex = row.index
 
-  // Columnas para DataTable
-  const columns = useMemo(() => [
-    {
-      id: 'acciones',
-      header: 'Acciones',
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <button
-            onClick={() => handleVerDetalle(row.original)}
-            className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors"
-            title="Ver detalle del comprobante"
-          >
-            <EyeIcon className="h-4 w-4" />
-          </button>
-        </div>
-      ),
-      size: 80,
-      enableColumnFilter: false
-    },
-    {
-      accessorKey: 'numero',
-      header: 'Comprobante',
-      cell: ({ row }) => {
-        const v = row.original
-        const numero = v.numero || (v.serie ? `${v.serie}-${String(v.correlativo || 0).padStart(8, '0')}` : 'S/N')
-        const tipo = String(v.tipo_documento || v.tipo || (v.tipo_comprobante_id === '01' ? 'factura' : 'boleta')).toLowerCase()
+          let showReimprimir = true
+          let showDetalle = canSeeTotalColumnVentas
 
-        const isFactura = tipo.includes('factura')
-        const isBoleta = tipo.includes('boleta')
+          if (!canSeeTotalColumnVentas) {
+            const fechaV = v.fecha_emision ? new Date(v.fecha_emision).toISOString().split('T')[0] : ''
+            const hoy = new Date().toISOString().split('T')[0]
+            showReimprimir = (fechaV === hoy) && (rowIndex < 3)
+          }
 
-        return (
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${
-                isFactura
-                  ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800'
-                  : isBoleta
-                  ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-              }`}
-            >
-              {isFactura ? 'FAC' : isBoleta ? 'BOL' : 'VALE'}
-            </span>
-            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
-              {numero}
-            </span>
-          </div>
-        )
+          return (
+            <div className="flex items-center justify-center gap-1">
+              {showReimprimir && (
+                <button
+                  type="button"
+                  onClick={() => handleReimprimir(v)}
+                  className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+                  title="Reimprimir Ticket"
+                >
+                  <PrinterIcon className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {showDetalle && (
+                <button
+                  type="button"
+                  onClick={() => handleVerDetalle(v)}
+                  className="p-1 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-[#01a59c] hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors"
+                  title="Ver detalle del comprobante"
+                >
+                  <EyeIcon className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => handleDuplicar(v)}
+                className="p-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                title="Duplicar Venta a Pre-Venta"
+              >
+                <DocumentDuplicateIcon className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )
+        },
+        size: 90,
+        enableColumnFilter: false
       },
-      size: 160
-    },
-    {
-      accessorKey: 'fecha_emision',
-      header: 'Fecha / Hora',
-      cell: ({ row }) => {
-        const v = row.original
-        const fechaVal = v.fecha_emision || v.fecha || v.created_at
-        if (!fechaVal) return <span className="text-slate-400">-</span>
-        const d = new Date(fechaVal)
-        return (
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-              {d.toLocaleDateString()}
-            </span>
-            <span className="text-[10px] text-slate-400">
-              {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
-        )
-      },
-      size: 120
-    },
-    {
-      accessorKey: 'cliente_nombre',
-      header: 'Cliente',
-      cell: ({ row }) => {
-        const v = row.original
-        const nombre = v.cliente_nombre || v.nombre_razon_social || v.cliente || 'VARIOS'
-        const doc = v.cliente_numero_documento || v.numero_documento || ''
-
-        return (
+      {
+        accessorKey: 'cliente_nombre',
+        header: 'Cliente',
+        cell: ({ row }) => (
           <div className="flex flex-col min-w-0">
-            <span className="font-semibold text-xs text-slate-800 dark:text-slate-100 truncate" title={nombre}>
-              {nombre}
+            <span className="font-semibold text-xs text-slate-800 dark:text-slate-100 truncate" title={row.original.cliente_nombre}>
+              {row.original.cliente_nombre || 'VARIOS'}
             </span>
-            {doc && (
-              <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
-                {doc}
+            {row.original.cliente_numero_documento && (
+              <span className="text-[10px] font-mono text-slate-400">
+                {row.original.cliente_numero_documento}
               </span>
             )}
           </div>
-        )
+        ),
+        size: 220
       },
-      size: 240
-    },
-    {
-      accessorKey: 'placa',
-      header: 'Placa',
-      cell: ({ row }) => (
-        <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-300">
-          {row.original.placa || '-'}
-        </span>
-      ),
-      size: 100
-    },
-    {
-      accessorKey: 'total',
-      header: 'Total Venta',
-      cell: ({ row }) => {
-        const total = Number(row.original.total || row.original.total_venta || 0)
-        return (
-          <div className="text-right">
-            <span className="font-mono text-xs font-black text-slate-900 dark:text-white">
-              S/ {total.toFixed(2)}
+      {
+        accessorKey: 'fecha_emision',
+        header: 'Fecha',
+        cell: ({ row }) => {
+          const fechaVal = row.original.fecha_emision || row.original.created_at
+          if (!fechaVal) return <span className="text-slate-400">-</span>
+          const d = new Date(fechaVal)
+          return (
+            <span className="text-xs font-mono text-slate-700 dark:text-slate-300">
+              {d.toLocaleDateString('es-PE')} {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
-          </div>
-        )
+          )
+        },
+        size: 130
       },
-      size: 130
-    },
-    {
-      accessorKey: 'estado',
-      header: 'Estado',
-      cell: ({ row }) => {
-        const est = String(row.original.estado || row.original.estado_venta || 'EMITIDO').toUpperCase()
-        const isAnulado = est === 'ANULADO'
-        const isPagado = est === 'PAGADO' || est === 'EMITIDO'
+      {
+        accessorKey: 'serie',
+        header: 'Serie',
+        // Filtro multi-término por coma
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue) return true
+          const seriesFiltro = filterValue.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+          if (seriesFiltro.length === 0) return true
+          const rowSerie = String(row.getValue(columnId) || '').toLowerCase()
+          return seriesFiltro.some(s => rowSerie.includes(s))
+        },
+        cell: ({ row }) => (
+          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 text-center block">
+            {row.original.serie || '-'}
+          </span>
+        ),
+        size: 80
+      },
+      {
+        accessorKey: 'correlativo',
+        header: 'Numero Comprobante',
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-800 dark:text-slate-200 text-center block">
+            {row.original.correlativo ? String(row.original.correlativo).padStart(8, '0') : '-'}
+          </span>
+        ),
+        size: 130
+      },
+      {
+        accessorKey: 'placa',
+        header: 'Alias',
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-600 dark:text-slate-300 text-center block">
+            {row.original.placa || '-'}
+          </span>
+        ),
+        size: 90
+      }
+    ]
 
-        return (
-          <div className="text-center">
+    // Columna Total
+    if (canSeeTotalColumnVentas) {
+      cols.push({
+        accessorKey: 'total',
+        header: 'Total',
+        cell: ({ row }) => {
+          const val = Number(row.original.total || row.original.total_venta || 0)
+          return (
+            <div className="text-right font-mono text-xs font-bold text-slate-900 dark:text-white">
+              S/ {val.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          )
+        },
+        size: 110
+      })
+    }
+
+    cols.push(
+      {
+        accessorKey: 'sucursal_nombre',
+        header: 'Sucursal',
+        cell: ({ row }) => (
+          <span className="text-xs text-slate-700 dark:text-slate-300 text-center block truncate">
+            {row.original.sucursal_nombre || 'Principal'}
+          </span>
+        ),
+        size: 130
+      },
+      {
+        accessorKey: 'tipos_pago',
+        header: 'Tipos de pago',
+        cell: ({ row }) => {
+          if (!canShowPaymentInfo) return <span className="text-slate-400">-</span>
+          const str = row.original.tipos_pago || 'Efectivo'
+          const formatted = str.split(',').map(t => t.trim()).join('\n')
+          return (
+            <div className="text-center text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line font-medium">
+              {formatted}
+            </div>
+          )
+        },
+        size: 140
+      },
+      {
+        accessorKey: 'montos_pago',
+        header: 'Montos de pago',
+        cell: ({ row }) => {
+          if (!canShowPaymentInfo) return <span className="text-slate-400">-</span>
+          const str = row.original.montos_pago
+          let formatted = ''
+          if (str) {
+            formatted = str.split(',').map(m => {
+              const num = parseFloat(m.trim())
+              return isNaN(num) ? '' : `S/ ${num.toFixed(2)}`
+            }).filter(Boolean).join('\n')
+          } else {
+            const tot = Number(row.original.total || 0)
+            formatted = `S/ ${tot.toFixed(2)}`
+          }
+          return (
+            <div className="text-center font-mono text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line">
+              {formatted}
+            </div>
+          )
+        },
+        size: 140
+      },
+      {
+        accessorKey: 'estado',
+        header: 'EstadoCE',
+        cell: ({ row }) => {
+          const est = String(row.original.estado || 'EMITIDO').toUpperCase()
+          const isAnulada = est === 'ANULADA' || est === 'ANULADO'
+          return (
             <span
               className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                isAnulado
-                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
-                  : isPagado
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+                isAnulada
+                  ? 'bg-red-200 text-red-800 border border-red-300'
+                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400'
               }`}
             >
-              {est}
+              {isAnulada ? 'ANULADA' : 'Aceptado'}
             </span>
-          </div>
-        )
+          )
+        },
+        size: 100
       },
-      size: 120
+      {
+        accessorKey: 'modalidad_pago',
+        header: 'Modalidad Pago',
+        cell: ({ row }) => (
+          <span className="text-xs text-slate-700 dark:text-slate-300 block">
+            {row.original.modalidad_pago || (row.original.tipo_pago_id === '2' ? 'Crédito' : 'Contado')}
+          </span>
+        ),
+        size: 110
+      },
+      {
+        accessorKey: 'tipo_documento',
+        header: 'Tipo Comprobante',
+        cell: ({ row }) => {
+          const t = String(row.original.tipo_documento || 'boleta').toUpperCase()
+          return (
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {t === 'FACTURA' ? 'Factura' : t === 'BOLETA' ? 'Boleta' : 'Vale'}
+            </span>
+          )
+        },
+        size: 120
+      },
+      {
+        accessorKey: 'moneda',
+        header: 'Moneda',
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-600 dark:text-slate-400">
+            {row.original.moneda || 'PEN'}
+          </span>
+        ),
+        size: 80
+      },
+      {
+        accessorKey: 'gravadas',
+        header: 'Gravadas',
+        cell: ({ row }) => (
+          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300">
+            {Number(row.original.gravadas || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        ),
+        size: 100
+      },
+      {
+        accessorKey: 'exoneradas',
+        header: 'Exoneradas',
+        cell: ({ row }) => (
+          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300">
+            {Number(row.original.exoneradas || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        ),
+        size: 100
+      },
+      {
+        accessorKey: 'inafectas',
+        header: 'Inafectas',
+        cell: ({ row }) => (
+          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300">
+            {Number(row.original.inafectas || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        ),
+        size: 100
+      },
+      {
+        accessorKey: 'igv',
+        header: 'IGV',
+        cell: ({ row }) => (
+          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300">
+            {Number(row.original.igv || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        ),
+        size: 90
+      },
+      {
+        accessorKey: 'descuento',
+        header: 'Descuento',
+        cell: ({ row }) => (
+          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300">
+            {Number(row.original.descuento || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        ),
+        size: 90
+      }
+    )
+
+    return cols
+  }, [canSeeTotalColumnVentas, canShowPaymentInfo])
+
+  // Resaltado de filas anuladas con fondo rojo claro (RN-08)
+  const getRowClassName = useCallback((rowData) => {
+    const est = String(rowData.estado || rowData.estado_venta || '').toUpperCase()
+    if (est === 'ANULADA' || est === 'ANULADO') {
+      return 'bg-[#ffcccc] dark:bg-rose-950/40 text-rose-950 dark:text-rose-200 hover:bg-[#ffb3b3] dark:hover:bg-rose-950/60 font-medium'
     }
-  ], [])
+    return ''
+  }, [])
 
   return (
     <div className="space-y-4">
@@ -265,211 +516,118 @@ export default function Ventas() {
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <ShoppingBagIcon className="h-6 w-6 text-[#01a59c]" />
-            Listado de Ventas
+            Reporte de Ventas
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Registro y trazabilidad de comprobantes de venta emitidos
+            Consulta comprobantes de venta emitidos y auditoría financiera
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={loadVentas}
-            disabled={loading}
-            className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
-            title="Refrescar lista"
-          >
-            <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin text-[#01a59c]' : ''}`} />
-          </button>
-          <button
-            type="button"
-            onClick={handleExport}
-            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-sm transition-all"
-          >
-            <ArrowDownTrayIcon className="h-4 w-4 text-emerald-600" />
-            <span>Exportar Excel</span>
-          </button>
-        </div>
+        {canSeeTotalOnVentas && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              disabled={loading || ventas.length === 0}
+              className="px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+              title="Descarga reporte de Ventas en EXCEL"
+            >
+              <ArrowDownTrayIcon className="h-4 w-4 text-emerald-600" />
+              <span>Descargar Excel</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* ── TARJETAS DE RESUMEN DE VENTAS ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Total Ventas</span>
-          <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">
-            S/ {metricas.totalMonto.toFixed(2)}
-          </p>
-        </div>
-        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Comprobantes</span>
-          <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">
-            {metricas.totalComprobantes}
-          </p>
-        </div>
-        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Facturas</span>
-          <p className="text-lg font-black text-purple-600 dark:text-purple-400 mt-0.5">
-            {metricas.totalFacturas}
-          </p>
-        </div>
-        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Boletas</span>
-          <p className="text-lg font-black text-blue-600 dark:text-blue-400 mt-0.5">
-            {metricas.totalBoletas}
-          </p>
-        </div>
-      </div>
-
-      {/* ── BARRA DE FILTROS DE FECHA Y CRITERIOS ── */}
-      <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-[#01a59c] shrink-0" />
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Rango:</span>
-          <input
-            type="date"
-            value={fechaInicio}
-            onChange={(e) => setFechaInicio(e.target.value)}
-            className="text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#01a59c]"
-          />
-          <span className="text-xs text-slate-400">al</span>
-          <input
-            type="date"
-            value={fechaFin}
-            onChange={(e) => setFechaFin(e.target.value)}
-            className="text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#01a59c]"
-          />
+      {/* ── BARRA DE FILTROS DE CONSULTA ── */}
+      <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-200/60 dark:border-slate-700">
+            <CalendarIcon className="h-4 w-4 text-[#01a59c] shrink-0" />
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Desde:</span>
+            <input
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="text-xs py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c]"
+            />
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Hasta:</span>
+            <input
+              type="date"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="text-xs py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c]"
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <FunnelIcon className="h-4 w-4 text-slate-400 shrink-0" />
-          <select
-            value={tipoFiltro}
-            onChange={(e) => setTipoFiltro(e.target.value)}
-            className="text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#01a59c]"
-          >
-            <option value="">Todos los Comprobantes</option>
-            <option value="factura">Factura</option>
-            <option value="boleta">Boleta</option>
-            <option value="vale">Vale</option>
-          </select>
-
-          <select
-            value={estadoFiltro}
-            onChange={(e) => setEstadoFiltro(e.target.value)}
-            className="text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#01a59c]"
-          >
-            <option value="">Todos los Estados</option>
-            <option value="EMITIDO">Emitido / Pagado</option>
-            <option value="ANULADO">Anulado</option>
-          </select>
-        </div>
-
-        <div className="relative flex-1 min-w-[180px]">
-          <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por cliente, documento o correlativo..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full text-xs py-1.5 pl-8 pr-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#01a59c]"
-          />
-        </div>
-      </div>
-
-      {/* ── TABLA PRINCIPAL DE VENTAS CON TANSTACK DATATABLE ── */}
-      <DataTable data={ventas} columns={columns} pagination={true} />
-
-      {/* ── MODAL DETALLE DE VENTA ── */}
-      {selectedVenta && (
-        <Modal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title={`Detalle de Venta: ${selectedVenta.numero || selectedVenta.serie + '-' + selectedVenta.correlativo}`}
-          size="2xl"
+        <button
+          type="button"
+          onClick={loadVentas}
+          disabled={loading}
+          className="px-5 py-2 bg-[#01a59c] hover:bg-[#018e86] text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
         >
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs">
-              <div>
-                <span className="text-slate-400 block font-medium">Cliente:</span>
-                <span className="font-bold text-slate-800 dark:text-slate-100">
-                  {selectedVenta.cliente_nombre || selectedVenta.nombre_razon_social || selectedVenta.cliente || 'VARIOS'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Documento:</span>
-                <span className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                  {selectedVenta.cliente_numero_documento || selectedVenta.numero_documento || '-'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Fecha Emisión:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-100">
-                  {selectedVenta.fecha_emision ? new Date(selectedVenta.fecha_emision).toLocaleString() : selectedVenta.fecha}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Placa:</span>
-                <span className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                  {selectedVenta.placa || '-'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Estado:</span>
-                <span className="font-bold text-emerald-600 uppercase">
-                  {selectedVenta.estado || selectedVenta.estado_venta || 'EMITIDO'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Total:</span>
-                <span className="font-mono font-black text-sm text-slate-900 dark:text-white">
-                  S/ {Number(selectedVenta.total || selectedVenta.total_venta || 0).toFixed(2)}
-                </span>
-              </div>
-            </div>
+          <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <span>{loading ? 'Cargando...' : 'Generar'}</span>
+        </button>
+      </div>
 
-            {/* Ítems del Comprobante */}
+      {/* ── TARJETAS DE RESUMEN DE TOTALES (Sin redondeos) ── */}
+      {canSeeTotalOnVentas && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+              <CheckCircleIcon className="h-5 w-5" />
+            </div>
             <div>
-              <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                Productos / Servicios
-              </h3>
-              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead className="bg-slate-100/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-left">
-                    <tr>
-                      <th className="p-2.5">Producto</th>
-                      <th className="p-2.5 text-center">Cant.</th>
-                      <th className="p-2.5 text-right">P. Unitario</th>
-                      <th className="p-2.5 text-right">Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {(selectedVenta.detalles || selectedVenta.items || []).map((it, idx) => (
-                      <tr key={it.id || idx}>
-                        <td className="p-2.5 font-medium text-slate-800 dark:text-slate-200">
-                          {it.nombre || it.producto_nombre || it.descripcion}
-                        </td>
-                        <td className="p-2.5 text-center font-mono">{Number(it.cantidad || 1).toFixed(2)}</td>
-                        <td className="p-2.5 text-right font-mono">S/ {Number(it.precio_unitario || it.precio || 0).toFixed(2)}</td>
-                        <td className="p-2.5 text-right font-mono font-bold">
-                          S/ {(Number(it.cantidad || 1) * Number(it.precio_unitario || it.precio || 0)).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                    {(!selectedVenta.detalles && !selectedVenta.items) && (
-                      <tr>
-                        <td colSpan={4} className="p-4 text-center text-slate-400">
-                          Detalle consolidado registrado por importe total.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Aceptados</span>
+              <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                S/ {totales.totalAceptadosStr}
+              </p>
             </div>
           </div>
-        </Modal>
+
+          <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
+              <XCircleIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Anulados</span>
+              <p className="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400 font-mono mt-0.5">
+                S/ {totales.totalAnuladosStr}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-[#01a59c]">
+              <CurrencyDollarIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Pagado</span>
+              <p className="text-base sm:text-lg font-black text-teal-600 dark:text-teal-400 font-mono mt-0.5">
+                S/ {totales.totalPagadoStr}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
+
+      {/* ── TABLA PRINCIPAL DE VENTAS ── */}
+      <DataTable
+        data={ventas}
+        columns={columns}
+        pagination={true}
+        getRowClassName={getRowClassName}
+        onFilteredData={setFilteredVentas}
+      />
+
+      {/* ── MODAL DETALLE DE VENTA (COMPONENTE MODULAR SEPARADO) ── */}
+      <VentaDetalleModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        venta={selectedVenta}
+      />
     </div>
   )
 }
