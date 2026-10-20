@@ -11,9 +11,9 @@ export const useProductosStore = create((set, get) => ({
   setBusqueda: (busqueda) => set({ busqueda }),
   setCategoriaFiltro: (categoriaFiltro) => set({ categoriaFiltro }),
 
-  fetchProductos: async () => {
+  fetchProductos: async (params = {}) => {
     set({ loading: true, error: null })
-    const res = await productoController.getAll()
+    const res = await productoController.getAll(params)
     if (res.success) {
       set({ productos: res.data, loading: false })
     } else {
@@ -55,7 +55,20 @@ export const useProductosStore = create((set, get) => ({
   deleteProducto: async (id) => {
     const res = await productoController.delete(id)
     if (res.success) {
-      set((s) => ({ productos: s.productos.filter((p) => p.id !== id) }))
+      set((s) => ({
+        productos: s.productos.map((p) => (p.id === id ? { ...p, activo: false } : p))
+      }))
+      return { success: true }
+    }
+    return { success: false, error: res.error }
+  },
+
+  activarProducto: async (id) => {
+    const res = await productoController.update(id, { activo: true })
+    if (res.success) {
+      set((s) => ({
+        productos: s.productos.map((p) => (p.id === id ? { ...p, activo: true } : p))
+      }))
       return { success: true }
     }
     return { success: false, error: res.error }

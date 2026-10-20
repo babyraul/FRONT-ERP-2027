@@ -52,6 +52,7 @@ export default function Stock() {
   // Filtros superiores
   const [almacenId, setAlmacenId] = useState('')
   const [estadoStock, setEstadoStock] = useState('todos') // 'todos' | 'negativo' | 'bajo_minimo' | 'sin_stock' | 'positivo'
+  const [filtroActivo, setFiltroActivo] = useState('activos') // 'todos' | 'activos' | 'inactivos'
 
   // Estado de filas expandidas (desglose de presentaciones)
   const [expanded, setExpanded] = useState({})
@@ -63,9 +64,11 @@ export default function Stock() {
   // Cargar datos desde stock_actual a través de stockController
   const loadStock = useCallback(async () => {
     setLoading(true)
+    const activoParam = filtroActivo === 'activos' ? true : filtroActivo === 'inactivos' ? false : undefined
     const res = await stockController.getStockActual({
       almacen_id: almacenId || undefined,
-      estado_stock: estadoStock !== 'todos' ? estadoStock : undefined
+      estado_stock: estadoStock !== 'todos' ? estadoStock : undefined,
+      activo: activoParam
     })
 
     if (res.success) {
@@ -76,7 +79,7 @@ export default function Stock() {
       toast.error('Error al cargar stock', res.message)
     }
     setLoading(false)
-  }, [almacenId, estadoStock])
+  }, [almacenId, estadoStock, filtroActivo])
 
   useEffect(() => {
     loadStock()
@@ -95,6 +98,7 @@ export default function Stock() {
           codigo: item.codigo || '-',
           codigo_barra: item.codigo_barra || '',
           producto_nombre: item.producto_nombre,
+          activo: item.activo !== false,
           categoria_id: item.categoria_id,
           categoria_nombre: item.categoria_nombre || 'General',
           sub_categoria_nombre: item.sub_categoria_nombre || '',
@@ -342,9 +346,16 @@ export default function Stock() {
           const prod = row.original
           return (
             <div className="flex flex-col min-w-0">
-              <span className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate" title={prod.producto_nombre}>
-                {prod.producto_nombre}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate" title={prod.producto_nombre}>
+                  {prod.producto_nombre}
+                </span>
+                {!prod.activo && (
+                  <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-400 border border-rose-300 dark:border-rose-800 shrink-0">
+                    Inactivo
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
                 <span>{prod.categoria_nombre || 'General'}</span>
                 {prod.sub_categoria_nombre && <span>· {prod.sub_categoria_nombre}</span>}
@@ -613,7 +624,7 @@ export default function Stock() {
                           <div className="flex items-center gap-2">
                             <span className="uppercase">{pres.presentacion_nombre || 'UNIDAD'}</span>
                             <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800">
-                              x{pres.multiplica_por || 1}
+                              x{pres.multiplica_por || 1} {pres.unidad_medida_id || prod.unidad_medida_id}
                             </span>
                           </div>
                         </td>
@@ -625,7 +636,7 @@ export default function Stock() {
 
                         {/* Factor de conversión */}
                         <td className="px-3.5 py-2.5 font-sans text-slate-600 dark:text-slate-300 text-[11px]">
-                          1 {pres.presentacion_nombre} = {pres.multiplica_por || 1} {prod.unidad_medida_id}
+                          1 {pres.presentacion_nombre} ({pres.unidad_medida_id || prod.unidad_medida_id}) = {pres.multiplica_por || 1} {prod.unidad_medida_id}
                         </td>
 
                         {/* Costo */}
@@ -846,8 +857,32 @@ export default function Stock() {
           ))}
         </div>
 
-        {/* Acciones de Desglose y Selector de Almacén */}
+        {/* Acciones de Desglose, Filtro de Activo/Inactivo y Selector de Almacén */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Selector de Activos / Inactivos */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+            {[
+              { id: 'activos', label: 'Activos' },
+              { id: 'inactivos', label: 'Inactivos' },
+              { id: 'todos', label: 'Todos' }
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setFiltroActivo(f.id)}
+                className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                  filtroActivo === f.id
+                    ? f.id === 'inactivos'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
           {/* Botón para expandir o colapsar todos */}
           <button
             type="button"

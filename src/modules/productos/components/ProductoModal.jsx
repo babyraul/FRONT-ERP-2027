@@ -277,8 +277,9 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
         pErr.nombre = 'El nombre de la presentación es requerido.'
       }
 
-      if (!p.unidad_medida_id && !formData.unidad_medida_id) {
-        pErr.unidad = 'Selecciona unidad de medida.'
+      const unidadPres = idx === 0 ? (p.unidad_medida_id || formData.unidad_medida_id) : p.unidad_medida_id
+      if (!unidadPres || !String(unidadPres).trim()) {
+        pErr.unidad = 'Selecciona una unidad de medida.'
       }
 
       const costo = Number(p.precio_costo || 0)
@@ -329,6 +330,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
     if (errors.unidad_medida_id) count++
     errors.presentaciones.forEach(p => {
       if (p.nombre) count++
+      if (p.unidad) count++
       if (p.precio_venta) count++
       if (p.precio_costo) count++
       if (p.relacion_precios) count++
@@ -437,11 +439,29 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
       )
     }
 
+    // Validar y asegurar unidad_medida_id en cada presentación
+    const presentacionesConUnidad = presentaciones.map((p, idx) => {
+      const unidad = (p.unidad_medida_id || (idx === 0 ? formData.unidad_medida_id : '') || formData.unidad_medida_id || '').trim()
+      return {
+        ...p,
+        unidad_medida_id: unidad
+      }
+    })
+
+    const presSinUnidad = presentacionesConUnidad.find(p => !p.unidad_medida_id)
+    if (presSinUnidad) {
+      if (activeTab !== 'presentaciones') setActiveTab('presentaciones')
+      return toast.error(
+        'Unidad de medida requerida',
+        `La presentación "${presSinUnidad.nombre || 'Sin nombre'}" debe tener asignada una unidad de medida.`
+      )
+    }
+
     setLoading(true)
 
     const payload = {
       ...formData,
-      presentaciones
+      presentaciones: presentacionesConUnidad
     }
 
     try {
@@ -773,7 +793,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                 Comportamiento Operativo y Opciones de Venta
               </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                   <input
                     type="checkbox"
@@ -827,17 +847,6 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                     className="w-4 h-4 text-[#01a59c] rounded border-slate-300 focus:ring-[#01a59c]"
                   />
                   <span>Es Insumo</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <input
-                    type="checkbox"
-                    name="activo"
-                    checked={formData.activo}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-[#01a59c] rounded border-slate-300 focus:ring-[#01a59c]"
-                  />
-                  <span>Producto Activo</span>
                 </label>
               </div>
             </div>
@@ -982,12 +991,13 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                       ) : (
                         <div>
                           <SearchableSelect
-                            label="Unidad de Medida"
+                            label="Unidad de Medida *"
                             options={opcionesUnidades}
-                            value={pres.unidad_medida_id || formData.unidad_medida_id}
+                            value={pres.unidad_medida_id || ''}
                             onChange={(val) => handlePresentacionChange(idx, 'unidad_medida_id', val)}
                             placeholder="Buscar unidad..."
                             allowEmpty={false}
+                            error={submitted && !pres.unidad_medida_id ? 'Requerido' : ''}
                           />
                         </div>
                       )}

@@ -54,9 +54,9 @@ export default function Vender() {
   // 2. Modales
   const [isBuscarClienteOpen, setIsBuscarClienteOpen] = useState(false)
 
-  // Cargar productos y verificar turno de caja al montar
+  // Cargar productos activos y verificar turno de caja al montar
   useEffect(() => {
-    fetchProductos()
+    fetchProductos({ activo: true })
 
     const verificarCajaActiva = async () => {
       try {

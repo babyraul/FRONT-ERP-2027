@@ -7,7 +7,9 @@ import {
   TrashIcon,
   ArchiveBoxIcon,
   TagIcon,
-  ClipboardDocumentListIcon
+  ClipboardDocumentListIcon,
+  ExclamationTriangleIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import { useProductosStore } from '../../../store/useProductosStore.js'
 import { productoController } from '../controllers/producto.js'
@@ -19,15 +21,21 @@ import Can from '../../../components/ui/Can.jsx'
 import { toast } from '../../../utils/toast.js'
 
 export default function Productos() {
-  const { productos, loading, fetchProductos, deleteProducto } = useProductosStore()
+  const { productos, loading, fetchProductos, deleteProducto, activarProducto } = useProductosStore()
 
   const [busq, setBusq] = useState('')
+  const [estadoFiltro, setEstadoFiltro] = useState('activos') // 'activos' | 'inactivos' | 'todos'
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [productoEdit, setProductoEdit] = useState(null)
   const [kardexModalOpen, setKardexModalOpen] = useState(false)
   const [kardexProducto, setKardexProducto] = useState(null)
   const [kardexRows, setKardexRows] = useState([])
   const [loadingKardex, setLoadingKardex] = useState(false)
+
+  // Estado para el Modal de confirmación de Baja / Inactivación
+  const [bajaModalOpen, setBajaModalOpen] = useState(false)
+  const [productoABajar, setProductoABajar] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleOpenKardex = async (prod) => {
     setKardexProducto(prod)
@@ -48,13 +56,24 @@ export default function Productos() {
   }, [fetchProductos])
 
   const filtered = useMemo(() => {
-    return productos.filter(p =>
-      p.nombre?.toLowerCase().includes(busq.toLowerCase()) ||
-      p.codigo?.toLowerCase().includes(busq.toLowerCase()) ||
-      p.codigo_barra?.toLowerCase().includes(busq.toLowerCase()) ||
-      p.palabra_clave?.toLowerCase().includes(busq.toLowerCase())
-    )
-  }, [productos, busq])
+    return productos.filter(p => {
+      // Filtro por Estado (Activo / Inactivo / Todos)
+      const isActivo = p.activo !== false
+      if (estadoFiltro === 'activos' && !isActivo) return false
+      if (estadoFiltro === 'inactivos' && isActivo) return false
+
+      // Filtro de Búsqueda
+      const query = busq.toLowerCase().trim()
+      if (!query) return true
+
+      return (
+        p.nombre?.toLowerCase().includes(query) ||
+        p.codigo?.toLowerCase().includes(query) ||
+        p.codigo_barra?.toLowerCase().includes(query) ||
+        p.palabra_clave?.toLowerCase().includes(query)
+      )
+    })
+  }, [productos, busq, estadoFiltro])
 
   const handleExport = () => {
     if (filtered.length === 0) {
@@ -69,7 +88,8 @@ export default function Productos() {
       'Precio Costo': Number(p.precio_costo || 0),
       'Precio Mayor': Number(p.precio_mayor || 0),
       'Stock Mínimo': Number(p.stock_minimo || 0),
-      Facturable: p.es_facturable ? 'Sí' : 'No'
+      Facturable: p.es_facturable ? 'Sí' : 'No',
+      Estado: p.activo !== false ? 'Activo' : 'Inactivo / Baja'
     }))
     exportToExcel(data, 'catalogo_productos', 'Productos')
     toast.success('Archivo descargado', 'El catálogo de productos se ha exportado correctamente a Excel.')
@@ -85,13 +105,31 @@ export default function Productos() {
     setIsModalOpen(true)
   }
 
-  const handleDelete = async (id, nombre) => {
-    if (!window.confirm(`¿Desea dar de baja el producto "${nombre || 'seleccionado'}"?`)) return
-    const res = await deleteProducto(id)
+  const handleSolicitarBaja = (prod) => {
+    setProductoABajar(prod)
+    setBajaModalOpen(true)
+  }
+
+  const handleConfirmarBaja = async () => {
+    if (!productoABajar?.id) return
+    setIsDeleting(true)
+    const res = await deleteProducto(productoABajar.id)
+    setIsDeleting(false)
     if (res.success) {
-      toast.success('Producto inactivado', 'El producto ha sido dado de baja del catálogo.')
+      toast.success('Producto inactivado', `"${productoABajar.nombre}" ha sido dado de baja del catálogo.`)
+      setBajaModalOpen(false)
+      setProductoABajar(null)
     } else {
       toast.error('Error al inactivar', res.error || 'No se pudo dar de baja el producto.')
+    }
+  }
+
+  const handleReactivar = async (prod) => {
+    const res = await activarProducto(prod.id)
+    if (res.success) {
+      toast.success('Producto reactivado', `"${prod.nombre}" vuelve a estar activo en el catálogo.`)
+    } else {
+      toast.error('Error al reactivar', res.error || 'No se pudo reactivar el producto.')
     }
   }
 
@@ -107,6 +145,7 @@ export default function Productos() {
       header: 'Acciones',
       cell: (info) => {
         const p = info.row.original
+        const isActivo = p.activo !== false
         return (
           <div className="flex justify-end gap-1">
             <button
@@ -127,13 +166,23 @@ export default function Productos() {
               </button>
             </Can>
             <Can I="eliminar" a="productos">
-              <button
-                onClick={() => handleDelete(p.id, p.nombre)}
-                className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                title="Inactivar producto"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
+              {isActivo ? (
+                <button
+                  onClick={() => handleSolicitarBaja(p)}
+                  className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  title="Dar de baja / Inactivar producto"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleReactivar(p)}
+                  className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                  title="Reactivar producto"
+                >
+                  <ArrowPathIcon className="h-4 w-4" />
+                </button>
+              )}
             </Can>
           </div>
         )
@@ -179,6 +228,11 @@ export default function Productos() {
           <div className="space-y-0.5 max-w-xs">
             <div className="font-semibold text-slate-800 dark:text-white flex items-center gap-1.5 flex-wrap">
               <span>{p.nombre}</span>
+              {p.activo === false && (
+                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-400 border border-rose-300 dark:border-rose-800 shrink-0">
+                  Inactivo / Baja
+                </span>
+              )}
               {p.unidad_medida_id && (
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700">
                   {p.unidad_medida_id}
@@ -385,6 +439,30 @@ export default function Productos() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          {/* Selector de Estado: Activos, Inactivos, Todos */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+            {[
+              { id: 'activos', label: 'Activos' },
+              { id: 'inactivos', label: 'Dados de Baja' },
+              { id: 'todos', label: 'Todos' }
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setEstadoFiltro(f.id)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                  estadoFiltro === f.id
+                    ? f.id === 'inactivos'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
           <div className="relative flex-1 sm:flex-none">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
@@ -418,7 +496,11 @@ export default function Productos() {
           data={filtered}
           columns={columns}
           loading={loading}
-          emptyMessage="No se encontraron productos registrados en esta sucursal."
+          emptyMessage={
+            estadoFiltro === 'inactivos'
+              ? 'No hay productos dados de baja en el catálogo.'
+              : 'No se encontraron productos registrados en esta sucursal.'
+          }
         />
       </div>
 
@@ -429,6 +511,56 @@ export default function Productos() {
         producto={productoEdit}
         onSave={fetchProductos}
       />
+
+      {/* Modal Confirmación de Baja / Inactivación */}
+      <Modal
+        isOpen={bajaModalOpen}
+        onClose={() => {
+          if (!isDeleting) {
+            setBajaModalOpen(false)
+            setProductoABajar(null)
+          }
+        }}
+        title="Confirmar Baja de Producto"
+        size="md"
+        confirmText={isDeleting ? 'Inactivando...' : 'Sí, dar de baja'}
+        cancelText="Cancelar"
+        isProcessing={isDeleting}
+        onConfirm={handleConfirmarBaja}
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50">
+            <ExclamationTriangleIcon className="h-6 w-6 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+              <p className="font-bold">¿Está seguro de dar de baja este producto?</p>
+              <p className="mt-1">
+                El producto dejará de estar disponible para nuevas ventas en caja y catálogo activo, pero su historial de kárdex, stock y comprobantes pasados se preservarán intactos.
+              </p>
+            </div>
+          </div>
+
+          {productoABajar && (
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-1.5 font-mono">
+              <div>
+                <span className="text-slate-400 font-sans">Producto:</span>{' '}
+                <strong className="text-slate-800 dark:text-white font-sans">{productoABajar.nombre}</strong>
+              </div>
+              {productoABajar.codigo && (
+                <div>
+                  <span className="text-slate-400 font-sans">Código:</span>{' '}
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">{productoABajar.codigo}</span>
+                </div>
+              )}
+              <div>
+                <span className="text-slate-400 font-sans">Stock Base Actual:</span>{' '}
+                <span className="font-bold text-slate-700 dark:text-slate-300">
+                  {Number(productoABajar.stock_actual ?? productoABajar.stock ?? 0)} {productoABajar.unidad_medida_id || 'NIU'}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* Modal Kárdex Histórico (tabla stock) */}
       <Modal

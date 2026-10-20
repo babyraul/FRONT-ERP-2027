@@ -270,13 +270,13 @@ export default function StockKardexModal({
                 {presentacionesProducto.length > 0 ? (
                   presentacionesProducto.map((p) => (
                     <option key={p.presentacion_id} value={p.presentacion_id}>
-                      {p.presentacion_nombre} (x{p.multiplica_por || 1})
+                      {p.presentacion_nombre} (x{p.multiplica_por || 1} {p.unidad_medida_id || itemSeleccionado.unidad_medida_id})
                     </option>
                   ))
                 ) : (
                   itemSeleccionado.presentacion_id && (
                     <option value={itemSeleccionado.presentacion_id}>
-                      {itemSeleccionado.presentacion_nombre} (x{itemSeleccionado.multiplica_por || 1})
+                      {itemSeleccionado.presentacion_nombre} (x{itemSeleccionado.multiplica_por || 1} {itemSeleccionado.unidad_medida_id})
                     </option>
                   )
                 )}
