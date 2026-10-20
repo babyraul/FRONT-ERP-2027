@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline'
 import PageHeader from '../../../components/ui/PageHeader.jsx'
 import { ExportExcelButton, RefreshButton } from '../../../components/ui/ActionButtons.jsx'
-import { getTodayStr } from '../../../components/ui/DateRangeFilter.jsx'
+import { getTodayStr, toDateStr } from '../../../components/ui/DateRangeFilter.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import VentaDetalleModal from '../components/VentaDetalleModal.jsx'
 import { ventaController } from '../controllers/ventaController.js'
@@ -209,8 +209,8 @@ export default function Ventas() {
           let showDetalle = canSeeTotalColumnVentas
 
           if (!canSeeTotalColumnVentas) {
-            const fechaV = v.fecha_emision ? new Date(v.fecha_emision).toISOString().split('T')[0] : ''
-            const hoy = new Date().toISOString().split('T')[0]
+            const fechaV = v.fecha_emision ? toDateStr(new Date(v.fecha_emision)) : ''
+            const hoy = getTodayStr()
             showReimprimir = (fechaV === hoy) && (rowIndex < 3)
           }
 

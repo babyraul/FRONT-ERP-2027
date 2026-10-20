@@ -1,21 +1,19 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ArrowDownTrayIcon,
-  CalendarIcon,
   EyeIcon,
-  ArrowPathIcon,
-  TicketIcon,
   PrinterIcon,
   DocumentDuplicateIcon,
   CheckCircleIcon,
-  XCircleIcon,
   CurrencyDollarIcon,
   TrashIcon,
   CheckIcon,
   RectangleStackIcon,
   BoltIcon
 } from '@heroicons/react/24/outline'
+import PageHeader from '../../../components/ui/PageHeader.jsx'
+import { ExportExcelButton, RefreshButton } from '../../../components/ui/ActionButtons.jsx'
+import { getTodayStr, toDateStr } from '../../../components/ui/DateRangeFilter.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import Modal from '../../../components/ui/Modal.jsx'
 import VentaDetalleModal from '../components/VentaDetalleModal.jsx'
@@ -26,6 +24,11 @@ import { usePermission } from '../../../hooks/usePermission.js'
 import { printTicketVenta } from '../../../utils/ticketVentaPrint.js'
 
 const STORAGE_KEY_TIME_RANGE = 'list-vales-time-range'
+
+// Estado normalizado del vale (por defecto EMITIDO)
+const getEstadoVale = (v) => String(v?.estado || v?.estado_venta || 'EMITIDO').toUpperCase()
+// Vales EMITIDOS = pendientes de formalizar (canje a Factura/Boleta)
+const isValeEmitido = (v) => ['EMITIDO'].includes(getEstadoVale(v))
 
 export default function Vales() {
   const navigate = useNavigate()
@@ -52,8 +55,8 @@ export default function Vales() {
         const parsed = JSON.parse(saved)
         if (parsed.fechaInicio) return parsed.fechaInicio
       }
-    } catch {}
-    return new Date().toISOString().split('T')[0]
+    } catch { }
+    return getTodayStr()
   })
 
   const [fechaFin, setFechaFin] = useState(() => {
@@ -63,8 +66,8 @@ export default function Vales() {
         const parsed = JSON.parse(saved)
         if (parsed.fechaFin) return parsed.fechaFin
       }
-    } catch {}
-    return new Date().toISOString().split('T')[0]
+    } catch { }
+    return getTodayStr()
   })
 
   // Modal de Detalle
@@ -106,6 +109,12 @@ export default function Vales() {
   }, [fechaInicio, fechaFin])
 
   useEffect(() => {
+    try {
+      sessionStorage.removeItem(STORAGE_KEY_TIME_RANGE)
+    } catch { }
+  }, [])
+
+  useEffect(() => {
     loadVales()
   }, [loadVales])
 
@@ -114,18 +123,18 @@ export default function Vales() {
     const dataset = filteredVales.length > 0 || vales.length === 0 ? filteredVales : vales
 
     let totalSelected = 0
-    let totalPendientes = 0
+    let totalEmitidos = 0
     let totalGeneral = 0
 
     dataset.forEach((v) => {
-      const estado = String(v.estado || v.estado_venta || 'PENDIENTE').toUpperCase()
+      const estado = getEstadoVale(v)
       const totalNum = Number(v.total || v.total_venta || 0)
 
       if (estado !== 'ANULADA' && estado !== 'ANULADO') {
         totalGeneral += totalNum
 
-        if (estado === 'PENDIENTE') {
-          totalPendientes += totalNum
+        if (isValeEmitido(v)) {
+          totalEmitidos += totalNum
         }
 
         if (selectedIds.has(v.id)) {
@@ -136,7 +145,7 @@ export default function Vales() {
 
     return {
       totalSelectedStr: totalSelected.toFixed(2),
-      totalPendientesStr: totalPendientes.toFixed(2),
+      totalEmitidosStr: totalEmitidos.toFixed(2),
       totalGeneralStr: totalGeneral.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
       cantidadTotal: dataset.length,
       cantidadSeleccionados: selectedIds.size
@@ -159,30 +168,24 @@ export default function Vales() {
   // Acción: Seleccionar todos los pendientes
   const handleSelectAllPendientes = () => {
     const dataset = filteredVales.length > 0 || vales.length === 0 ? filteredVales : vales
-    const pendientes = dataset.filter(v => {
-      const est = String(v.estado || v.estado_venta || 'PENDIENTE').toUpperCase()
-      return est === 'PENDIENTE' && v.showCheck !== false
-    })
+    const pendientes = dataset.filter(v => isValeEmitido(v) && v.showCheck !== false)
 
     if (pendientes.length === 0) {
-      toast.info('No hay vales pendientes seleccionables.')
+      toast.info('No hay vales emitidos seleccionables.')
       return
     }
 
     setSelectedIds(new Set(pendientes.map(v => v.id)))
-    toast.success(`Se seleccionaron ${pendientes.length} vales pendientes.`)
+    toast.success(`Se seleccionaron ${pendientes.length} vales emitidos.`)
   }
 
   // Acción: Seleccionar los 20 primeros pendientes (RN-04)
   const handleSelectTwentyVales = () => {
     const dataset = filteredVales.length > 0 || vales.length === 0 ? filteredVales : vales
-    const pendientes = dataset.filter(v => {
-      const est = String(v.estado || v.estado_venta || 'PENDIENTE').toUpperCase()
-      return est === 'PENDIENTE' && v.showCheck !== false
-    })
+    const pendientes = dataset.filter(v => isValeEmitido(v) && v.showCheck !== false)
 
     if (pendientes.length === 0) {
-      toast.info('No hay vales pendientes para seleccionar.')
+      toast.info('No hay vales emitidos para seleccionar.')
       return
     }
 
@@ -211,7 +214,7 @@ export default function Vales() {
     // Persistir rango de fechas en sessionStorage para retorno del usuario (RN-02)
     try {
       sessionStorage.setItem(STORAGE_KEY_TIME_RANGE, JSON.stringify({ fechaInicio, fechaFin }))
-    } catch {}
+    } catch { }
 
     const idsArray = Array.from(selectedIds)
     navigate(`/vales/procesar/${idsArray.join(',')}`)
@@ -352,8 +355,8 @@ export default function Vales() {
         ),
         cell: ({ row }) => {
           const v = row.original
-          const est = String(v.estado || v.estado_venta || 'PENDIENTE').toUpperCase()
-          const isPendiente = est === 'PENDIENTE'
+          const est = getEstadoVale(v)
+          const isPendiente = isValeEmitido(v)
           const canCheck = isPendiente && hasEditPerm && v.showCheck !== false
           const isChecked = selectedIds.has(v.id)
 
@@ -387,15 +390,14 @@ export default function Vales() {
         cell: ({ row }) => {
           const v = row.original
           const rowIndex = row.index
-          const est = String(v.estado || v.estado_venta || 'PENDIENTE').toUpperCase()
-          const isPendiente = est === 'PENDIENTE'
+          const isPendiente = isValeEmitido(v)
 
           let showReimprimir = true
           let showDetalle = canSeeTotalColumnVales
 
           if (!canSeeTotalColumnVales) {
-            const fechaV = v.fecha_emision ? new Date(v.fecha_emision).toISOString().split('T')[0] : ''
-            const hoy = new Date().toISOString().split('T')[0]
+            const fechaV = v.fecha_emision ? toDateStr(new Date(v.fecha_emision)) : ''
+            const hoy = getTodayStr()
             showReimprimir = (fechaV === hoy) && (rowIndex < 3)
           }
 
@@ -566,20 +568,19 @@ export default function Vales() {
         accessorKey: 'estado',
         header: 'Estado',
         cell: ({ row }) => {
-          const est = String(row.original.estado || 'PENDIENTE').toUpperCase()
+          const est = getEstadoVale(row.original)
           const isAnulada = est === 'ANULADA' || est === 'ANULADO'
           const isProcesado = est === 'PROCESADO' || est === 'PROCESADA'
 
           return (
             <div className="text-center">
               <span
-                className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                  isAnulada
+                className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isAnulada
                     ? 'bg-red-200 text-red-800 border border-red-300'
                     : isProcesado
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400'
-                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
-                }`}
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400'
+                      : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
+                  }`}
               >
                 {est}
               </span>
@@ -658,104 +659,67 @@ export default function Vales() {
 
   return (
     <div className="space-y-4">
-      {/* ── ENCABEZADO Y ACCIONES PRINCIPALES ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <TicketIcon className="h-6 w-6 text-[#01a59c]" />
-            Lista de Vales
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Gestión, selección y consolidación fiscal de comprobantes de venta interna
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {canSeeTotalOnVales && (
-            <button
-              type="button"
-              onClick={handleExportExcel}
-              disabled={loading || vales.length === 0}
-              className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
-              title="Descarga reporte de Vales en EXCEL"
-            >
-              <ArrowDownTrayIcon className="h-4 w-4 text-emerald-600" />
-              <span>Descargar Excel</span>
-            </button>
-          )}
-
-          {hasEditPerm && (
-            <button
-              type="button"
-              onClick={handleProcesarVales}
-              disabled={selectedIds.size === 0}
-              className="px-4 py-2 bg-[#01a59c] hover:bg-[#018e86] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
-              title="Procesar vales seleccionados para emitir Factura o Boleta"
-            >
-              <BoltIcon className="h-4 w-4 text-amber-300" />
-              <span>Procesar Vales ({selectedIds.size})</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── BARRA DE HERRAMIENTAS Y FILTROS ── */}
-      <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        {/* Rango de Fechas */}
-        <div className="flex flex-wrap items-center gap-2">
-          {canChangeDateForRecords ? (
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-200/60 dark:border-slate-700">
-              <CalendarIcon className="h-4 w-4 text-[#01a59c] shrink-0" />
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Desde:</span>
-              <input
-                type="date"
-                value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-                className="text-xs py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c]"
+      {/* ── ENCABEZADO Y FILTROS GLOBALES ── */}
+      <PageHeader
+        title="Lista de Vales"
+        dateRange={canChangeDateForRecords ? {
+          from: fechaInicio,
+          to: fechaFin,
+          onChange: ({ from, to }) => {
+            setFechaInicio(from)
+            setFechaFin(to)
+          }
+        } : undefined}
+        actions={
+          <>
+            <RefreshButton
+              onClick={loadVales}
+              loading={loading}
+              title="Actualizar vales"
+            />
+            {canSeeTotalOnVales && (
+              <ExportExcelButton
+                onClick={handleExportExcel}
+                disabled={loading || vales.length === 0}
+                label="Descargar Excel"
+                title="Descarga reporte de Vales en EXCEL"
               />
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Hasta:</span>
-              <input
-                type="date"
-                value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
-                className="text-xs py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c]"
-              />
-            </div>
-          ) : (
-            <div className="text-xs font-medium text-slate-500 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200/60">
-              Fecha de consulta: <span className="font-bold text-slate-700 dark:text-slate-300">{fechaInicio}</span>
-            </div>
-          )}
+            )}
+            {hasEditPerm && (
+              <button
+                type="button"
+                onClick={handleProcesarVales}
+                disabled={selectedIds.size === 0}
+                className="px-4 py-2 bg-[#01a59c] hover:bg-[#018e86] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+                title="Procesar vales seleccionados para emitir Factura o Boleta"
+              >
+                <BoltIcon className="h-4 w-4 text-amber-300" />
+                <span>Procesar Vales ({selectedIds.size})</span>
+              </button>
+            )}
+          </>
+        }
+      />
 
-          <button
-            type="button"
-            onClick={loadVales}
-            disabled={loading}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
-          >
-            <ArrowPathIcon className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>{loading ? 'Cargando...' : 'Filtrar'}</span>
-          </button>
-        </div>
-
-        {/* Acciones de Selección Rápida en Lote (RN-04 / RN-05) */}
+      {/* ── ACCIONES DE SELECCIÓN RÁPIDA EN LOTE (RN-04 / RN-05) ── */}
+      <div className="flex flex-wrap items-center justify-end gap-3">
         {hasEditPerm && (
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
               onClick={handleSelectAllPendientes}
               className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-colors"
-              title="Seleccionar todos los vales en estado PENDIENTE"
+              title="Seleccionar todos los vales en estado EMITIDO"
             >
               <CheckIcon className="h-3.5 w-3.5 text-emerald-600" />
-              <span>Todos los pendientes</span>
+              <span>Todos los emitidos</span>
             </button>
 
             <button
               type="button"
               onClick={handleSelectTwentyVales}
               className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-colors"
-              title="Seleccionar hasta 20 vales pendientes"
+              title="Seleccionar hasta 20 vales emitidos"
             >
               <RectangleStackIcon className="h-3.5 w-3.5 text-blue-600" />
               <span>20 primeros</span>
@@ -797,10 +761,10 @@ export default function Vales() {
             </div>
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Total de Pendientes
+                Total de Emitidos
               </span>
               <p className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400 font-mono mt-0.5">
-                S/ {totales.totalPendientesStr}
+                S/ {totales.totalEmitidosStr}
               </p>
             </div>
           </div>
