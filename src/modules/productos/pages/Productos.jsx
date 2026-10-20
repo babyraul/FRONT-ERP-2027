@@ -259,7 +259,7 @@ export default function Productos() {
       }
     },
     {
-      header: 'Presentaciones & Tarifas',
+      header: 'Presentaciones & Precios',
       id: 'presentaciones_tarifas',
       cell: (info) => {
         const p = info.row.original
@@ -491,10 +491,10 @@ export default function Productos() {
                 type="button"
                 onClick={() => setEstadoFiltro(f.id)}
                 className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${estadoFiltro === f.id
-                    ? f.id === 'inactivos'
-                      ? 'bg-rose-600 text-white shadow-xs'
-                      : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                  ? f.id === 'inactivos'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
                   }`}
               >
                 {f.label}

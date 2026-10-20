@@ -8,7 +8,8 @@ export default function CierreTurnoModal({
   onSave,
   turno,
   metodosPago = [],
-  isProcessing = false
+  isProcessing = false,
+  variant = 'drawer'
 }) {
   const [declarados, setDeclarados] = useState({})
   const [observacion, setObservacion] = useState('')
@@ -62,19 +63,14 @@ export default function CierreTurnoModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      variant={variant}
       title={`Cierre de Caja — ${turno.identificador_caja}`}
-      subtitle={`Turno abierto el ${new Date(turno.fecha_apertura).toLocaleString()} por ${turno.usuario_nombre || 'Usuario'}`}
       confirmButtonId="cierre-turno-form"
       confirmText="Confirmar y Cerrar Caja"
       isProcessing={isProcessing}
       maxWidth="max-w-xl"
     >
       <form id="cierre-turno-form" onSubmit={handleSubmit} className="space-y-4">
-        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 p-3 rounded-xl text-xs text-amber-800 dark:text-amber-300">
-          <p className="font-semibold mb-0.5">Arqueo y Declaración de Montos</p>
-          Ingrese los montos reales arqueados físicamente en caja por cada medio de pago para calcular posibles faltantes o sobrantes.
-        </div>
-
         <div className="space-y-3">
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
             Montos Declarados por Medio de Pago

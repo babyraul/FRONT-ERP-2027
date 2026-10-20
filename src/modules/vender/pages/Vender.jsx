@@ -248,6 +248,8 @@ export default function Vender() {
 
   // Navegar a la pantalla de Pago / Procesar Preventa en BD
   const handleIrAPagar = async () => {
+    if (isSubmitting) return
+
     // 0. Validar estado de caja (RN-V01 y RN-V02)
     if (cajaStatus.bloqueado) {
       toast.error('Caja no disponible', cajaStatus.mensaje)
@@ -575,6 +577,7 @@ export default function Vender() {
         igv={totales.igv}
         total={totales.total}
         itemCount={cartItems.length}
+        disabled={isSubmitting}
         onGenerarVenta={handleIrAPagar}
       />
 

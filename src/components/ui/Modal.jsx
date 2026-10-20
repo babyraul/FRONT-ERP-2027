@@ -1,24 +1,43 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import ActionSection from './ActionSection.jsx'
 
 /**
- * Componente Global Modal
- * Unifica el diseño de todas las ventanas modales del sistema.
+ * Componente Global Modal / Drawer
+ * Unifica las ventanas y paneles de edición/creación del sistema con animación fluida.
  * 
- * @param {boolean} isOpen - Estado de apertura del modal
- * @param {function} onClose - Función para cerrar el modal
- * @param {string|ReactNode} title - Título del modal
- * @param {string|ReactNode} subtitle - Subtítulo opcional (puede incluir JSX)
- * @param {function} onConfirm - Función al pulsar el botón principal (si se omite, se asume que el body maneja su propio form/submit)
- * @param {string} confirmText - Texto del botón principal
- * @param {string} cancelText - Texto del botón de cancelar
+ * @param {boolean} isOpen - Estado de apertura
+ * @param {function} onClose - Función para cerrar
+ * @param {string|ReactNode} title - Título principal
+ * @param {string|ReactNode} subtitle - Subtítulo opcional
+ * @param {function} onConfirm - Función al pulsar el botón principal
+ * @param {string} confirmText - Texto del botón principal (def: 'Guardar')
+ * @param {string} cancelText - Texto del botón de cancelar (def: 'Cancelar')
  * @param {boolean} isProcessing - Estado de carga para el botón principal
- * @param {string} maxWidth - Clase de ancho máximo (ej: max-w-lg, max-w-2xl, max-w-3xl)
- * @param {string} size - Atajo de tamaño (sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl, full)
- * @param {ReactNode} children - Contenido del cuerpo del modal
- * @param {string} confirmButtonId - ID del form a hacer submit si se usa el botón principal como tipo "submit" (opcional)
+ * @param {string} maxWidth - Clase de ancho máximo personalizada
+ * @param {string} size - Atajo de tamaño (sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, full)
+ * @param {'drawer'|'modal'|'inline'} variant - Tipo de animación: 'drawer' (panel lateral deslizante), 'modal' (centrado con zoom) o 'inline' (reemplaza/cubre con animación fluida la sección contenedora asignada)
+ * @param {ReactNode} children - Contenido del cuerpo
+ * @param {string} confirmButtonId - ID del form a hacer submit
+ * @param {boolean} showFooter - Si muestra la barra inferior de botones
+ * @param {boolean} hideConfirm - Ocultar el botón confirmar
+ * @param {boolean} noPadding - Quitar el padding por defecto del cuerpo
  */
-const sizeMap = {
+const sizeMapDrawer = {
+  sm: 'max-w-md',
+  md: 'max-w-lg',
+  lg: 'max-w-xl',
+  xl: 'max-w-2xl',
+  '2xl': 'max-w-3xl',
+  '3xl': 'max-w-4xl',
+  '4xl': 'max-w-5xl',
+  '5xl': 'max-w-6xl',
+  '6xl': 'max-w-7xl',
+  '7xl': 'max-w-[90vw]',
+  full: 'max-w-[94vw]'
+}
+
+const sizeMapModal = {
   sm: 'max-w-sm',
   md: 'max-w-md',
   lg: 'max-w-lg',
@@ -43,24 +62,48 @@ export default function Modal({
   isProcessing = false,
   maxWidth,
   size,
+  variant = 'drawer', // 'drawer' | 'modal' | 'inline'
   children,
   confirmButtonId,
   showFooter = true,
   hideConfirm = false,
   noPadding = false
 }) {
-  const resolvedMaxWidth = maxWidth || (size && sizeMap[size]) || 'max-w-lg'
-  // Prevenir scroll en el body cuando el modal está abierto
+  // Manejo de montaje y animación de salida
+  const [mounted, setMounted] = useState(false)
+  const [active, setActive] = useState(false)
+
+  const isInline = variant === 'inline'
+  const isDrawer = variant === 'drawer'
+
   useEffect(() => {
+    let timer
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      setMounted(true)
+      // Activar la transición en el siguiente frame
+      timer = setTimeout(() => {
+        setActive(true)
+      }, 20)
+      if (!isInline) {
+        document.body.style.overflow = 'hidden'
+      }
     } else {
-      document.body.style.overflow = 'unset'
+      setActive(false)
+      // Esperar a que concluya la animación de salida (300ms) para desmontar
+      timer = setTimeout(() => {
+        setMounted(false)
+      }, 300)
+      if (!isInline) {
+        document.body.style.overflow = 'unset'
+      }
     }
     return () => {
-      document.body.style.overflow = 'unset'
+      clearTimeout(timer)
+      if (!isInline) {
+        document.body.style.overflow = 'unset'
+      }
     }
-  }, [isOpen])
+  }, [isOpen, isInline])
 
   // Cerrar con tecla Escape
   useEffect(() => {
@@ -71,34 +114,81 @@ export default function Modal({
     return () => window.removeEventListener('keydown', handleEsc)
   }, [isOpen, onClose])
 
-  if (!isOpen) return null
+  if (!mounted) return null
 
+  const resolvedMaxWidth = maxWidth || (size && (isDrawer ? sizeMapDrawer[size] : sizeMapModal[size])) || (isDrawer ? 'max-w-2xl' : 'max-w-lg')
+
+  // Reenviar a ActionSection si se usa variant="inline" para máxima compatibilidad
+  if (variant === 'inline') {
+    return (
+      <ActionSection
+        isOpen={isOpen}
+        onClose={onClose}
+        title={title}
+        subtitle={subtitle}
+        onConfirm={onConfirm}
+        confirmText={confirmText}
+        cancelText={cancelText}
+        isProcessing={isProcessing}
+        confirmButtonId={confirmButtonId}
+        showFooter={showFooter}
+        hideConfirm={hideConfirm}
+        noPadding={noPadding}
+      >
+        {children}
+      </ActionSection>
+    )
+  }
+
+  // VARIANTE DRAWER / MODAL
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 duration-200">
+    <div 
+      className={`fixed inset-0 z-[100] transition-colors duration-300 ${
+        isDrawer 
+          ? 'overflow-hidden flex justify-end bg-slate-900/30 dark:bg-black/40 backdrop-blur-[2px]' 
+          : 'flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs'
+      } ${active ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      onClick={(e) => {
+        // Cierra si se hace clic en el backdrop directamente
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
+    >
       <div 
-        className={`bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-2xl w-full ${resolvedMaxWidth} overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200`}
+        className={
+          isDrawer
+            ? `bg-slate-50 dark:bg-slate-900 h-full w-full ${resolvedMaxWidth} shadow-2xl flex flex-col border-l border-slate-200/80 dark:border-slate-800 transform transition-all duration-300 ease-out ${
+                active ? 'translate-x-0' : 'translate-x-full'
+              }`
+            : `bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-2xl w-full ${resolvedMaxWidth} overflow-hidden flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out ${
+                active ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
+              }`
+        }
         role="dialog"
         aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
       >
         
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+        <div className="flex items-start justify-between px-6 py-4.5 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white leading-tight">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">
               {title}
             </h2>
             {subtitle && (
-              <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-normal">
                 {subtitle}
               </div>
             )}
           </div>
           <button 
+            type="button"
             onClick={onClose} 
-            className="p-2 -mr-2 -mt-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Cerrar modal"
+            className="p-1.5 -mr-1 -mt-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Cerrar panel"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
 
@@ -109,11 +199,11 @@ export default function Modal({
 
         {/* Footer */}
         {showFooter && (
-          <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-end gap-3 shrink-0">
+          <div className="px-6 py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm flex justify-end items-center gap-3 shrink-0">
             <button 
               type="button" 
               onClick={onClose} 
-              className="px-5 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-500"
             >
               {cancelText}
             </button>
@@ -123,7 +213,7 @@ export default function Modal({
                 form={confirmButtonId}
                 onClick={!confirmButtonId && onConfirm ? onConfirm : undefined} 
                 disabled={isProcessing}
-                className="btn-primary px-6 py-2.5 rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+                className="btn-primary px-5 py-2 text-sm rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
               >
                 {isProcessing ? 'Procesando...' : confirmText}
               </button>
@@ -135,3 +225,4 @@ export default function Modal({
     </div>
   )
 }
+

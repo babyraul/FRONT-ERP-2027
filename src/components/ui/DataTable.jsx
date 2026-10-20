@@ -89,12 +89,17 @@ export function DataTable({
                   const isAcciones = header.column.id === 'acciones'
                   const colDef = header.column.columnDef
                   const extraClass = colDef.meta?.headerClassName || colDef.headerClassName || ''
+                  const colSize = header.getSize()
+                  const hasCustomSize = colDef.size !== undefined
+                  const thStyle = isAcciones
+                    ? { width: '1%', whiteSpace: 'nowrap' }
+                    : (hasCustomSize ? { width: colSize, minWidth: colSize } : (colSize !== 150 ? { width: colSize } : {}))
                   return (
                     <th
                       key={header.id}
                       colSpan={header.colSpan}
                       className={`relative px-5 py-4 font-semibold text-slate-600 dark:text-slate-300 group align-top ${extraClass}`}
-                      style={{ width: header.getSize() !== 150 ? header.getSize() : (isAcciones ? '1%' : 'auto') }}
+                      style={thStyle}
                     >
                       {header.isPlaceholder ? null : (
                         <div className={`flex flex-col h-full gap-1.5 justify-start ${isAcciones ? 'items-center text-center' : ''}`}>
@@ -146,11 +151,16 @@ export function DataTable({
                         const isAcciones = cell.column.id === 'acciones'
                         const colDef = cell.column.columnDef
                         const cellClass = colDef.meta?.cellClassName || colDef.cellClassName || colDef.className || ''
+                        const colSize = cell.column.getSize()
+                        const hasCustomSize = colDef.size !== undefined
+                        const tdStyle = isAcciones
+                          ? { width: '1%', whiteSpace: 'nowrap' }
+                          : (hasCustomSize ? { width: colSize, minWidth: colSize } : {})
                         return (
                           <td
                             key={cell.id}
                             className={`px-5 py-3.5 text-slate-600 dark:text-slate-300 ${isAcciones ? 'text-center' : ''} ${cellClass}`}
-                            style={isAcciones ? { width: '1%', whiteSpace: 'nowrap' } : {}}
+                            style={tdStyle}
                           >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </td>

@@ -19,7 +19,8 @@ export default function AperturaTurnoModal({
   onSave,
   cajasConfiguradas = [],
   metodosPago = [],
-  isProcessing = false
+  isProcessing = false,
+  variant = 'drawer'
 }) {
   const { user } = useAuthStore()
   const [selectedIden, setSelectedIden] = useState('')
@@ -82,6 +83,7 @@ export default function AperturaTurnoModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      variant={variant}
       title="Apertura de Turno de Caja"
       subtitle="Identifica la caja física, verifica sus series fiscales e inicializa el fondo de efectivo"
       confirmButtonId="apertura-turno-form"

@@ -11,7 +11,8 @@ export default function ClienteModal({
   onSave,
   cliente,
   tiposDocumento = [],
-  isProcessing = false
+  isProcessing = false,
+  variant = 'drawer'
 }) {
   const [formData, setFormData] = useState({
     tipo_documento_id: '1',
@@ -162,6 +163,7 @@ export default function ClienteModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      variant={variant}
       title={cliente ? 'Editar Cliente' : 'Nuevo Cliente'}
       subtitle={cliente ? 'Modifique la información y condiciones comerciales del cliente' : 'Complete el formulario para registrar un nuevo cliente'}
       confirmButtonId="cliente-form"

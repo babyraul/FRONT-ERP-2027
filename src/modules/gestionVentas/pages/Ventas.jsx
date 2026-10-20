@@ -306,7 +306,7 @@ export default function Ventas() {
             )}
           </div>
         ),
-        size: 220
+        size: 200
       },
       {
         accessorKey: 'fecha_emision',
@@ -316,12 +316,12 @@ export default function Ventas() {
           if (!fechaVal) return <span className="text-slate-400">-</span>
           const d = new Date(fechaVal)
           return (
-            <span className="text-xs font-mono text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
               {d.toLocaleDateString('es-PE')} {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )
         },
-        size: 130
+        size: 140
       },
       {
         id: 'serieCorrelativo',
@@ -361,21 +361,21 @@ export default function Ventas() {
             </span>
           )
         },
-        size: 120,
+        size: 140,
       },
       {
         accessorKey: 'placa',
         header: 'Alias',
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-600 dark:text-slate-300 text-center block">
+          <span className="font-mono text-xs text-slate-600 dark:text-slate-300 text-center block truncate">
             {row.original.placa || '-'}
           </span>
         ),
-        size: 110
+        size: 100
       }
     ]
 
-    // Columna Total
+    // Columna Total (destacada y con ancho asegurado)
     if (canSeeTotalColumnVentas) {
       cols.push({
         accessorKey: 'total',
@@ -383,26 +383,16 @@ export default function Ventas() {
         cell: ({ row }) => {
           const val = Number(row.original.total || row.original.total_venta || 0)
           return (
-            <div className="text-right font-mono text-xs font-bold text-slate-900 dark:text-white">
+            <div className="text-right font-mono text-xs font-bold text-slate-900 dark:text-white whitespace-nowrap px-1">
               S/ {val.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           )
         },
-        size: 150
+        size: 130
       })
     }
 
     cols.push(
-      // {
-      //   accessorKey: 'sucursal_nombre',
-      //   header: 'Sucursal',
-      //   cell: ({ row }) => (
-      //     <span className="text-xs text-slate-700 dark:text-slate-300 text-center block truncate">
-      //       {row.original.sucursal_nombre || 'Principal'}
-      //     </span>
-      //   ),
-      //   size: 130
-      // },
       {
         accessorKey: 'tipos_pago',
         header: 'Tipos de pago',
@@ -416,7 +406,7 @@ export default function Ventas() {
             </div>
           )
         },
-        size: 140
+        size: 120
       },
       {
         accessorKey: 'montos_pago',
@@ -440,13 +430,13 @@ export default function Ventas() {
             </div>
           )
         },
-        size: 140
+        size: 120
       },
       {
         accessorKey: 'modalidad_pago',
         header: 'Modalidad Pago',
         cell: ({ row }) => (
-          <span className="text-xs text-slate-700 dark:text-slate-300 block">
+          <span className="text-xs text-slate-700 dark:text-slate-300 block text-center whitespace-nowrap">
             {row.original.modalidad_pago || (row.original.tipo_pago_id === '2' ? 'Crédito' : 'Contado')}
           </span>
         ),
@@ -458,28 +448,18 @@ export default function Ventas() {
         cell: ({ row }) => {
           const t = String(row.original.tipo_documento || 'boleta').toUpperCase()
           return (
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block text-center whitespace-nowrap">
               {t === 'FACTURA' ? 'Factura' : t === 'BOLETA' ? 'Boleta' : 'Vale'}
             </span>
           )
         },
         size: 120
       },
-      // {
-      //   accessorKey: 'moneda',
-      //   header: 'Moneda',
-      //   cell: ({ row }) => (
-      //     <span className="font-mono text-xs text-slate-600 dark:text-slate-400">
-      //       {row.original.moneda || 'PEN'}
-      //     </span>
-      //   ),
-      //   size: 80
-      // },
       {
         accessorKey: 'gravadas',
         header: 'Gravadas',
         cell: ({ row }) => (
-          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300">
+          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
             {Number(row.original.gravadas || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         ),
@@ -489,7 +469,7 @@ export default function Ventas() {
         accessorKey: 'exoneradas',
         header: 'Exoneradas',
         cell: ({ row }) => (
-          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300">
+          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
             {Number(row.original.exoneradas || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         ),
@@ -499,7 +479,7 @@ export default function Ventas() {
         accessorKey: 'inafectas',
         header: 'Inafectas',
         cell: ({ row }) => (
-          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300">
+          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
             {Number(row.original.inafectas || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         ),
@@ -509,7 +489,7 @@ export default function Ventas() {
         accessorKey: 'igv',
         header: 'IGV',
         cell: ({ row }) => (
-          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300">
+          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
             {Number(row.original.igv || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         ),
@@ -519,11 +499,11 @@ export default function Ventas() {
         accessorKey: 'descuento',
         header: 'Descuento',
         cell: ({ row }) => (
-          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300">
+          <div className="text-right font-mono text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
             {Number(row.original.descuento || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         ),
-        size: 90
+        size: 95
       }
     )
 
