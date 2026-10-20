@@ -942,7 +942,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                     )}
 
                     {/* Fila 1: Nombre, Unidad, Código de Barras y Factor Multiplicador */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                       <div className="md:col-span-2">
                         <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1 items-center justify-between">
                           <span>Nombre Presentación *</span>
@@ -984,9 +984,6 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                               ({formData.unidad_medida_id || 'NIU'})
                             </span>
                           </div>
-                          <span className="text-[10px] text-teal-600 dark:text-teal-400 block mt-0.5 font-medium">
-                            Sincronizada con Unidad Base
-                          </span>
                         </div>
                       ) : (
                         <div>
@@ -1141,7 +1138,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                           className="w-full px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs dark:text-white font-mono outline-none focus:ring-1 focus:ring-[#01a59c]"
                         />
                       </div>
-
+                      {/* 
                       <div className="flex items-center pt-3 pl-2">
                         <label className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
                           <input
@@ -1152,7 +1149,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                           />
                           <span>Presentación Activa</span>
                         </label>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 )

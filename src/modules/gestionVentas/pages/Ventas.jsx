@@ -130,21 +130,67 @@ export default function Ventas() {
   }
 
   // Duplicar Venta hacia Pre-Venta (RN-05)
-  const handleDuplicar = (venta) => {
-    navigate('/vender', {
-      state: {
-        preventaId: null,
-        tipoDocumento: String(venta.tipo_documento || 'boleta').toLowerCase(),
-        cliente: {
-          id: venta.cliente_id,
-          numero_documento: venta.cliente_numero_documento || '99999999',
-          nombre_razon_social: venta.cliente_nombre || 'VARIOS',
-          tipo_documento_id: venta.cliente_tipo_documento_id || '1'
-        },
-        placa: venta.placa || '',
-        cartItems: []
-      }
-    })
+  const handleDuplicar = async (venta) => {
+    try {
+      setLoading(true)
+      const res = await ventaController.getVentaById(venta.id)
+      const ventaData = res.success && res.data ? res.data : venta
+
+      // Mapear los items de la venta al formato requerido por el Carrito
+      const itemsMapped = (ventaData.items || []).map((it) => {
+        const prodId = it.producto_id
+        const presId = it.presentacion_id || null
+        const uniqueId = presId ? `${prodId}-${presId}` : `${prodId}-base`
+        const nombreProducto = it.producto_nombre || 'PRODUCTO'
+        const nombrePresentacion = it.presentacion_nombre || (presId ? 'PRESENTACIÓN' : 'UNIDAD')
+        const unidadMedidaId = it.unidad_medida_id || 'NIU'
+
+        return {
+          uniqueId,
+          producto_id: prodId,
+          presentacion_id: presId,
+          nombre_producto: nombreProducto,
+          nombre_presentacion: nombrePresentacion,
+          nombre_completo: `${nombreProducto} ${nombrePresentacion} ${unidadMedidaId}`.trim().toUpperCase(),
+          precio: Number(it.precio_unitario || 0),
+          precio_unitario: Number(it.precio_unitario || 0),
+          precio_costo: Number(it.precio_costo || 0),
+          precio_mayor: Number(it.precio_mayor || 0),
+          precio_especial: Number(it.precio_especial || 0),
+          cantidad: Number(it.cantidad || 1),
+          descuento: Number(it.descuento || 0),
+          tarifa: 'menor',
+          stock: 9999, // Stock referencial disponible para la venta
+          codigo: it.producto_codigo || '',
+          codigo_barra: it.cod_barra || '',
+          unidad_medida_id: unidadMedidaId,
+          unidad_medida: unidadMedidaId,
+          es_facturable: true
+        }
+      })
+
+      setLoading(false)
+
+      navigate('/vender', {
+        state: {
+          preventaId: null,
+          tipoDocumento: String(ventaData.tipo_documento || 'boleta').toLowerCase(),
+          cliente: {
+            id: ventaData.cliente_id,
+            numero_documento: ventaData.cliente_numero_documento || '99999999',
+            nombre_razon_social: ventaData.cliente_nombre || 'VARIOS',
+            tipo_documento_id: ventaData.cliente_tipo_documento_id || '1'
+          },
+          placa: ventaData.placa || '',
+          cartItems: itemsMapped
+        }
+      })
+      toast.success('Venta cargada', 'Los productos se han cargado en el punto de venta para duplicar.')
+    } catch (err) {
+      setLoading(false)
+      console.error('Error al duplicar venta:', err)
+      toast.error('Error al duplicar', 'No se pudieron recuperar los productos de la venta.')
+    }
   }
 
   // Exportar a Excel
@@ -315,7 +361,7 @@ export default function Ventas() {
             </span>
           )
         },
-        size: 180,
+        size: 120,
       },
       {
         accessorKey: 'placa',
@@ -325,7 +371,7 @@ export default function Ventas() {
             {row.original.placa || '-'}
           </span>
         ),
-        size: 90
+        size: 110
       }
     ]
 
@@ -342,7 +388,7 @@ export default function Ventas() {
             </div>
           )
         },
-        size: 110
+        size: 150
       })
     }
 
@@ -397,25 +443,6 @@ export default function Ventas() {
         size: 140
       },
       {
-        accessorKey: 'estado',
-        header: 'EstadoCE',
-        cell: ({ row }) => {
-          const est = String(row.original.estado || 'EMITIDO').toUpperCase()
-          const isAnulada = est === 'ANULADA' || est === 'ANULADO'
-          return (
-            <span
-              className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isAnulada
-                ? 'bg-red-200 text-red-800 border border-red-300'
-                : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400'
-                }`}
-            >
-              {isAnulada ? 'ANULADA' : 'Aceptado'}
-            </span>
-          )
-        },
-        size: 100
-      },
-      {
         accessorKey: 'modalidad_pago',
         header: 'Modalidad Pago',
         cell: ({ row }) => (
@@ -438,16 +465,16 @@ export default function Ventas() {
         },
         size: 120
       },
-      {
-        accessorKey: 'moneda',
-        header: 'Moneda',
-        cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-600 dark:text-slate-400">
-            {row.original.moneda || 'PEN'}
-          </span>
-        ),
-        size: 80
-      },
+      // {
+      //   accessorKey: 'moneda',
+      //   header: 'Moneda',
+      //   cell: ({ row }) => (
+      //     <span className="font-mono text-xs text-slate-600 dark:text-slate-400">
+      //       {row.original.moneda || 'PEN'}
+      //     </span>
+      //   ),
+      //   size: 80
+      // },
       {
         accessorKey: 'gravadas',
         header: 'Gravadas',

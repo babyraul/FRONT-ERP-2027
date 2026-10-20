@@ -77,7 +77,8 @@ export default function Productos() {
         p.nombre?.toLowerCase().includes(query) ||
         p.codigo?.toLowerCase().includes(query) ||
         p.codigo_barra?.toLowerCase().includes(query) ||
-        p.palabra_clave?.toLowerCase().includes(query)
+        p.palabra_clave?.toLowerCase().includes(query) ||
+        p.descripcion?.toLowerCase().includes(query)
       )
     })
   }, [productos, busq, estadoFiltro])
@@ -86,18 +87,25 @@ export default function Productos() {
     if (filtered.length === 0) {
       return toast.info('Exportación vacía', 'No hay productos para exportar.')
     }
-    const data = filtered.map((p) => ({
-      Código: p.codigo || '-',
-      Nombre: p.nombre,
-      'Código de Barras': p.codigo_barra || '-',
-      'Unidad Medida': p.unidad_medida_id || 'NIU',
-      'Precio Venta': Number(p.precio_venta || 0),
-      'Precio Costo': Number(p.precio_costo || 0),
-      'Precio Mayor': Number(p.precio_mayor || 0),
-      'Stock Mínimo': Number(p.stock_minimo || 0),
-      Facturable: p.es_facturable ? 'Sí' : 'No',
-      Estado: p.activo !== false ? 'Activo' : 'Inactivo / Baja'
-    }))
+    const data = filtered.map((p) => {
+      const tributoId = String(p.tipo_tributo_id || '10')
+      const afectacionLabel = tributoId === '10' ? 'Gravado (10)' : tributoId === '20' ? 'Exonerado (20)' : tributoId === '30' ? 'Inafecto (30)' : tributoId
+      return {
+        Código: p.codigo || '-',
+        Nombre: p.nombre,
+        Descripción: p.descripcion || '-',
+        'Código de Barras': p.codigo_barra || '-',
+        'Unidad Medida': p.unidad_medida_id || 'NIU',
+        'Stock Actual': Number(p.stock_actual ?? p.stock ?? 0),
+        'Stock Mínimo': Number(p.stock_minimo || 0),
+        'Afectación IGV': afectacionLabel,
+        'Precio Venta': Number(p.precio_venta || 0),
+        'Precio Costo': Number(p.precio_costo || 0),
+        'Precio Mayor': Number(p.precio_mayor || 0),
+        Facturable: p.es_facturable ? 'Sí' : 'No',
+        Estado: p.activo !== false ? 'Activo' : 'Inactivo / Baja'
+      }
+    })
     exportToExcel(data, 'catalogo_productos', 'Productos')
     toast.success('Archivo descargado', 'El catálogo de productos se ha exportado correctamente a Excel.')
   }
@@ -220,28 +228,30 @@ export default function Productos() {
       cell: (info) => {
         const p = info.row.original
         return (
-          <div className="space-y-0.5 max-w-xs">
+          <div className="space-y-1 max-w-sm">
             <div className="font-semibold text-slate-800 dark:text-white flex items-center gap-1.5 flex-wrap">
-              <span>{p.nombre}</span>
+              <span className="text-sm font-bold">{p.nombre}</span>
               {p.activo === false && (
                 <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-400 border border-rose-300 dark:border-rose-800 shrink-0">
                   Inactivo / Baja
                 </span>
               )}
               {p.unidad_medida_id && (
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700">
                   {p.unidad_medida_id}
                 </span>
               )}
             </div>
-            {p.descripcion && (
-              <p className="text-xs text-slate-400 dark:text-slate-400 line-clamp-1 truncate" title={p.descripcion}>
+            {p.descripcion ? (
+              <p className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded border border-slate-200/50 dark:border-slate-700/50 line-clamp-2" title={p.descripcion}>
                 {p.descripcion}
               </p>
+            ) : (
+              <p className="text-[11px] text-slate-400 italic">Sin descripción adicional</p>
             )}
             {p.palabra_clave && (
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 italic truncate" title={p.palabra_clave}>
-                Tags: {p.palabra_clave}
+              <p className="text-[11px] text-teal-600 dark:text-teal-400 font-medium truncate" title={p.palabra_clave}>
+                🏷️ {p.palabra_clave}
               </p>
             )}
           </div>
@@ -337,13 +347,78 @@ export default function Productos() {
       }
     },
     {
+      header: 'Stock Actual',
+      accessorKey: 'stock_actual',
+      cell: (info) => {
+        const p = info.row.original
+        const stock = Number(p.stock_actual ?? p.stock ?? 0)
+        const min = Number(p.stock_minimo ?? 0)
+        const badgeCls =
+          stock < 0
+            ? 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800/60'
+            : stock <= min
+              ? 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/60'
+              : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/60'
+
+        return (
+          <div className="flex flex-col items-center gap-1">
+            <button
+              type="button"
+              onClick={() => handleOpenKardex(p)}
+              className={`font-mono text-xs font-bold px-3 py-1.5 rounded-lg border transition-all hover:scale-105 active:scale-95 shadow-2xs ${badgeCls}`}
+              title="Clic para ver el Kárdex histórico de movimientos"
+            >
+              {stock} {p.unidad_medida_id || 'NIU'}
+            </button>
+            {stock < 0 ? (
+              <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                Stock negativo
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-400 font-mono">
+                Mín: {min}
+              </span>
+            )}
+          </div>
+        )
+      }
+    },
+    {
       header: 'Información & Clasificación',
       id: 'info_producto',
       cell: (info) => {
         const p = info.row.original
+
+        // Mapeo amigable de Tipo de Afectación al IGV (SUNAT)
+        const tributoId = String(p.tipo_tributo_id || '10')
+        const afectacionLabel = tributoId === '10'
+          ? 'Gravado (10)'
+          : tributoId === '20'
+            ? 'Exonerado (20)'
+            : tributoId === '30'
+              ? 'Inafecto (30)'
+              : tributoId === '40'
+                ? 'Exportación (40)'
+                : `Afect. ${tributoId}`
+
+        const afectacionBadgeCls = tributoId === '10'
+          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
+          : tributoId === '20'
+            ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800'
+            : tributoId === '30'
+              ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
+              : 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800'
+
         return (
-          <div className="space-y-1 text-xs">
+          <div className="space-y-1.5 text-xs">
+            {/* Categorías y Afectación al IGV */}
             <div className="flex items-center gap-1.5 flex-wrap">
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-md border tracking-tight uppercase shadow-2xs ${afectacionBadgeCls}`}
+                title={`Afectación al IGV código ${tributoId}`}
+              >
+                {afectacionLabel}
+              </span>
               {p.categoria_nombre && (
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                   {p.categoria_nombre}
@@ -355,10 +430,12 @@ export default function Productos() {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
+
+            {/* Badges de atributos operativos */}
+            <div className="flex items-center gap-1 flex-wrap">
               {p.es_facturable && (
                 <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40">
-                  FE (Facturable)
+                  FE
                 </span>
               )}
               {p.es_combo && (
@@ -376,44 +453,12 @@ export default function Productos() {
                   Insumo
                 </span>
               )}
+              {p.codigo_sunat && (
+                <span className="text-[10px] text-slate-500 font-mono">
+                  SUNAT: {p.codigo_sunat}
+                </span>
+              )}
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center gap-2">
-              <span>Stock Mín: <strong className="text-slate-700 dark:text-slate-300">{p.stock_minimo ?? 0}</strong></span>
-              {p.codigo_sunat && <span>• SUNAT: {p.codigo_sunat}</span>}
-            </div>
-          </div>
-        )
-      }
-    },
-    {
-      header: 'Stock Actual',
-      accessorKey: 'stock_actual',
-      cell: (info) => {
-        const p = info.row.original
-        const stock = Number(p.stock_actual ?? p.stock ?? 0)
-        const min = Number(p.stock_minimo ?? 0)
-        const badgeCls =
-          stock < 0
-            ? 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800/60'
-            : stock <= min
-              ? 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/60'
-              : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/60'
-
-        return (
-          <div className="flex flex-col items-end gap-1">
-            <button
-              type="button"
-              onClick={() => handleOpenKardex(p)}
-              className={`font-mono text-xs font-bold px-2.5 py-1 rounded-lg border transition-opacity hover:opacity-80 ${badgeCls}`}
-              title="Clic para ver el Kárdex histórico de movimientos"
-            >
-              {stock} {p.unidad_medida_id || 'NIU'}
-            </button>
-            {stock < 0 && (
-              <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
-                Stock negativo
-              </span>
-            )}
           </div>
         )
       }

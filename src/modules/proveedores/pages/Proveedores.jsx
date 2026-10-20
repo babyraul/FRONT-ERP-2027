@@ -107,7 +107,7 @@ export default function Proveedores() {
   }
 
   const columns = useMemo(() => [
-,
+    ,
     {
       id: 'acciones',
       header: 'Acciones',
@@ -151,7 +151,7 @@ export default function Proveedores() {
               {info.getValue()}
             </span>
             {row.nombre_comercial && (
-              <span className="text-xs text-slate-400 dark:text-slate-500 italic">
+              <span className="text-xs text-slate-500 dark:text-slate-500 italic">
                 {row.nombre_comercial}
               </span>
             )}
@@ -171,8 +171,8 @@ export default function Proveedores() {
               {info.getValue() || <span className="text-slate-400 italic">Sin dirección</span>}
             </span>
             {row.ubigeo_descripcion && (
-              <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate" title={row.ubigeo_descripcion}>
-                📍 {row.ubigeo_descripcion}
+              <span className="text-[11px] text-slate-500 dark:text-slate-500 truncate" title={row.ubigeo_descripcion}>
+                {row.ubigeo_descripcion}
               </span>
             )}
           </div>
@@ -248,11 +248,10 @@ export default function Proveedores() {
         const val = info.getValue()
         return (
           <div className="flex justify-center">
-            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
-              val
-                ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-            }`}>
+            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${val
+              ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+              }`}>
               {val ? <CheckCircleIcon className="h-3.5 w-3.5" /> : <XCircleIcon className="h-3.5 w-3.5" />}
               {val ? 'Activo' : 'Inactivo'}
             </span>

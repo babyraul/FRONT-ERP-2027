@@ -54,6 +54,22 @@ export default function Vender() {
   // 2. Modales
   const [isBuscarClienteOpen, setIsBuscarClienteOpen] = useState(false)
 
+  // Sincronizar estado cuando se navega con datos nuevos (ej. Duplicar venta desde Reporte de Ventas)
+  useEffect(() => {
+    if (location.state) {
+      if (location.state.tipoDocumento) setTipoDocumento(location.state.tipoDocumento)
+      if (location.state.cliente) setCliente(location.state.cliente)
+      if (location.state.placa !== undefined) setPlaca(location.state.placa)
+      if (Array.isArray(location.state.cartItems)) {
+        setCartItems(location.state.cartItems)
+        store.setCartItems(location.state.cartItems)
+      }
+      if (location.state.preventaId !== undefined) {
+        setPreventaId(location.state.preventaId)
+      }
+    }
+  }, [location.state])
+
   // Cargar productos activos y verificar turno de caja al montar
   useEffect(() => {
     fetchProductos({ activo: true })
