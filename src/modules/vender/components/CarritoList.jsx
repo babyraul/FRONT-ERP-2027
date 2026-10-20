@@ -160,7 +160,36 @@ export default function CarritoList({
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                    {/* Badge de Afectación Fiscal SUNAT */}
+                    {item.tipo_afectacion_igv === '20' && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
+                        EXONERADO
+                      </span>
+                    )}
+                    {item.tipo_afectacion_igv === '30' && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                        INAFECTO
+                      </span>
+                    )}
+                    {(item.gratuito || ['11', '12', '13', '14', '15', '16', '21', '31', '32', '37'].includes(item.tipo_afectacion_igv)) && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+                        GRATUITO
+                      </span>
+                    )}
+
+                    {/* Badge de Stock Sin Comprobante / No Facturable */}
+                    {(item.tipo_stock_id === '2' || item.tipo_stock_id === 'SIN_COMPROBANTE' || item.tipo_stock_id === 'PENDIENTE') && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500 text-white shadow-xs">
+                        SIN COMPROBANTE
+                      </span>
+                    )}
+                    {item.es_facturable === false && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#01a59c] text-white shadow-xs">
+                        NO FACTURABLE
+                      </span>
+                    )}
+
                     {/* Indicador de Tipo de Unidad (Permite decimales vs Entero) */}
                     <span
                       className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${

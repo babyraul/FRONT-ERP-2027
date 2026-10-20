@@ -150,9 +150,26 @@ export default function ResumenProductosTabla({
                       key={item.uniqueId}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                     >
-                      {/* Nombre del Producto */}
+                      {/* Nombre del Producto + Badges de Afectación */}
                       <td className="py-2 px-3 font-semibold text-slate-800 dark:text-slate-100" title={item.nombre_completo}>
-                        <div className="truncate max-w-[220px] font-medium">{item.nombre_completo}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="truncate max-w-[200px] font-medium">{item.nombre_completo}</span>
+                          {item.tipo_afectacion_igv === '20' && (
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300">
+                              EXO
+                            </span>
+                          )}
+                          {item.tipo_afectacion_igv === '30' && (
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">
+                              INA
+                            </span>
+                          )}
+                          {(item.gratuito || ['11', '12', '13', '14', '15', '16', '21', '31', '32', '37'].includes(item.tipo_afectacion_igv)) && (
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300">
+                              GRAT
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Cantidad Editable */}

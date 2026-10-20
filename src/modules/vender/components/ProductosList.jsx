@@ -43,7 +43,10 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
             unidad_medida_id: unidadMedidaId,
             unidad_medida: unidadMedidaId,
             unidad_medida_descripcion: unidadMedidaDesc,
-            es_facturable: prod.es_facturable !== false,
+            tipo_afectacion_igv: String(prod.tipo_tributo_id || prod.tipo_tributo || '10'),
+            tipo_tributo_id: String(prod.tipo_tributo_id || prod.tipo_tributo || '10'),
+            es_facturable: prod.es_facturable !== false && prod.es_facturable !== 0 && prod.es_facturable !== '0',
+            tipo_stock_id: prod.tipo_stock_id || prod.tipo_stock || 'GENERAL',
             presentaciones_disponibles: prod.presentaciones
           })
         })
@@ -68,7 +71,10 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
           unidad_medida_id: unidadMedidaId,
           unidad_medida: unidadMedidaId,
           unidad_medida_descripcion: unidadMedidaDesc,
-          es_facturable: prod.es_facturable !== false,
+          tipo_afectacion_igv: String(prod.tipo_tributo_id || prod.tipo_tributo || '10'),
+          tipo_tributo_id: String(prod.tipo_tributo_id || prod.tipo_tributo || '10'),
+          es_facturable: prod.es_facturable !== false && prod.es_facturable !== 0 && prod.es_facturable !== '0',
+          tipo_stock_id: prod.tipo_stock_id || prod.tipo_stock || 'GENERAL',
           presentaciones_disponibles: []
         })
       }
@@ -91,6 +97,7 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
   }, [itemsDisponibles, busqueda])
 
   // Manejo de atajos de teclado en el buscador (Enter para agregar, Flechas para navegar)
+  const lastKeyTimeRef = useRef(0)
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -100,7 +107,15 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0))
     } else if (e.key === 'Enter') {
       e.preventDefault()
+      const now = Date.now()
+      if (now - lastKeyTimeRef.current < 250) {
+        console.warn('[ProductosList] Enter ignorado por debounce', now - lastKeyTimeRef.current)
+        return
+      }
+      lastKeyTimeRef.current = now
+
       if (itemsFiltrados[selectedIndex]) {
+        console.log('[ProductosList] onAgregarItem vía Enter:', itemsFiltrados[selectedIndex].nombre_completo)
         onAgregarItem(itemsFiltrados[selectedIndex])
       }
     }
@@ -117,6 +132,21 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
     window.addEventListener('keydown', handleGlobalKey)
     return () => window.removeEventListener('keydown', handleGlobalKey)
   }, [])
+
+  // Handler con protección contra doble click en la fila
+  const lastClickRef = useRef({ id: null, time: 0 })
+  const handleRowClick = (e, item) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const now = Date.now()
+    if (lastClickRef.current.id === item.uniqueId && now - lastClickRef.current.time < 250) {
+      console.warn('[ProductosList] Click duplicado ignorado para:', item.uniqueId)
+      return
+    }
+    lastClickRef.current = { id: item.uniqueId, time: now }
+    console.log('[ProductosList] Click en producto:', item.nombre_completo, 'uniqueId:', item.uniqueId)
+    onAgregarItem(item)
+  }
 
   return (
     <div className="flex flex-col h-full dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border dark:border-slate-800 shadow-sm overflow-hidden">
@@ -171,7 +201,7 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
             return (
               <div
                 key={item.uniqueId}
-                onClick={() => onAgregarItem(item)}
+                onClick={(e) => handleRowClick(e, item)}
                 className={`grid grid-cols-[1fr_90px_70px] items-center px-4 py-2.5 text-sm cursor-pointer transition-colors select-none ${isSelected
                   ? 'dark:bg-teal-950/40 ring-1 ring-[#01a59c]/50'
                   : 'hover:bg-slate-200/80 dark:hover:bg-slate-800/40'

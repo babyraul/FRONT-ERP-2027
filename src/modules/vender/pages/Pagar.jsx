@@ -287,6 +287,10 @@ export default function Pagar() {
       placa: placa || null,
       alias: placa || null,
       gravado: totales.gravado,
+      exonerado: totales.exonerado,
+      inafecto: totales.inafecto,
+      gratuito: totales.gratuito,
+      icbper: totales.icbper,
       igv: totales.igv,
       total: totales.total,
       items: cartItems.map((item) => ({
@@ -294,7 +298,9 @@ export default function Pagar() {
         presentacion_id: item.presentacion_id || null,
         cantidad: Number(item.cantidad),
         precio_unitario: Number(item.precio_unitario),
-        descuento: Number(item.descuento || 0)
+        descuento: Number(item.descuento || 0),
+        tipo_afectacion_igv: String(item.tipo_afectacion_igv || item.tipo_tributo_id || '10'),
+        gratuito: Boolean(item.gratuito || item.es_gratuito)
       }))
     }
 
@@ -439,6 +445,12 @@ export default function Pagar() {
           referencia: esEfectivo ? null : (p.referencia || null)
         }
       }),
+      gravado: totales.gravado,
+      exonerado: totales.exonerado,
+      inafecto: totales.inafecto,
+      gratuito: totales.gratuito,
+      icbper: totales.icbper,
+      igv: totales.igv,
       total: totales.total,
       vuelto: vuelto,
       items: cartItems.map((item) => ({
@@ -447,7 +459,9 @@ export default function Pagar() {
         nombre: item.nombre_completo,
         cantidad: Number(item.cantidad),
         precio_unitario: Number(item.precio_unitario),
-        descuento: Number(item.descuento || 0)
+        descuento: Number(item.descuento || 0),
+        tipo_afectacion_igv: String(item.tipo_afectacion_igv || item.tipo_tributo_id || '10'),
+        gratuito: Boolean(item.gratuito || item.es_gratuito)
       }))
     }
 
@@ -541,8 +555,8 @@ export default function Pagar() {
 
       {/* ── FOOTER TOTALIZADOR CON BOTÓN RESERVAR Y PAGAR ── */}
       <div className="bg-slate-300/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-300/70 dark:border-slate-800 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 sm:gap-4 shrink-0 shadow-lg z-20">
-        {/* Desglose de Totales a la Izquierda */}
-        <div className="flex-1 flex items-center gap-3 sm:gap-8 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 min-w-0">
+        {/* Desglose de Totales Fiscales a la Izquierda */}
+        <div className="flex-1 flex items-center gap-3 sm:gap-6 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 min-w-0 flex-wrap">
           <div>
             <span className="text-slate-600 font-semibold dark:text-slate-500 mr-1">Gravado</span>
             <strong className="font-bold text-slate-900 dark:text-white">{totales.gravado.toFixed(2)}</strong>
@@ -552,6 +566,34 @@ export default function Pagar() {
             <span className="text-slate-600 font-semibold dark:text-slate-500 mr-1">IGV</span>
             <strong className="font-bold text-slate-900 dark:text-white">{totales.igv.toFixed(2)}</strong>
           </div>
+
+          {totales.exonerado > 0 && (
+            <div>
+              <span className="text-sky-700 dark:text-sky-400 font-semibold mr-1">Exonerado</span>
+              <strong className="font-bold text-sky-950 dark:text-sky-200">{totales.exonerado.toFixed(2)}</strong>
+            </div>
+          )}
+
+          {totales.inafecto > 0 && (
+            <div>
+              <span className="text-amber-700 dark:text-amber-400 font-semibold mr-1">Inafecto</span>
+              <strong className="font-bold text-amber-950 dark:text-amber-200">{totales.inafecto.toFixed(2)}</strong>
+            </div>
+          )}
+
+          {totales.gratuito > 0 && (
+            <div>
+              <span className="text-purple-700 dark:text-purple-400 font-semibold mr-1">Gratuito</span>
+              <strong className="font-bold text-purple-950 dark:text-purple-200">{totales.gratuito.toFixed(2)}</strong>
+            </div>
+          )}
+
+          {totales.icbper > 0 && (
+            <div>
+              <span className="text-emerald-700 dark:text-emerald-400 font-semibold mr-1">ICBPER</span>
+              <strong className="font-bold text-emerald-950 dark:text-emerald-200">{totales.icbper.toFixed(2)}</strong>
+            </div>
+          )}
         </div>
 
         {/* Centro: Total Destacado (Caja Verde Aqua) */}

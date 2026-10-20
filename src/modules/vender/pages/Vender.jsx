@@ -124,21 +124,51 @@ export default function Vender() {
     }
   }
 
+  // Helper para procesar código de balanza Magellan EAN-13 (prefijo 6663 en chars 3 a 7)
+  const procesarItemBalanza = (rawItem) => {
+    const item = { ...rawItem }
+    const cod = String(item.codigo_barra || item.codigo || '').trim()
+    // Si cumple EAN-13 (13 dígitos) y posiciones 3..7 son '6663': caracteres 7 a 12 son gramos / 1000
+    if (/^\d{13}$/.test(cod) && cod.substring(3, 7) === '6663') {
+      const gramos = parseInt(cod.substring(7, 12), 10)
+      if (!isNaN(gramos) && gramos > 0) {
+        item.cantidad = Number((gramos / 1000).toFixed(3))
+      }
+    }
+    return item
+  }
+
   // 3. Gestión del Carrito
-  const handleAgregarItem = (item) => {
+  const handleAgregarItem = (rawItem) => {
+    const item = procesarItemBalanza(rawItem)
+    const cantidadInicial = Number(item.cantidad || 1)
+    console.log('[Vender.jsx] handleAgregarItem invocado para:', item.nombre_completo, 'uniqueId:', item.uniqueId, 'cantInicial:', cantidadInicial)
+
     setCartItems((prevItems) => {
       const existingIndex = prevItems.findIndex((i) => i.uniqueId === item.uniqueId)
       if (existingIndex >= 0) {
         const updated = [...prevItems]
-        updated[existingIndex].cantidad = Number((updated[existingIndex].cantidad + 1).toFixed(2))
+        const currentCant = Number(updated[existingIndex].cantidad || 0)
+        const nuevaCant = Number((currentCant + cantidadInicial).toFixed(3))
+        console.log(`[Vender.jsx] Actualizando cantidad existente de ${currentCant} a ${nuevaCant}`)
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          cantidad: nuevaCant
+        }
         return updated
       } else {
+        console.log(`[Vender.jsx] Insertando nuevo ítem con cantidad ${cantidadInicial}`)
         return [
           ...prevItems,
           {
             ...item,
-            cantidad: 1,
+            cantidad: cantidadInicial,
             precio_unitario: item.precio,
+            descuento: 0,
+            tipo_afectacion_igv: String(item.tipo_afectacion_igv || item.tipo_tributo_id || '10'),
+            es_facturable: item.es_facturable !== false && item.es_facturable !== 0 && item.es_facturable !== '0',
+            tipo_stock_id: item.tipo_stock_id || 'GENERAL',
+            gratuito: Boolean(item.gratuito || item.es_gratuito),
             tarifa: 'menor'
           }
         ]
@@ -205,7 +235,7 @@ export default function Vender() {
     setCartItems([])
   }
 
-  // 4. Cálculos Matemáticos Centralizados en Operaciones.js (sin redondeo)
+  // 4. Cálculos Matemáticos Centralizados en Operaciones.js (sin redondeo floor, factor 1000)
   const totales = useMemo(() => {
     return calcularTotalesVenta(cartItems)
   }, [cartItems])
@@ -227,6 +257,12 @@ export default function Vender() {
     // A. Validar carrito no vacío
     if (!cartItems || cartItems.length === 0) {
       toast.info('Carrito vacío', 'Agregue al menos un producto para procesar la preventa.')
+      return
+    }
+
+    // A.0 Validar total mayor a 0 (VAL-AFEC-06)
+    if (totales.total <= 0 && totales.gratuito <= 0) {
+      toast.error('Total no válido', 'El total no puede ser 0.')
       return
     }
 
@@ -260,6 +296,53 @@ export default function Vender() {
       }
     }
 
+    // A.3 Validaciones fiscales por ítem (VAL-AFEC-01, VAL-AFEC-03)
+    for (let i = 0; i < cartItems.length; i++) {
+      const item = cartItems[i]
+      const desc = Number(item.descuento || 0)
+      const isGratuito = Boolean(item.gratuito || item.es_gratuito)
+      const totalItemBruto = Number(item.cantidad || 0) * Number(item.precio_unitario || 0)
+
+      if (isGratuito && desc > 0) {
+        toast.error(
+          'Validación fiscal de producto',
+          `El producto no puede tener descuento y ser gratuito - posición ${i + 1}`
+        )
+        return
+      }
+
+      if (desc >= totalItemBruto && totalItemBruto > 0) {
+        toast.error(
+          'Descuento no permitido',
+          `El descuento en la posición ${i + 1} no debe ser mayor que el total del detalle`
+        )
+        return
+      }
+    }
+
+    // A.4 Validar productos no facturables o sin comprobante en Boleta/Factura (VAL-AFEC-07, VAL-AFEC-08)
+    const esVale = tipoDocumento === 'vale' || tipoDocumento === '1'
+    if (!esVale) {
+      for (const item of cartItems) {
+        const tipoStock = String(item.tipo_stock_id || '').toUpperCase()
+        if (tipoStock === '2' || tipoStock === 'SIN_COMPROBANTE' || tipoStock === 'PENDIENTE') {
+          toast.error(
+            'Tipo de stock restringido',
+            'Los productos sin comprobante solo pueden salir con vale'
+          )
+          return
+        }
+
+        if (item.es_facturable === false || item.es_facturable === 0 || item.es_facturable === '0') {
+          toast.error(
+            'Producto no facturable',
+            'Los productos no facturables solo salen con vale'
+          )
+          return
+        }
+      }
+    }
+
     // B. Validar tipo de comprobante vs cliente
     if (tipoDocumento === 'factura') {
       const doc = String(cliente?.numero_documento || '').trim()
@@ -269,13 +352,21 @@ export default function Vender() {
       }
     }
 
-    // C. Validar Regla Fiscal SUNAT (RN-V03): Total >= 700 exige identificar al cliente
+    if (tipoDocumento === 'boleta') {
+      const doc = String(cliente?.numero_documento || '').trim()
+      if (doc.length === 11) {
+        toast.error('Comprobante incompatible', 'No puede realizar una boleta con un cliente con RUC')
+        return
+      }
+    }
+
+    // C. Validar Regla Fiscal SUNAT (RN-V03 / VAL-CLI-01): Total >= 700 exige identificar al cliente
     const docCliente = String(cliente?.numero_documento || '').trim()
     const esClienteGenerico = !docCliente || docCliente === '99999999' || docCliente === '00000000'
-    if (totales.total >= 700 && esClienteGenerico && tipoDocumento !== 'vale') {
+    if (totales.total >= 700 && esClienteGenerico && !esVale) {
       toast.error(
         'Identificación obligatoria (SUNAT)',
-        'Para ventas mayores o iguales a S/. 700.00 SUNAT exige identificar al cliente con DNI o RUC.'
+        'Seleccionar otro cliente por montos mayores a 700 S./'
       )
       setIsBuscarClienteOpen(true)
       return
@@ -289,13 +380,17 @@ export default function Vender() {
       sanitizedClienteId = cliente.id
     }
 
-    // Formatear payload de preventa
+    // Formatear payload de preventa con segregación de bases fiscales
     const preventaPayload = {
       cliente_id: sanitizedClienteId,
       tipo_documento: tipoDocumento,
       placa: placa || null,
       alias: placa || null,
       gravado: totales.gravado,
+      exonerado: totales.exonerado,
+      inafecto: totales.inafecto,
+      gratuito: totales.gratuito,
+      icbper: totales.icbper,
       igv: totales.igv,
       total: totales.total,
       items: cartItems.map((item) => ({
@@ -303,7 +398,9 @@ export default function Vender() {
         presentacion_id: item.presentacion_id || null,
         cantidad: Number(item.cantidad),
         precio_unitario: Number(item.precio_unitario),
-        descuento: Number(item.descuento || 0)
+        descuento: Number(item.descuento || 0),
+        tipo_afectacion_igv: String(item.tipo_afectacion_igv || item.tipo_tributo_id || '10'),
+        gratuito: Boolean(item.gratuito || item.es_gratuito)
       }))
     }
 
@@ -468,9 +565,13 @@ export default function Vender() {
         </div>
       </div>
 
-      {/* ── FOOTER TOTALIZADOR FIJO AL PIE ── */}
+      {/* ── FOOTER TOTALIZADOR FIJO AL PIE CON BASES FISCALES ── */}
       <VentaFooter
         gravado={totales.gravado}
+        exonerado={totales.exonerado}
+        inafecto={totales.inafecto}
+        gratuito={totales.gratuito}
+        icbper={totales.icbper}
         igv={totales.igv}
         total={totales.total}
         itemCount={cartItems.length}
