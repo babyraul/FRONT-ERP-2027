@@ -12,7 +12,15 @@ import {
   BoltIcon
 } from '@heroicons/react/24/outline'
 import PageHeader from '../../../components/ui/PageHeader.jsx'
-import { ExportExcelButton, RefreshButton } from '../../../components/ui/ActionButtons.jsx'
+import {
+  ActionCell,
+  ExportExcelButton,
+  RefreshButton,
+  ViewRowButton,
+  PrintRowButton,
+  DuplicateRowButton,
+  DeleteRowButton
+} from '../../../components/ui/ActionButtons.jsx'
 import { getTodayStr, toDateStr } from '../../../components/ui/DateRangeFilter.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import Modal from '../../../components/ui/Modal.jsx'
@@ -402,50 +410,34 @@ export default function Vales() {
           }
 
           return (
-            <div className="flex items-center justify-center gap-1">
+            <ActionCell>
               {showReimprimir && (
-                <button
-                  type="button"
+                <PrintRowButton
                   onClick={() => handleReimprimir(v)}
-                  className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
                   title="Reimprimir Vale (Ticket)"
-                >
-                  <PrinterIcon className="h-3.5 w-3.5" />
-                </button>
+                />
               )}
               {showDetalle && (
-                <button
-                  type="button"
+                <ViewRowButton
                   onClick={() => handleVerDetalle(v)}
-                  className="p-1 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-[#01a59c] hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors"
                   title="Ver detalle del vale"
-                >
-                  <EyeIcon className="h-3.5 w-3.5" />
-                </button>
+                />
               )}
-              <button
-                type="button"
+              <DuplicateRowButton
                 onClick={() => handleDuplicar(v)}
-                className="p-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                 title="Duplicar Vale a Pre-Venta"
-              >
-                <DocumentDuplicateIcon className="h-3.5 w-3.5" />
-              </button>
+              />
               {isPendiente && hasDeletePerm && (
-                <button
-                  type="button"
+                <DeleteRowButton
                   onClick={() => handleSolicitarAnulacion(v)}
-                  className="p-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors"
                   title="Anular Vale"
-                >
-                  <TrashIcon className="h-3.5 w-3.5" />
-                </button>
+                />
               )}
-            </div>
+            </ActionCell>
           )
         },
-        size: 110,
-        enableColumnFilter: false
+        enableColumnFilter: false,
+        enableSorting: false
       },
       // 3. Cliente
       {
@@ -457,24 +449,13 @@ export default function Vales() {
               {row.original.cliente_nombre || 'VARIOS'}
             </span>
             {row.original.cliente_numero_documento && (
-              <span className="text-[10px] font-mono text-slate-400">
+              <span className="text-[12px] font-mono text-slate-500">
                 {row.original.cliente_numero_documento}
               </span>
             )}
           </div>
         ),
         size: 210
-      },
-      // 4. Número Documento
-      {
-        accessorKey: 'cliente_numero_documento',
-        header: 'Número Documento',
-        cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-700 dark:text-slate-300">
-            {row.original.cliente_numero_documento || '-'}
-          </span>
-        ),
-        size: 130
       },
       // 5. Fecha de emisión
       {
@@ -492,34 +473,45 @@ export default function Vales() {
         },
         size: 140
       },
-      // 6. Serie (filtro múltiple por coma)
+      // 6. Serie + NumeroComprobante (unificadas)
       {
-        accessorKey: 'serie',
-        header: 'Serie',
+        id: 'serieCorrelativo',
+        accessorFn: (row) => {
+          const serie = row.serie ? String(row.serie).toUpperCase() : ''
+          const correlativo = row.correlativo
+            ? String(row.correlativo).padStart(8, '0')
+            : ''
+          return serie && correlativo ? `${serie}-${correlativo}` : serie || correlativo || ''
+        },
+        header: 'Serie / N° Comprobante',
         filterFn: (row, columnId, filterValue) => {
           if (!filterValue) return true
-          const seriesFiltro = filterValue.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
-          if (seriesFiltro.length === 0) return true
-          const rowSerie = String(row.getValue(columnId) || '').toLowerCase()
-          return seriesFiltro.some(s => rowSerie.includes(s))
+          const filtros = filterValue.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+          if (filtros.length === 0) return true
+          const rowValue = String(row.getValue(columnId) || '').toLowerCase()
+          return filtros.some(f => rowValue.includes(f))
         },
-        cell: ({ row }) => (
-          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 text-center block">
-            {row.original.serie || '-'}
-          </span>
-        ),
-        size: 80
-      },
-      // 7. NumeroComprobante
-      {
-        accessorKey: 'correlativo',
-        header: 'NumeroComprobante',
-        cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-800 dark:text-slate-200 text-center block">
-            {row.original.correlativo ? String(row.original.correlativo).padStart(8, '0') : '-'}
-          </span>
-        ),
-        size: 130
+        cell: ({ row }) => {
+          const serie = row.original.serie ? String(row.original.serie).toUpperCase() : ''
+          const correlativo = row.original.correlativo
+            ? String(row.original.correlativo).padStart(8, '0')
+            : ''
+
+          if (!serie && !correlativo) {
+            return (
+              <span className="font-mono text-xs text-slate-400 text-center block">-</span>
+            )
+          }
+
+          return (
+            <span className="font-mono text-xs text-slate-800 dark:text-slate-200 text-center block whitespace-nowrap">
+              {serie && <span className="font-bold">{serie}</span>}
+              {serie && correlativo && <span className="text-slate-400">-</span>}
+              {correlativo && <span>{correlativo}</span>}
+            </span>
+          )
+        },
+        size: 180,
       },
       // 8. Alias/Placa
       {
@@ -576,10 +568,10 @@ export default function Vales() {
             <div className="text-center">
               <span
                 className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isAnulada
-                    ? 'bg-red-200 text-red-800 border border-red-300'
-                    : isProcesado
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400'
-                      : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
+                  ? 'bg-red-200 text-red-800 border border-red-300'
+                  : isProcesado
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400'
+                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
                   }`}
               >
                 {est}
@@ -590,16 +582,16 @@ export default function Vales() {
         size: 110
       },
       // 12. Moneda
-      {
-        accessorKey: 'moneda',
-        header: 'Moneda',
-        cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-600 dark:text-slate-400 text-center block">
-            {row.original.moneda || 'PEN'}
-          </span>
-        ),
-        size: 80
-      }
+      // {
+      //   accessorKey: 'moneda',
+      //   header: 'Moneda',
+      //   cell: ({ row }) => (
+      //     <span className="font-mono text-xs text-slate-600 dark:text-slate-400 text-center block">
+      //       {row.original.moneda || 'PEN'}
+      //     </span>
+      //   ),
+      //   size: 80
+      // }
     )
 
     // 13. Tipos de Pago y 14. Montos de Pago (si canShowPaymentInfo)

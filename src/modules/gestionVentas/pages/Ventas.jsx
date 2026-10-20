@@ -10,7 +10,14 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline'
 import PageHeader from '../../../components/ui/PageHeader.jsx'
-import { ExportExcelButton, RefreshButton } from '../../../components/ui/ActionButtons.jsx'
+import {
+  ActionCell,
+  ExportExcelButton,
+  RefreshButton,
+  ViewRowButton,
+  PrintRowButton,
+  DuplicateRowButton
+} from '../../../components/ui/ActionButtons.jsx'
 import { getTodayStr, toDateStr } from '../../../components/ui/DateRangeFilter.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import VentaDetalleModal from '../components/VentaDetalleModal.jsx'
@@ -215,40 +222,28 @@ export default function Ventas() {
           }
 
           return (
-            <div className="flex items-center justify-center gap-1">
+            <ActionCell>
               {showReimprimir && (
-                <button
-                  type="button"
+                <PrintRowButton
                   onClick={() => handleReimprimir(v)}
-                  className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
                   title="Reimprimir Ticket"
-                >
-                  <PrinterIcon className="h-3.5 w-3.5" />
-                </button>
+                />
               )}
               {showDetalle && (
-                <button
-                  type="button"
+                <ViewRowButton
                   onClick={() => handleVerDetalle(v)}
-                  className="p-1 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-[#01a59c] hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors"
                   title="Ver detalle del comprobante"
-                >
-                  <EyeIcon className="h-3.5 w-3.5" />
-                </button>
+                />
               )}
-              <button
-                type="button"
+              <DuplicateRowButton
                 onClick={() => handleDuplicar(v)}
-                className="p-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                 title="Duplicar Venta a Pre-Venta"
-              >
-                <DocumentDuplicateIcon className="h-3.5 w-3.5" />
-              </button>
-            </div>
+              />
+            </ActionCell>
           )
         },
-        size: 90,
-        enableColumnFilter: false
+        enableColumnFilter: false,
+        enableSorting: false
       },
       {
         accessorKey: 'cliente_nombre',
@@ -283,32 +278,44 @@ export default function Ventas() {
         size: 130
       },
       {
-        accessorKey: 'serie',
-        header: 'Serie',
+        id: 'serieCorrelativo',
+        accessorFn: (row) => {
+          const serie = row.serie ? String(row.serie).toUpperCase() : ''
+          const correlativo = row.correlativo
+            ? String(row.correlativo).padStart(8, '0')
+            : ''
+          return serie && correlativo ? `${serie}-${correlativo}` : serie || correlativo || ''
+        },
+        header: 'Serie / N° Comprobante',
         // Filtro multi-término por coma
         filterFn: (row, columnId, filterValue) => {
           if (!filterValue) return true
-          const seriesFiltro = filterValue.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
-          if (seriesFiltro.length === 0) return true
-          const rowSerie = String(row.getValue(columnId) || '').toLowerCase()
-          return seriesFiltro.some(s => rowSerie.includes(s))
+          const filtros = filterValue.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+          if (filtros.length === 0) return true
+          const rowValue = String(row.getValue(columnId) || '').toLowerCase()
+          return filtros.some(f => rowValue.includes(f))
         },
-        cell: ({ row }) => (
-          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 text-center block">
-            {row.original.serie || '-'}
-          </span>
-        ),
-        size: 80
-      },
-      {
-        accessorKey: 'correlativo',
-        header: 'Numero Comprobante',
-        cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-800 dark:text-slate-200 text-center block">
-            {row.original.correlativo ? String(row.original.correlativo).padStart(8, '0') : '-'}
-          </span>
-        ),
-        size: 130
+        cell: ({ row }) => {
+          const serie = row.original.serie ? String(row.original.serie).toUpperCase() : ''
+          const correlativo = row.original.correlativo
+            ? String(row.original.correlativo).padStart(8, '0')
+            : ''
+
+          if (!serie && !correlativo) {
+            return (
+              <span className="font-mono text-xs text-slate-400 text-center block">-</span>
+            )
+          }
+
+          return (
+            <span className="font-mono text-xs text-slate-800 dark:text-slate-200 text-center block whitespace-nowrap">
+              {serie && <span className="font-bold">{serie}</span>}
+              {serie && correlativo && <span className="text-slate-400">-</span>}
+              {correlativo && <span>{correlativo}</span>}
+            </span>
+          )
+        },
+        size: 180,
       },
       {
         accessorKey: 'placa',
@@ -340,16 +347,16 @@ export default function Ventas() {
     }
 
     cols.push(
-      {
-        accessorKey: 'sucursal_nombre',
-        header: 'Sucursal',
-        cell: ({ row }) => (
-          <span className="text-xs text-slate-700 dark:text-slate-300 text-center block truncate">
-            {row.original.sucursal_nombre || 'Principal'}
-          </span>
-        ),
-        size: 130
-      },
+      // {
+      //   accessorKey: 'sucursal_nombre',
+      //   header: 'Sucursal',
+      //   cell: ({ row }) => (
+      //     <span className="text-xs text-slate-700 dark:text-slate-300 text-center block truncate">
+      //       {row.original.sucursal_nombre || 'Principal'}
+      //     </span>
+      //   ),
+      //   size: 130
+      // },
       {
         accessorKey: 'tipos_pago',
         header: 'Tipos de pago',

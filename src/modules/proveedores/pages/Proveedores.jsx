@@ -16,6 +16,7 @@ import { proveedorController } from '../controllers/proveedor.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
 import { toast } from '../../../utils/toast.js'
 import Can from '../../../components/ui/Can.jsx'
+import { ActionCell, EditRowButton, DeleteRowButton } from '../../../components/ui/ActionButtons.jsx'
 
 export default function Proveedores() {
   const [proveedores, setProveedores] = useState([])
@@ -111,46 +112,23 @@ export default function Proveedores() {
       id: 'acciones',
       header: 'Acciones',
       cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-1.5">
-          <Can I="editar" a="proveedores" fallback={
-            <button
+        <ActionCell>
+          <Can I="editar" a="proveedores">
+            <EditRowButton
               onClick={() => handleOpenEdit(row.original)}
-              className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
               title="Editar Proveedor"
-            >
-              <PencilIcon className="h-4 w-4" />
-            </button>
-          }>
-            <button
-              onClick={() => handleOpenEdit(row.original)}
-              className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-              title="Editar Proveedor"
-            >
-              <PencilIcon className="h-4 w-4" />
-            </button>
+            />
           </Can>
-
-          <Can I="eliminar" a="proveedores" fallback={
-            <button
+          <Can I="eliminar" a="proveedores">
+            <DeleteRowButton
               onClick={() => handleDelete(row.original.id, row.original.razon_social)}
-              className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
               title="Inactivar Proveedor"
-            >
-              <TrashIcon className="h-4 w-4" />
-            </button>
-          }>
-            <button
-              onClick={() => handleDelete(row.original.id, row.original.razon_social)}
-              className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-              title="Inactivar Proveedor"
-            >
-              <TrashIcon className="h-4 w-4" />
-            </button>
+            />
           </Can>
-        </div>
+        </ActionCell>
       ),
-      size: 100,
-      enableColumnFilter: false
+      enableColumnFilter: false,
+      enableSorting: false
     },
     {
       accessorKey: 'ruc',

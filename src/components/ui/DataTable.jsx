@@ -59,10 +59,10 @@ export function DataTable({
     onColumnFiltersChange: setColumnFilters,
     ...(renderExpandedRow
       ? {
-          onExpandedChange,
-          getExpandedRowModel: getExpandedRowModel(),
-          getRowCanExpand: () => true
-        }
+        onExpandedChange,
+        getExpandedRowModel: getExpandedRowModel(),
+        getRowCanExpand: () => true
+      }
       : {}),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -85,43 +85,47 @@ export function DataTable({
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    className="relative px-5 py-4 font-semibold text-slate-600 dark:text-slate-300 group align-top"
-                    style={{ width: header.getSize() !== 150 ? header.getSize() : 'auto' }}
-                  >
-                    {header.isPlaceholder ? null : (
-                      <div className="flex flex-col h-full gap-1.5 justify-start">
-                        <div className="flex items-center justify-between gap-1 uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200">
-                          <span className="truncate">
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                          </span>
-                        </div>
-                        {header.column.getCanFilter() ? (
-                          <div className="w-full">
-                            <Filter column={header.column} table={table} />
+                {headerGroup.headers.map((header) => {
+                  const isAcciones = header.column.id === 'acciones'
+                  const colDef = header.column.columnDef
+                  const extraClass = colDef.meta?.headerClassName || colDef.headerClassName || ''
+                  return (
+                    <th
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className={`relative px-5 py-4 font-semibold text-slate-600 dark:text-slate-300 group align-top ${extraClass}`}
+                      style={{ width: header.getSize() !== 150 ? header.getSize() : (isAcciones ? '1%' : 'auto') }}
+                    >
+                      {header.isPlaceholder ? null : (
+                        <div className={`flex flex-col h-full gap-1.5 justify-start ${isAcciones ? 'items-center text-center' : ''}`}>
+                          <div className={`flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200 ${isAcciones ? 'justify-center text-center w-full' : 'justify-between'}`}>
+                            <span className="truncate">
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                            </span>
                           </div>
-                        ) : null}
-                      </div>
-                    )}
-                    
-                    {/* Resizer handle */}
-                    {header.column.getCanResize() && (
-                      <div
-                        onMouseDown={header.getResizeHandler()}
-                        onTouchStart={header.getResizeHandler()}
-                        className={`absolute right-0 top-1/4 h-1/2 w-1.5 cursor-col-resize rounded-full bg-slate-300 dark:bg-slate-600 opacity-0 group-hover:opacity-100 hover:w-2 hover:bg-blue-500 transition-all ${
-                          header.column.getIsResizing() ? 'bg-blue-500 opacity-100 w-2' : ''
-                        }`}
-                      />
-                    )}
-                  </th>
-                ))}
+                          {header.column.getCanFilter() ? (
+                            <div className="w-full">
+                              <Filter column={header.column} table={table} />
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
+
+                      {/* Resizer handle */}
+                      {header.column.getCanResize() && (
+                        <div
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
+                          className={`absolute right-0 top-1/4 h-1/2 w-1.5 cursor-col-resize rounded-full bg-slate-300 dark:bg-slate-600 opacity-0 group-hover:opacity-100 hover:w-2 hover:bg-blue-500 transition-all ${header.column.getIsResizing() ? 'bg-blue-500 opacity-100 w-2' : ''
+                            }`}
+                        />
+                      )}
+                    </th>
+                  )
+                })}
               </tr>
             ))}
           </thead>
@@ -133,20 +137,25 @@ export function DataTable({
                 return (
                   <React.Fragment key={row.id}>
                     <tr
-                      className={`transition-colors group/row ${
-                        isExpanded
+                      className={`transition-colors group/row ${isExpanded
                           ? 'bg-teal-50/20 dark:bg-slate-800/60'
                           : customClass || 'hover:bg-blue-50/40 dark:hover:bg-blue-900/10'
-                      }`}
+                        }`}
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className="px-5 py-3.5 text-slate-600 dark:text-slate-300"
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
+                      {row.getVisibleCells().map((cell) => {
+                        const isAcciones = cell.column.id === 'acciones'
+                        const colDef = cell.column.columnDef
+                        const cellClass = colDef.meta?.cellClassName || colDef.cellClassName || colDef.className || ''
+                        return (
+                          <td
+                            key={cell.id}
+                            className={`px-5 py-3.5 text-slate-600 dark:text-slate-300 ${isAcciones ? 'text-center' : ''} ${cellClass}`}
+                            style={isAcciones ? { width: '1%', whiteSpace: 'nowrap' } : {}}
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </td>
+                        )
+                      })}
                     </tr>
                     {isExpanded && (
                       <tr className="bg-slate-50/70 dark:bg-slate-900/70 border-y border-slate-200/60 dark:border-slate-800/60">
@@ -213,7 +222,7 @@ export function DataTable({
               ))}
             </select>
           </div>
-          
+
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => table.setPageIndex(0)}

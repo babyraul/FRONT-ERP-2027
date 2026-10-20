@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { UserIcon } from '@heroicons/react/24/outline'
 import {
+  ActionCell,
   ExportExcelButton,
   RefreshButton,
   NewButton,
@@ -253,7 +254,7 @@ export default function Preventas() {
       cell: ({ row }) => {
         const p = row.original
         return (
-          <div className="flex items-center justify-left gap-1">
+          <ActionCell>
             <ViewRowButton onClick={() => handleVerDetalle(p)} title="Ver detalle de preventa" />
             {tienePermisoCaja && (
               <PayRowButton onClick={() => handleCobrar(p)} title="Cobrar / Procesar Preventa" />
@@ -262,13 +263,13 @@ export default function Preventas() {
               <EditRowButton onClick={() => handleEditar(p)} title="Editar Pre-venta" />
             )}
             {canDelete && (
-              <DeleteRowButton onClick={() => handleSolicitarAnulacion(p)} label="Anular" title="Anular pre-venta" />
+              <DeleteRowButton onClick={() => handleSolicitarAnulacion(p)} title="Anular pre-venta" />
             )}
-          </div>
+          </ActionCell>
         )
       },
-      size: 100,
-      enableColumnFilter: false
+      enableColumnFilter: false,
+      enableSorting: false
     },
     {
       accessorKey: 'codigo',

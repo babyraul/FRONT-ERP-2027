@@ -18,6 +18,13 @@ import ProductoModal from '../components/ProductoModal.jsx'
 import Modal from '../../../components/ui/Modal.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import Can from '../../../components/ui/Can.jsx'
+import {
+  ActionCell,
+  EditRowButton,
+  DeleteRowButton,
+  ReactivateRowButton,
+  KardexRowButton
+} from '../../../components/ui/ActionButtons.jsx'
 import { toast } from '../../../utils/toast.js'
 
 export default function Productos() {
@@ -147,47 +154,35 @@ export default function Productos() {
         const p = info.row.original
         const isActivo = p.activo !== false
         return (
-          <div className="flex justify-end gap-1">
-            <button
-              type="button"
+          <ActionCell>
+            <KardexRowButton
               onClick={() => handleOpenKardex(p)}
-              className="p-1.5 text-slate-400 hover:text-[#01a59c] dark:hover:text-teal-400 transition-colors"
               title="Ver Kárdex / Movimientos de Stock"
-            >
-              <ClipboardDocumentListIcon className="h-4 w-4" />
-            </button>
+            />
             <Can I="editar" a="productos">
-              <button
+              <EditRowButton
                 onClick={() => handleOpenEdit(p)}
-                className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 title="Editar producto"
-              >
-                <PencilIcon className="h-4 w-4" />
-              </button>
+              />
             </Can>
             <Can I="eliminar" a="productos">
               {isActivo ? (
-                <button
+                <DeleteRowButton
                   onClick={() => handleSolicitarBaja(p)}
-                  className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                   title="Dar de baja / Inactivar producto"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </button>
+                />
               ) : (
-                <button
+                <ReactivateRowButton
                   onClick={() => handleReactivar(p)}
-                  className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                   title="Reactivar producto"
-                >
-                  <ArrowPathIcon className="h-4 w-4" />
-                </button>
+                />
               )}
             </Can>
-          </div>
+          </ActionCell>
         )
       },
-      className: 'text-right'
+      enableColumnFilter: false,
+      enableSorting: false
     },
     {
       header: 'Código',
@@ -450,13 +445,12 @@ export default function Productos() {
                 key={f.id}
                 type="button"
                 onClick={() => setEstadoFiltro(f.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
-                  estadoFiltro === f.id
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${estadoFiltro === f.id
                     ? f.id === 'inactivos'
                       ? 'bg-rose-600 text-white shadow-xs'
                       : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 {f.label}
               </button>
@@ -584,8 +578,8 @@ export default function Productos() {
                 <span className="text-slate-500 dark:text-slate-400 mr-1.5">Saldo Actual:</span>
                 <span
                   className={`font-bold px-2 py-0.5 rounded ${Number(kardexProducto.stock_actual || 0) < 0
-                      ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
-                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
+                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
                     }`}
                 >
                   {Number(kardexProducto.stock_actual || 0)}
@@ -633,8 +627,8 @@ export default function Productos() {
                         <td className="px-3 py-2 text-center">
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${esEntrada
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400'
-                                : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400'
+                              : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400'
                               }`}
                           >
                             {esEntrada ? '1 · Entrada' : '2 · Salida'}
@@ -650,8 +644,8 @@ export default function Productos() {
                         </td>
                         <td
                           className={`px-3 py-2 text-right font-bold ${saldoNum < 0
-                              ? 'text-rose-600 dark:text-rose-400'
-                              : 'text-slate-900 dark:text-white'
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-slate-900 dark:text-white'
                             }`}
                         >
                           {saldoNum}
