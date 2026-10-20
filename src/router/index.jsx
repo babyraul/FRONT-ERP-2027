@@ -11,6 +11,7 @@ import { Vender, Pagar } from '../modules/vender'
 import { Reportes } from '../modules/reportes'
 import { Proveedores } from '../modules/proveedores'
 import { Caja } from '../modules/caja'
+import { Stock } from '../modules/stock'
 import { Usuarios, Configuracion, Empresas, Sucursales, Almacenes, Modulos, Roles, Cajas } from '../modules/manager'
 
 export const router = createBrowserRouter([
@@ -30,6 +31,8 @@ export const router = createBrowserRouter([
       { path: 'vender/pagar', element: <Pagar /> },
       { path: 'pagar', element: <Pagar /> },
       { path: 'productos', element: <Productos /> },
+      { path: 'stock', element: <ProtectedRoute requirePermission="stock.ver"><Stock /></ProtectedRoute> },
+      { path: 'kardexprod', element: <ProtectedRoute requirePermission="kardexprod.ver"><Stock /></ProtectedRoute> },
       { path: 'clientes', element: <ProtectedRoute><Clientes /></ProtectedRoute> },
       { path: 'caja', element: <ProtectedRoute><Caja /></ProtectedRoute> },
       { path: 'listventas', element: <Ventas /> },

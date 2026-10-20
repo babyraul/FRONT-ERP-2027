@@ -49,5 +49,15 @@ export const productoController = {
       console.error(`Error al eliminar producto ${id}:`, error)
       return { success: false, error: error.response?.data?.message || 'Error al eliminar producto' }
     }
+  },
+
+  getKardex: async (id) => {
+    try {
+      const response = await api.get(`/productos/${id}/kardex`)
+      return { success: true, data: response.data?.data || response.data || [] }
+    } catch (error) {
+      console.error(`Error al obtener kardex del producto ${id}:`, error)
+      return { success: false, data: [], error: error.response?.data?.message || 'Error al obtener kárdex' }
+    }
   }
 }

@@ -31,7 +31,7 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
             precio_costo: Number(pres.precio_costo || prod.precio_costo || 0),
             precio_mayor: Number(pres.precio_mayor || 0),
             precio_especial: Number(pres.precio_especial || 0),
-            stock: Number(prod.stock_actual ?? prod.stock ?? 0),
+            stock: Number(pres.stock_actual ?? prod.stock_actual ?? prod.stock ?? 0),
             codigo: prod.codigo || '',
             codigo_barra: pres.cod_barra || prod.codigo_barra || '',
             unidad_medida: prod.unidad_medida_id || 'NIU',
@@ -147,12 +147,14 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
           itemsFiltrados.map((item, index) => {
             const isSelected = index === selectedIndex
             const stock = item.stock
-            const stockColor =
+            const stockBadgeCls =
               stock > 5
                 ? 'text-emerald-700 dark:text-emerald-400 font-semibold'
                 : stock > 0
                   ? 'text-amber-600 dark:text-amber-400 font-semibold'
-                  : 'text-rose-600 dark:text-rose-400 font-bold'
+                  : stock === 0
+                    ? 'text-slate-500 dark:text-slate-400 font-semibold'
+                    : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 px-1.5 py-0.5 rounded-md font-mono font-bold'
 
             return (
               <div
@@ -179,9 +181,9 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
                   {item.precio.toFixed(2)}
                 </div>
 
-                {/* Stock disponible */}
-                <div className={`text-right ${stockColor}`}>
-                  {stock}
+                {/* Stock disponible (soporta stock negativo) */}
+                <div className="text-right">
+                  <span className={stockBadgeCls}>{stock}</span>
                 </div>
               </div>
             )

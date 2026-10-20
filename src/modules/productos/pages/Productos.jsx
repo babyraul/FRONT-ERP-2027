@@ -6,11 +6,14 @@ import {
   PencilIcon,
   TrashIcon,
   ArchiveBoxIcon,
-  TagIcon
+  TagIcon,
+  ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline'
 import { useProductosStore } from '../../../store/useProductosStore.js'
+import { productoController } from '../controllers/producto.js'
 import { exportToExcel, formatCurrency } from '../../../utils/exportExcel.js'
 import ProductoModal from '../components/ProductoModal.jsx'
+import Modal from '../../../components/ui/Modal.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import Can from '../../../components/ui/Can.jsx'
 import { toast } from '../../../utils/toast.js'
@@ -21,6 +24,24 @@ export default function Productos() {
   const [busq, setBusq] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [productoEdit, setProductoEdit] = useState(null)
+  const [kardexModalOpen, setKardexModalOpen] = useState(false)
+  const [kardexProducto, setKardexProducto] = useState(null)
+  const [kardexRows, setKardexRows] = useState([])
+  const [loadingKardex, setLoadingKardex] = useState(false)
+
+  const handleOpenKardex = async (prod) => {
+    setKardexProducto(prod)
+    setKardexRows([])
+    setKardexModalOpen(true)
+    setLoadingKardex(true)
+    const res = await productoController.getKardex(prod.id)
+    if (res.success) {
+      setKardexRows(res.data)
+    } else {
+      toast.error('Error al cargar Kárdex', res.error || 'No se pudo obtener el historial de movimientos.')
+    }
+    setLoadingKardex(false)
+  }
 
   useEffect(() => {
     fetchProductos()
@@ -88,6 +109,14 @@ export default function Productos() {
         const p = info.row.original
         return (
           <div className="flex justify-end gap-1">
+            <button
+              type="button"
+              onClick={() => handleOpenKardex(p)}
+              className="p-1.5 text-slate-400 hover:text-[#01a59c] dark:hover:text-teal-400 transition-colors"
+              title="Ver Kárdex / Movimientos de Stock"
+            >
+              <ClipboardDocumentListIcon className="h-4 w-4" />
+            </button>
             <Can I="editar" a="productos">
               <button
                 onClick={() => handleOpenEdit(p)}
@@ -178,13 +207,13 @@ export default function Productos() {
         const presList = Array.isArray(p.presentaciones) && p.presentaciones.length > 0
           ? p.presentaciones
           : [{
-              nombre: 'PRINCIPAL',
-              multiplica_por: 1,
-              precio_costo: p.precio_costo,
-              precio_venta: p.precio_venta,
-              precio_mayor: p.precio_mayor,
-              precio_especial: p.precio_especial
-            }]
+            nombre: 'PRINCIPAL',
+            multiplica_por: 1,
+            precio_costo: p.precio_costo,
+            precio_venta: p.precio_venta,
+            precio_mayor: p.precio_mayor,
+            precio_especial: p.precio_especial
+          }]
 
         const isExpanded = Boolean(expandedRows[p.id])
         const hasExtraPrices = presList.some(
@@ -306,6 +335,39 @@ export default function Productos() {
           </div>
         )
       }
+    },
+    {
+      header: 'Stock Actual',
+      accessorKey: 'stock_actual',
+      cell: (info) => {
+        const p = info.row.original
+        const stock = Number(p.stock_actual ?? p.stock ?? 0)
+        const min = Number(p.stock_minimo ?? 0)
+        const badgeCls =
+          stock < 0
+            ? 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800/60'
+            : stock <= min
+              ? 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/60'
+              : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/60'
+
+        return (
+          <div className="flex flex-col items-end gap-1">
+            <button
+              type="button"
+              onClick={() => handleOpenKardex(p)}
+              className={`font-mono text-xs font-bold px-2.5 py-1 rounded-lg border transition-opacity hover:opacity-80 ${badgeCls}`}
+              title="Clic para ver el Kárdex histórico de movimientos"
+            >
+              {stock} {p.unidad_medida_id || 'NIU'}
+            </button>
+            {stock < 0 && (
+              <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                Stock negativo
+              </span>
+            )}
+          </div>
+        )
+      }
     }
   ], [expandedRows])
 
@@ -367,6 +429,110 @@ export default function Productos() {
         producto={productoEdit}
         onSave={fetchProductos}
       />
+
+      {/* Modal Kárdex Histórico (tabla stock) */}
+      <Modal
+        isOpen={kardexModalOpen}
+        onClose={() => setKardexModalOpen(false)}
+        title={`Kárdex de Stock: ${kardexProducto?.nombre || ''}`}
+        maxWidth="max-w-5xl w-full"
+        size="4xl"
+      >
+        <div className="space-y-4 text-xs min-h-[380px]">
+          {kardexProducto && (
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+              <div>
+                <span className="text-slate-500 dark:text-slate-400">Producto: </span>
+                <strong className="text-slate-800 dark:text-white">{kardexProducto.nombre}</strong>
+                {kardexProducto.codigo && (
+                  <span className="ml-2 font-mono text-slate-500">({kardexProducto.codigo})</span>
+                )}
+              </div>
+              <div className="font-mono">
+                <span className="text-slate-500 dark:text-slate-400 mr-1.5">Saldo Actual:</span>
+                <span
+                  className={`font-bold px-2 py-0.5 rounded ${Number(kardexProducto.stock_actual || 0) < 0
+                      ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
+                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                    }`}
+                >
+                  {Number(kardexProducto.stock_actual || 0)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {loadingKardex ? (
+            <div className="p-8 text-center text-slate-400">Cargando movimientos de kárdex...</div>
+          ) : kardexRows.length === 0 ? (
+            <div className="p-8 text-center text-slate-400">
+              No existen movimientos registrados en la tabla `stock` para este producto.
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl max-h-[480px] overflow-y-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-[10px] font-bold border-b border-slate-200 dark:border-slate-700">
+                    <th className="px-3 py-2.5">Fecha</th>
+                    <th className="px-3 py-2.5">Documento</th>
+                    <th className="px-3 py-2.5">Concepto</th>
+                    <th className="px-3 py-2.5 text-center">Tipo</th>
+                    <th className="px-3 py-2.5 text-right">Cant.</th>
+                    <th className="px-3 py-2.5 text-right">Factor</th>
+                    <th className="px-3 py-2.5 text-right">Cant. Base</th>
+                    <th className="px-3 py-2.5 text-right">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono text-xs">
+                  {kardexRows.map((m) => {
+                    const esEntrada = Number(m.tipo_mov) === 1
+                    const saldoNum = Number(m.saldo || 0)
+                    return (
+                      <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                        <td className="px-3 py-2 whitespace-nowrap text-slate-600 dark:text-slate-300">
+                          {m.created_at ? new Date(m.created_at).toLocaleString('es-PE') : '-'}
+                        </td>
+                        <td className="px-3 py-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                          {m.documento || '-'}
+                        </td>
+                        <td className="px-3 py-2 font-sans text-slate-600 dark:text-slate-300">
+                          {m.concepto || '-'}
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${esEntrada
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400'
+                                : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400'
+                              }`}
+                          >
+                            {esEntrada ? '1 · Entrada' : '2 · Salida'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right">{m.cantidad}</td>
+                        <td className="px-3 py-2 text-right text-slate-400">x{m.multiplica_por || 1}</td>
+                        <td
+                          className={`px-3 py-2 text-right font-bold ${esEntrada ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                            }`}
+                        >
+                          {esEntrada ? `+${m.cantidad_base}` : `-${m.cantidad_base}`}
+                        </td>
+                        <td
+                          className={`px-3 py-2 text-right font-bold ${saldoNum < 0
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-slate-900 dark:text-white'
+                            }`}
+                        >
+                          {saldoNum}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -443,6 +443,7 @@ export default function Pagar() {
       vuelto: vuelto,
       items: cartItems.map((item) => ({
         producto_id: item.producto_id,
+        presentacion_id: item.presentacion_id || null,
         nombre: item.nombre_completo,
         cantidad: Number(item.cantidad),
         precio_unitario: Number(item.precio_unitario),

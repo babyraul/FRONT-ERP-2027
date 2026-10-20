@@ -14,9 +14,24 @@ import { XMarkIcon } from '@heroicons/react/24/outline'
  * @param {string} cancelText - Texto del botón de cancelar
  * @param {boolean} isProcessing - Estado de carga para el botón principal
  * @param {string} maxWidth - Clase de ancho máximo (ej: max-w-lg, max-w-2xl, max-w-3xl)
+ * @param {string} size - Atajo de tamaño (sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl, full)
  * @param {ReactNode} children - Contenido del cuerpo del modal
  * @param {string} confirmButtonId - ID del form a hacer submit si se usa el botón principal como tipo "submit" (opcional)
  */
+const sizeMap = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-2xl',
+  '2xl': 'max-w-4xl',
+  '3xl': 'max-w-5xl',
+  '4xl': 'max-w-6xl',
+  '5xl': 'max-w-7xl',
+  '6xl': 'max-w-[92vw]',
+  '7xl': 'max-w-[96vw]',
+  full: 'max-w-[98vw]'
+}
+
 export default function Modal({
   isOpen,
   onClose,
@@ -26,13 +41,15 @@ export default function Modal({
   confirmText = 'Guardar',
   cancelText = 'Cancelar',
   isProcessing = false,
-  maxWidth = 'max-w-lg',
+  maxWidth,
+  size,
   children,
   confirmButtonId,
   showFooter = true,
   hideConfirm = false,
   noPadding = false
 }) {
+  const resolvedMaxWidth = maxWidth || (size && sizeMap[size]) || 'max-w-lg'
   // Prevenir scroll en el body cuando el modal está abierto
   useEffect(() => {
     if (isOpen) {
@@ -59,7 +76,7 @@ export default function Modal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 duration-200">
       <div 
-        className={`bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-2xl w-full ${maxWidth} overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200`}
+        className={`bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-2xl w-full ${resolvedMaxWidth} overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200`}
         role="dialog"
         aria-modal="true"
       >

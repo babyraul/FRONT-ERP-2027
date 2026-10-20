@@ -4,6 +4,7 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
+  getExpandedRowModel,
   flexRender,
 } from '@tanstack/react-table'
 import {
@@ -31,16 +32,38 @@ function Filter({ column, table }) {
   )
 }
 
-export function DataTable({ data, columns, pagination = true, getRowClassName, onFilteredData }) {
+export function DataTable({
+  data,
+  columns,
+  pagination = true,
+  getRowClassName,
+  onFilteredData,
+  renderExpandedRow,
+  expanded: controlledExpanded,
+  onExpandedChange: controlledSetExpanded
+}) {
   const [columnFilters, setColumnFilters] = useState([])
+  const [internalExpanded, setInternalExpanded] = useState({})
+
+  const isControlledExpanded = controlledExpanded !== undefined
+  const expanded = isControlledExpanded ? controlledExpanded : internalExpanded
+  const onExpandedChange = isControlledExpanded ? controlledSetExpanded : setInternalExpanded
 
   const table = useReactTable({
     data,
     columns,
     state: {
       columnFilters,
+      ...(renderExpandedRow ? { expanded } : {})
     },
     onColumnFiltersChange: setColumnFilters,
+    ...(renderExpandedRow
+      ? {
+          onExpandedChange,
+          getExpandedRowModel: getExpandedRowModel(),
+          getRowCanExpand: () => true
+        }
+      : {}),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: pagination ? getPaginationRowModel() : undefined,
@@ -106,20 +129,36 @@ export function DataTable({ data, columns, pagination = true, getRowClassName, o
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => {
                 const customClass = getRowClassName ? getRowClassName(row.original) : ''
+                const isExpanded = renderExpandedRow && row.getIsExpanded()
                 return (
-                  <tr
-                    key={row.id}
-                    className={`transition-colors group/row ${customClass || 'hover:bg-blue-50/40 dark:hover:bg-blue-900/10'}`}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className="px-5 py-3.5 text-slate-600 dark:text-slate-300"
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
-                  </tr>
+                  <React.Fragment key={row.id}>
+                    <tr
+                      className={`transition-colors group/row ${
+                        isExpanded
+                          ? 'bg-teal-50/20 dark:bg-slate-800/60'
+                          : customClass || 'hover:bg-blue-50/40 dark:hover:bg-blue-900/10'
+                      }`}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          className="px-5 py-3.5 text-slate-600 dark:text-slate-300"
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                    {isExpanded && (
+                      <tr className="bg-slate-50/70 dark:bg-slate-900/70 border-y border-slate-200/60 dark:border-slate-800/60">
+                        <td
+                          colSpan={row.getVisibleCells().length}
+                          className="p-0"
+                        >
+                          {renderExpandedRow({ row })}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 )
               })
             ) : (
