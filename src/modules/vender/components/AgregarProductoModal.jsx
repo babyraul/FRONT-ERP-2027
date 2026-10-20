@@ -26,13 +26,14 @@ export default function AgregarProductoModal({
     productos.forEach((prod) => {
       if (prod.presentaciones && prod.presentaciones.length > 0) {
         prod.presentaciones.forEach((pres) => {
+          const unidadMedidaId = prod.unidad_medida_id || 'NIU'
           list.push({
             uniqueId: `${prod.id}-${pres.id}`,
             producto_id: prod.id,
             presentacion_id: pres.id,
             nombre_producto: prod.nombre,
             nombre_presentacion: pres.nombre,
-            nombre_completo: `${prod.nombre} ${pres.nombre}`.trim().toUpperCase(),
+            nombre_completo: `${prod.nombre} ${pres.nombre} ${unidadMedidaId}`.trim().toUpperCase(),
             precio: Number(pres.precio_venta || prod.precio_venta || 0),
             precio_costo: Number(pres.precio_costo || prod.precio_costo || 0),
             precio_mayor: Number(pres.precio_mayor || 0),
@@ -40,18 +41,20 @@ export default function AgregarProductoModal({
             stock: Number(prod.stock_actual ?? prod.stock ?? 0),
             codigo: prod.codigo || '',
             codigo_barra: pres.cod_barra || prod.codigo_barra || '',
-            unidad_medida: prod.unidad_medida_id || 'NIU',
+            unidad_medida_id: unidadMedidaId,
+            unidad_medida: unidadMedidaId,
             es_facturable: prod.es_facturable !== false
           })
         })
       } else {
+        const unidadMedidaId = prod.unidad_medida_id || 'NIU'
         list.push({
           uniqueId: `${prod.id}-base`,
           producto_id: prod.id,
           presentacion_id: null,
           nombre_producto: prod.nombre,
           nombre_presentacion: 'UNIDAD',
-          nombre_completo: `${prod.nombre} UNIDAD`.trim().toUpperCase(),
+          nombre_completo: `${prod.nombre} UNIDAD ${unidadMedidaId}`.trim().toUpperCase(),
           precio: Number(prod.precio_venta || 0),
           precio_costo: Number(prod.precio_costo || 0),
           precio_mayor: Number(prod.precio_mayor || 0),
@@ -59,7 +62,8 @@ export default function AgregarProductoModal({
           stock: Number(prod.stock_actual ?? prod.stock ?? 0),
           codigo: prod.codigo || '',
           codigo_barra: prod.codigo_barra || '',
-          unidad_medida: prod.unidad_medida_id || 'NIU',
+          unidad_medida_id: unidadMedidaId,
+          unidad_medida: unidadMedidaId,
           es_facturable: prod.es_facturable !== false
         })
       }

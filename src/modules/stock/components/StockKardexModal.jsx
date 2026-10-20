@@ -108,9 +108,9 @@ export default function StockKardexModal({
       return
     }
 
-    const cant = Math.round(Number(cantidadAjuste || 0))
-    if (cant <= 0) {
-      toast.error('Cantidad inválida', 'Ingrese una cantidad entera mayor a 0.')
+    const cant = Number(cantidadAjuste || 0)
+    if (!Number.isFinite(cant) || cant <= 0) {
+      toast.error('Cantidad inválida', 'Ingrese una cantidad mayor a 0.')
       return
     }
 
@@ -416,8 +416,8 @@ export default function StockKardexModal({
                   </label>
                   <input
                     type="number"
-                    min="1"
-                    step="1"
+                    min="0.001"
+                    step="any"
                     required
                     value={cantidadAjuste}
                     onChange={(e) => setCantidadAjuste(e.target.value)}

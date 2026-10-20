@@ -32,7 +32,7 @@ export const router = createBrowserRouter([
       { path: 'pagar', element: <Pagar /> },
       { path: 'productos', element: <Productos /> },
       { path: 'stock', element: <ProtectedRoute requirePermission="stock.ver"><Stock /></ProtectedRoute> },
-      { path: 'kardexprod', element: <ProtectedRoute requirePermission="kardexprod.ver"><Stock /></ProtectedRoute> },
+      // { path: 'kardexprod', element: <ProtectedRoute requirePermission="kardexprod.ver"><Stock /></ProtectedRoute> },
       { path: 'clientes', element: <ProtectedRoute><Clientes /></ProtectedRoute> },
       { path: 'caja', element: <ProtectedRoute><Caja /></ProtectedRoute> },
       { path: 'listventas', element: <Ventas /> },

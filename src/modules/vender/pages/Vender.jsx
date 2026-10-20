@@ -11,6 +11,7 @@ import BuscarClienteModal from '../components/BuscarClienteModal.jsx'
 import { venderController } from '../controllers/venderController.js'
 import { cajaController } from '../../caja/controllers/caja.js'
 import { calcularTotalesVenta } from '../../../utils/Operaciones.js'
+import { permiteDecimales } from '../../../utils/unidades.js'
 import { toast } from '../../../utils/toast.js'
 import { ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 
@@ -131,17 +132,37 @@ export default function Vender() {
 
   const handleUpdateCantidad = (uniqueId, nuevaCantidad) => {
     setCartItems((prev) =>
-      prev.map((item) =>
-        item.uniqueId === uniqueId ? { ...item, cantidad: Math.max(0.01, nuevaCantidad) } : item
-      )
+      prev.map((item) => {
+        if (item.uniqueId !== uniqueId) return item
+        if (nuevaCantidad === '' || nuevaCantidad === null || nuevaCantidad === undefined) {
+          return { ...item, cantidad: '' }
+        }
+        const num = Number(nuevaCantidad)
+        if (isNaN(num)) return item
+        const esDec = permiteDecimales(item)
+        let finalCantidad = num
+        if (!esDec) {
+          finalCantidad = Math.round(num)
+          if (finalCantidad < 1) finalCantidad = 1
+        } else {
+          if (finalCantidad < 0.001) finalCantidad = 0.001
+        }
+        return { ...item, cantidad: finalCantidad }
+      })
     )
   }
 
   const handleUpdatePrecio = (uniqueId, nuevoPrecio) => {
     setCartItems((prev) =>
-      prev.map((item) =>
-        item.uniqueId === uniqueId ? { ...item, precio_unitario: Math.max(0, nuevoPrecio) } : item
-      )
+      prev.map((item) => {
+        if (item.uniqueId !== uniqueId) return item
+        if (nuevoPrecio === '' || nuevoPrecio === null || nuevoPrecio === undefined) {
+          return { ...item, precio_unitario: '' }
+        }
+        const num = Number(nuevoPrecio)
+        if (isNaN(num)) return item
+        return { ...item, precio_unitario: Math.max(0, num) }
+      })
     )
   }
 
@@ -187,10 +208,40 @@ export default function Vender() {
       return
     }
 
-    // A. Validar carrito
+    // A. Validar carrito no vacío
     if (!cartItems || cartItems.length === 0) {
       toast.info('Carrito vacío', 'Agregue al menos un producto para procesar la preventa.')
       return
+    }
+
+    // A.1 Validar cantidades según unidad de medida
+    for (const item of cartItems) {
+      const cant = Number(item.cantidad)
+      const esDec = permiteDecimales(item)
+      if (isNaN(cant) || cant <= 0) {
+        toast.error('Cantidad no válida', `Ingrese una cantidad mayor a 0 para "${item.nombre_completo}".`)
+        return
+      }
+      if (!esDec && cant % 1 !== 0) {
+        toast.error(
+          'Cantidad no permitida',
+          `El producto "${item.nombre_completo}" se vende por ${item.unidad_medida_id || 'UNIDAD'} y no admite cantidades decimales.`
+        )
+        return
+      }
+    }
+
+    // A.2 Validar restricción estricta de Precio Costo
+    for (const item of cartItems) {
+      const costo = Number(item.precio_costo || 0)
+      const precio = Number(item.precio_unitario || 0)
+      if (costo > 0 && precio < costo) {
+        toast.error(
+          'Precio por debajo del costo',
+          `El producto "${item.nombre_completo}" tiene un precio de S/ ${precio.toFixed(2)}, el cual no puede ser menor a su precio costo (S/ ${costo.toFixed(2)}).`
+        )
+        return
+      }
     }
 
     // B. Validar tipo de comprobante vs cliente

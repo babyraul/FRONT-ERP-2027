@@ -158,9 +158,11 @@ export default function Preventas() {
           uniqueId: it.uniqueId || `it-${it.id || idx}`,
           producto_id: it.producto_id,
           presentacion_id: it.presentacion_id || null,
-          nombre_completo: it.nombre_completo || it.producto_nombre || it.nombre || it.descripcion,
+          unidad_medida_id: it.unidad_medida_id || 'NIU',
+          nombre_completo: `${it.producto_nombre || it.nombre || it.descripcion || ''} ${it.nombre_completo || 'UNIDAD'} ${it.unidad_medida_id || 'NIU'}`.trim().toUpperCase(),
           cantidad: Number(it.cantidad || 1),
           precio_unitario: Number(it.precio_unitario || it.precio || 0),
+          precio_costo: Number(it.precio_costo || 0),
           descuento: Number(it.descuento || 0)
         }))
       }
@@ -195,9 +197,11 @@ export default function Preventas() {
           uniqueId: it.uniqueId || `it-${it.id || idx}`,
           producto_id: it.producto_id,
           presentacion_id: it.presentacion_id || null,
-          nombre_completo: it.nombre_completo || it.producto_nombre || it.nombre || it.descripcion,
+          unidad_medida_id: it.unidad_medida_id || 'NIU',
+          nombre_completo: `${it.producto_nombre || it.nombre || it.descripcion || ''} ${it.nombre_completo || 'UNIDAD'} ${it.unidad_medida_id || 'NIU'}`.trim().toUpperCase(),
           cantidad: Number(it.cantidad || 1),
           precio_unitario: Number(it.precio_unitario || it.precio || 0),
+          precio_costo: Number(it.precio_costo || 0),
           descuento: Number(it.descuento || 0)
         }))
       }
