@@ -67,7 +67,9 @@ export default function Modal({
   confirmButtonId,
   showFooter = true,
   hideConfirm = false,
-  noPadding = false
+  noPadding = false,
+  backIcon = 'arrow',
+  extraHeader = null
 }) {
   // Manejo de montaje y animación de salida
   const [mounted, setMounted] = useState(false)
@@ -134,6 +136,8 @@ export default function Modal({
         showFooter={showFooter}
         hideConfirm={hideConfirm}
         noPadding={noPadding}
+        backIcon={backIcon}
+        extraHeader={extraHeader}
       >
         {children}
       </ActionSection>

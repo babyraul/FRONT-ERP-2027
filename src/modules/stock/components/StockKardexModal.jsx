@@ -1,14 +1,15 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
   ArrowUpCircleIcon,
   ArrowDownCircleIcon,
   PlusCircleIcon,
   CubeIcon
 } from '@heroicons/react/24/outline'
 import Modal from '../../../components/ui/Modal.jsx'
+import ActionSection from '../../../components/ui/ActionSection.jsx'
 import Can from '../../../components/ui/Can.jsx'
+import { DataTable } from '../../../components/ui/DataTable.jsx'
+import { ExportExcelButton, RefreshButton } from '../../../components/ui/ActionButtons.jsx'
 import { usePermission } from '../../../hooks/usePermission.js'
 import { stockController } from '../controllers/stock.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
@@ -25,7 +26,8 @@ export default function StockKardexModal({
   itemSeleccionado,
   presentacionesProducto = [],
   almacenes = [],
-  onStockUpdated
+  onStockUpdated,
+  variant = 'drawer'
 }) {
   const { hasPermission } = usePermission()
 
@@ -166,6 +168,139 @@ export default function StockKardexModal({
     exportToExcel(rows, nombreArchivo, 'Kardex')
   }
 
+  // Columnas para DataTable
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: 'created_at',
+        header: 'Fecha / Hora',
+        cell: (info) => {
+          const val = info.getValue()
+          return (
+            <span className="font-mono text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
+              {val ? new Date(val).toLocaleString('es-PE') : '-'}
+            </span>
+          )
+        }
+      },
+      {
+        accessorKey: 'presentacion_nombre',
+        header: 'Presentación',
+        cell: (info) => (
+          <span className="font-semibold text-xs text-slate-700 dark:text-slate-200 whitespace-nowrap">
+            {info.getValue() || 'UNIDAD'}
+          </span>
+        )
+      },
+      {
+        accessorKey: 'documento',
+        header: 'Documento',
+        cell: (info) => (
+          <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-100 whitespace-nowrap">
+            {info.getValue() || '-'}
+          </span>
+        )
+      },
+      {
+        accessorKey: 'concepto',
+        header: 'Concepto / Motivo',
+        cell: (info) => (
+          <span
+            className="text-xs text-slate-600 dark:text-slate-300 block max-w-[200px] truncate"
+            title={info.getValue() || ''}
+          >
+            {info.getValue() || '-'}
+          </span>
+        )
+      },
+      {
+        accessorKey: 'tipo_mov',
+        header: 'Tipo Mov.',
+        cell: (info) => {
+          const esEntrada = Number(info.getValue()) === 1
+          return (
+            <div className="flex justify-center">
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase whitespace-nowrap ${esEntrada
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400'
+                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400'
+                  }`}
+              >
+                {esEntrada ? '1 · Entrada' : '2 · Salida'}
+              </span>
+            </div>
+          )
+        }
+      },
+      {
+        accessorKey: 'cantidad',
+        header: 'Cant.',
+        cell: (info) => (
+          <span className="font-mono font-semibold text-xs text-right block">
+            {info.getValue()}
+          </span>
+        )
+      },
+      {
+        accessorKey: 'multiplica_por',
+        header: 'Factor',
+        cell: (info) => (
+          <span className="font-mono text-xs text-slate-400 text-right block">
+            x{info.getValue() || 1}
+          </span>
+        )
+      },
+      {
+        accessorKey: 'cantidad_base',
+        header: 'Cant. Base',
+        cell: (info) => {
+          const row = info.row.original
+          const esEntrada = Number(row.tipo_mov) === 1
+          const val = info.getValue()
+          return (
+            <span
+              className={`font-mono font-bold text-xs text-right block ${esEntrada
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-rose-600 dark:text-rose-400'
+                }`}
+            >
+              {esEntrada ? `+${val}` : `-${val}`}
+            </span>
+          )
+        }
+      },
+      {
+        accessorKey: 'saldo',
+        header: 'Saldo',
+        cell: (info) => {
+          const saldoNum = Number(info.getValue() || 0)
+          return (
+            <div className="text-right">
+              <span
+                className={`font-mono font-bold text-xs px-2 py-0.5 rounded ${saldoNum < 0
+                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
+                  : 'text-slate-900 dark:text-white'
+                  }`}
+              >
+                {saldoNum}
+              </span>
+            </div>
+          )
+        }
+      },
+      {
+        accessorKey: 'usuario_nombre',
+        header: 'Usuario',
+        cell: (info) => (
+          <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+            {info.getValue() || '-'}
+          </span>
+        )
+      }
+    ],
+    []
+  )
+
   if (!itemSeleccionado) return null
 
   const tituloModal =
@@ -177,11 +312,15 @@ export default function StockKardexModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      variant={variant}
       title={tituloModal}
       maxWidth="max-w-6xl w-full"
       size="5xl"
+      cancelText="Volver a Stock"
+      hideConfirm={true}
+      showFooter={true}
     >
-      <div className="space-y-4 text-xs min-h-[520px] flex flex-col justify-between">
+      <div className="space-y-4 text-sm flex flex-col justify-between">
         {/* ── RESUMEN SUPERIOR DEL PRODUCTO / PRESENTACIÓN ── */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700 flex items-center gap-2.5">
@@ -225,22 +364,20 @@ export default function StockKardexModal({
           </div>
 
           <div
-            className={`p-3 rounded-xl border flex items-center justify-between ${
-              resumen.saldoActual < 0
-                ? 'bg-rose-100/80 border-rose-300 dark:bg-rose-950/60 dark:border-rose-800'
-                : 'bg-teal-50/70 border-teal-200 dark:bg-teal-950/30 dark:border-teal-800/60'
-            }`}
+            className={`p-3 rounded-xl border flex items-center justify-between ${resumen.saldoActual < 0
+              ? 'bg-rose-100/80 border-rose-300 dark:bg-rose-950/60 dark:border-rose-800'
+              : 'bg-teal-50/70 border-teal-200 dark:bg-teal-950/30 dark:border-teal-800/60'
+              }`}
           >
             <div>
               <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-300 block">
                 Saldo Vigente (`stock_actual`)
               </span>
               <p
-                className={`text-base font-black font-mono ${
-                  resumen.saldoActual < 0
-                    ? 'text-rose-700 dark:text-rose-400'
-                    : 'text-[#01a59c] dark:text-teal-400'
-                }`}
+                className={`text-base font-black font-mono ${resumen.saldoActual < 0
+                  ? 'text-rose-700 dark:text-rose-400'
+                  : 'text-[#01a59c] dark:text-teal-400'
+                  }`}
               >
                 {resumen.saldoActual} {itemSeleccionado.unidad_medida_id || 'NIU'}
               </p>
@@ -347,29 +484,21 @@ export default function StockKardexModal({
             </div>
           </div>
 
-          {/* Botones de Acción */}
+          {/* Botones de Acción Estándar */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <RefreshButton
               onClick={loadKardex}
-              disabled={loading}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+              loading={loading}
               title="Refrescar Kárdex"
-            >
-              <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+            />
 
-            <button
-              type="button"
+            <ExportExcelButton
               onClick={handleExportarKardex}
               disabled={movimientos.length === 0}
-              className="px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1.5 hover:bg-emerald-100 transition-colors disabled:opacity-40"
-            >
-              <ArrowDownTrayIcon className="h-4 w-4" />
-              <span>Excel</span>
-            </button>
+              label="Excel"
+            />
 
-            {canRegistrarAjuste && (
+            {/* {canRegistrarAjuste && (
               <button
                 type="button"
                 onClick={() => setShowAjusteForm((prev) => !prev)}
@@ -378,7 +507,7 @@ export default function StockKardexModal({
                 <PlusCircleIcon className="h-4 w-4" />
                 <span>{showAjusteForm ? 'Ocultar Ajuste' : 'Registrar Movimiento'}</span>
               </button>
-            )}
+            )} */}
           </div>
         </div>
 
@@ -472,102 +601,19 @@ export default function StockKardexModal({
           )}
         </Can>
 
-        {/* ── TABLA DE MOVIMIENTOS DEL KÁRDEX (`stock`) ── */}
-        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-          <div className="max-h-[480px] overflow-y-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 z-10">
-                <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-[10px] font-bold border-b border-slate-200 dark:border-slate-700">
-                  <th className="px-3 py-2.5">Fecha / Hora</th>
-                  <th className="px-3 py-2.5">Presentación</th>
-                  <th className="px-3 py-2.5">Documento</th>
-                  <th className="px-3 py-2.5">Concepto</th>
-                  <th className="px-3 py-2.5 text-center">Tipo Mov.</th>
-                  <th className="px-3 py-2.5 text-right">Cant.</th>
-                  <th className="px-3 py-2.5 text-right">Factor</th>
-                  <th className="px-3 py-2.5 text-right">Cant. Base</th>
-                  <th className="px-3 py-2.5 text-right">Saldo</th>
-                  <th className="px-3 py-2.5">Usuario</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono text-xs">
-                {loading ? (
-                  <tr>
-                    <td colSpan={10} className="px-4 py-10 text-center font-sans text-slate-400">
-                      Consultando historial de Kárdex...
-                    </td>
-                  </tr>
-                ) : movimientos.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="px-4 py-10 text-center font-sans text-slate-400">
-                      No se encontraron movimientos en la tabla `stock` para los filtros seleccionados.
-                    </td>
-                  </tr>
-                ) : (
-                  movimientos.map((m) => {
-                    const esEntrada = Number(m.tipo_mov) === 1
-                    const saldoNum = Number(m.saldo || 0)
-
-                    return (
-                      <tr
-                        key={m.id}
-                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                      >
-                        <td className="px-3 py-2 whitespace-nowrap text-slate-600 dark:text-slate-300">
-                          {m.created_at ? new Date(m.created_at).toLocaleString('es-PE') : '-'}
-                        </td>
-                        <td className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">
-                          {m.presentacion_nombre || 'UNIDAD'}
-                        </td>
-                        <td className="px-3 py-2 font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                          {m.documento || '-'}
-                        </td>
-                        <td className="px-3 py-2 font-sans text-slate-600 dark:text-slate-300 max-w-[220px] truncate" title={m.concepto}>
-                          {m.concepto || '-'}
-                        </td>
-                        <td className="px-3 py-2 text-center whitespace-nowrap">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              esEntrada
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400'
-                                : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400'
-                            }`}
-                          >
-                            {esEntrada ? '1 · Entrada' : '2 · Salida'}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-right font-semibold">{m.cantidad}</td>
-                        <td className="px-3 py-2 text-right text-slate-400">x{m.multiplica_por || 1}</td>
-                        <td
-                          className={`px-3 py-2 text-right font-bold ${
-                            esEntrada
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-rose-600 dark:text-rose-400'
-                          }`}
-                        >
-                          {esEntrada ? `+${m.cantidad_base}` : `-${m.cantidad_base}`}
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          <span
-                            className={`font-bold px-2 py-0.5 rounded ${
-                              saldoNum < 0
-                                ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
-                                : 'text-slate-900 dark:text-white'
-                            }`}
-                          >
-                            {saldoNum}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 font-sans text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                          {m.usuario_nombre || '-'}
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+        {/* ── TABLA DE MOVIMIENTOS DEL KÁRDEX (`DataTable`) ── */}
+        <div className="w-full">
+          {loading ? (
+            <div className="py-12 text-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+              <span className="animate-pulse font-medium">Consultando historial de Kárdex...</span>
+            </div>
+          ) : (
+            <DataTable
+              data={movimientos}
+              columns={columns}
+              pagination={true}
+            />
+          )}
         </div>
       </div>
     </Modal>

@@ -9,7 +9,7 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline'
 const VARIANTS = {
   primary: 'bg-[#01a59c] hover:bg-[#018f86] text-white shadow-xs border border-transparent',
   dark: 'bg-[#01473d] hover:bg-[#025a4d] text-white shadow-2xs border border-transparent',
-  secondary: 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs',
+  secondary: 'bg-[#35605a] dark:bg-[#35605a] border border-[#35605a]-200 dark:border-slate-700 text-white dark:text-slate-200 hover:bg-[#2e544e] dark:hover:bg-[#2e544e] shadow-2xs',
   outline: 'bg-transparent border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800',
   ghost: 'bg-transparent border border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800',
   soft: 'bg-teal-50 dark:bg-teal-900/20 text-[#01a59c] hover:bg-teal-100 dark:hover:bg-teal-900/40 border border-transparent',

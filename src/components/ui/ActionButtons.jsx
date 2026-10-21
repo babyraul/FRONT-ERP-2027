@@ -17,7 +17,7 @@ import Button from './Button.jsx'
 
 export function ExportExcelButton({ label = 'Exportar Excel', title = 'Exportar a Excel', ...props }) {
   return (
-    <Button variant="secondary" icon={ArrowDownTrayIcon} iconClassName="text-emerald-600" title={title} {...props}>
+    <Button variant="secondary" icon={ArrowDownTrayIcon} iconClassName="text-white" title={title} {...props}>
       {label}
     </Button>
   )
@@ -34,7 +34,7 @@ export function ExportPdfButton({ label = 'Exportar PDF', title = 'Exportar a PD
 export function RefreshButton({ loading = false, title = 'Actualizar', label, ...props }) {
   return (
     <Button
-      variant="outline"
+      variant="secondary"
       size={label ? 'md' : 'icon'}
       icon={ArrowPathIcon}
       iconClassName={loading ? 'animate-spin text-[#01a59c]' : ''}

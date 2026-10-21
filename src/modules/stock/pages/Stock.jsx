@@ -283,11 +283,10 @@ export default function Stock() {
               <button
                 type="button"
                 onClick={row.getToggleExpandedHandler()}
-                className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                  isExpanded
-                    ? 'bg-[#01a59c] text-white shadow-xs'
-                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
-                }`}
+                className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${isExpanded
+                  ? 'bg-[#01a59c] text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+                  }`}
                 title={isExpanded ? 'Colapsar desglose' : 'Desglosar presentaciones'}
               >
                 {isExpanded ? (
@@ -315,7 +314,7 @@ export default function Stock() {
                 <button
                   type="button"
                   onClick={() => handleAbrirKardexProducto(prod)}
-                  className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/40 dark:hover:bg-teal-900/60 text-[#01a59c] dark:text-teal-300 border border-teal-200/70 dark:border-teal-800/60 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-[#01a59c] hover:bg-[#018e86] text-white font-bold text-[11px] flex items-center gap-1.5 cursor-pointer transition-all shadow-xs hover:shadow-md"
                   title="Ver Kárdex general consolidado de este producto"
                 >
                   <ClipboardDocumentListIcon className="h-3.5 w-3.5" />
@@ -356,11 +355,11 @@ export default function Stock() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+              {/* <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
                 <span>{prod.categoria_nombre || 'General'}</span>
                 {prod.sub_categoria_nombre && <span>· {prod.sub_categoria_nombre}</span>}
                 {prod.codigo_barra && <span className="font-mono">· SKU: {prod.codigo_barra}</span>}
-              </div>
+              </div> */}
             </div>
           )
         }
@@ -444,14 +443,12 @@ export default function Stock() {
 
           return (
             <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => handleAbrirKardexProducto(prod)}
+              <span
                 className={`px-2.5 py-1 rounded-lg border font-mono text-xs font-black transition-transform hover:scale-105 cursor-pointer ${badgeCls}`}
-                title="Stock total base del producto. Clic para ver Kárdex consolidado"
+                title="Stock total base del producto."
               >
                 {saldo} {prod.unidad_medida_id || 'NIU'}
-              </button>
+              </span>
             </div>
           )
         }
@@ -542,22 +539,22 @@ export default function Stock() {
       const presentaciones = prod.presentaciones || []
 
       return (
-        <div className="p-4 bg-slate-50/90 dark:bg-slate-900/90 border-t border-b border-teal-200/50 dark:border-teal-900/40 space-y-3">
-          {/* Cabecera del Desglose */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200/70 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-teal-100/70 dark:bg-teal-950/60 text-[#01a59c] border border-teal-200 dark:border-teal-800/60">
+        <div className="p-2 sm:p-2 bg-gradient-to-b from-slate-100/90 to-slate-50/70 dark:from-slate-900 dark:to-slate-950/80 border-y-2 border-teal-500/30 dark:border-teal-500/20 shadow-inner space-y-3.5">
+          {/* Cabecera del Desglose con identidad visual marcada */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-white/90 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-teal-500 text-white shadow-xs">
                 <CubeIcon className="h-4 w-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
-                  <span>Desglose de Presentaciones:</span>
-                  <span className="text-[#01a59c] font-black">{prod.producto_nombre}</span>
-                  <span className="font-mono text-[11px] text-slate-400 font-normal">({prod.codigo})</span>
-                </h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Stock base total: <strong className="font-mono text-slate-800 dark:text-slate-200">{prod.saldo_producto_total} {prod.unidad_medida_id}</strong> · {presentaciones.length} {presentaciones.length === 1 ? 'presentación disponible' : 'presentaciones disponibles'}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+                    Desglose de Presentaciones
+                  </span>
+                  <span className="text-xs font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700/70 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-600">
+                    {prod.producto_nombre}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -565,142 +562,125 @@ export default function Stock() {
               <button
                 type="button"
                 onClick={() => handleAbrirKardexProducto(prod)}
-                className="px-2.5 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/80 text-[#01a59c] dark:text-teal-300 border border-teal-200 dark:border-teal-800 font-bold text-[11px] flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                className="px-3 py-1.5 rounded-lg bg-[#01a59c] hover:bg-[#018e86] text-white font-bold text-[11px] flex items-center gap-1.5 cursor-pointer transition-all shadow-xs hover:shadow-md"
                 title="Ver historial de kárdex consolidado del producto"
               >
-                <ClipboardDocumentListIcon className="h-3.5 w-3.5" />
-                <span>Kárdex General de Todas las Presentaciones</span>
+                <ClipboardDocumentListIcon className="h-4 w-4" />
+                <span>Kárdex General del Producto</span>
               </button>
             )}
           </div>
 
-          {/* Tabla de Presentaciones */}
+          {/* Grid de Cards de Presentaciones con diferenciación visual absoluta */}
           {presentaciones.length === 0 ? (
-            <div className="p-4 text-center text-slate-400 text-xs">
+            <div className="p-5 text-center text-slate-400 dark:text-slate-500 text-xs italic bg-white dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
               Este producto no cuenta con presentaciones adicionales. Se maneja exclusivamente en su unidad base ({prod.unidad_medida_id}).
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
-              <table className="w-full text-xs text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-100/90 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 text-[10px] uppercase font-bold tracking-wider border-b border-slate-200 dark:border-slate-800">
-                    <th className="px-3.5 py-2.5 text-center w-28">Kárdex</th>
-                    <th className="px-3.5 py-2.5">Presentación</th>
-                    <th className="px-3.5 py-2.5">Cód. Barras / SKU</th>
-                    <th className="px-3.5 py-2.5">Factor Conversión</th>
-                    <th className="px-3.5 py-2.5 text-right">Precio Costo</th>
-                    <th className="px-3.5 py-2.5 text-right">Precio Venta</th>
-                    <th className="px-3.5 py-2.5 text-right">Stock en Presentación</th>
-                    <th className="px-3.5 py-2.5 text-center">Estado</th>
-                    <th className="px-3.5 py-2.5 text-center">Última Act.</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono text-xs">
-                  {presentaciones.map((pres) => {
-                    const saldoPres = Number(pres.saldo_actual || 0)
-                    const min = Number(prod.stock_minimo || 0)
-                    return (
-                      <tr
-                        key={pres.id || `${prod.producto_id}-${pres.presentacion_id}`}
-                        className="hover:bg-teal-50/25 dark:hover:bg-teal-950/20 transition-colors"
-                      >
-                        {/* Kárdex por presentación */}
-                        <td className="px-3.5 py-2.5 text-center">
-                          {canViewKardex && (
-                            <button
-                              type="button"
-                              onClick={() => handleAbrirKardexPresentacion(pres, prod)}
-                              className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/60 text-[#01a59c] dark:text-teal-300 border border-teal-200/80 dark:border-teal-800/70 font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-colors"
-                              title={`Consultar Kárdex individual de ${pres.presentacion_nombre}`}
-                            >
-                              <ClipboardDocumentListIcon className="h-3.5 w-3.5" />
-                              <span>Kárdex</span>
-                            </button>
-                          )}
-                        </td>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-1">
+              {presentaciones.map((pres) => {
+                const saldoPres = Number(pres.saldo_actual || 0)
+                const min = Number(prod.stock_minimo || 0)
+                const isNeg = saldoPres < 0
+                const isZero = saldoPres === 0
+                const isLow = saldoPres > 0 && saldoPres <= min
 
-                        {/* Presentación y Factor */}
-                        <td className="px-3.5 py-2.5 font-sans font-bold text-slate-800 dark:text-slate-100">
-                          <div className="flex items-center gap-2">
-                            <span className="uppercase">{pres.presentacion_nombre || 'UNIDAD'}</span>
-                            <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800">
-                              x{pres.multiplica_por || 1} {pres.unidad_medida_id || prod.unidad_medida_id}
-                            </span>
-                          </div>
-                        </td>
+                const statusBorder = isNeg
+                  ? 'border-l-rose-500'
+                  : isZero
+                    ? 'border-l-slate-400'
+                    : isLow
+                      ? 'border-l-amber-500'
+                      : 'border-l-emerald-500'
 
-                        {/* Código de barras / SKU */}
-                        <td className="px-3.5 py-2.5 text-slate-500 dark:text-slate-400">
-                          {pres.codigo_barra || '-'}
-                        </td>
+                const statusBadge = isNeg
+                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                  : isZero
+                    ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                    : isLow
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                      : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
 
-                        {/* Factor de conversión */}
-                        <td className="px-3.5 py-2.5 font-sans text-slate-600 dark:text-slate-300 text-[11px]">
-                          1 {pres.presentacion_nombre} ({pres.unidad_medida_id || prod.unidad_medida_id}) = {pres.multiplica_por || 1} {prod.unidad_medida_id}
-                        </td>
+                const statusLabel = isNeg
+                  ? 'Negativo'
+                  : isZero
+                    ? 'Sin Stock'
+                    : isLow
+                      ? 'Bajo Mínimo'
+                      : 'Disponible'
 
-                        {/* Costo */}
-                        <td className="px-3.5 py-2.5 text-right text-slate-500 dark:text-slate-400">
-                          {formatCurrency(Number(pres.precio_costo || 0))}
-                        </td>
-
-                        {/* Venta */}
-                        <td className="px-3.5 py-2.5 text-right font-bold text-slate-800 dark:text-slate-100">
-                          {formatCurrency(Number(pres.precio_venta || 0))}
-                        </td>
-
-                        {/* Saldo en Presentación */}
-                        <td className="px-3.5 py-2.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleAbrirKardexPresentacion(pres, prod)}
-                            className={`px-2 py-0.5 rounded-lg border font-black transition-transform hover:scale-105 cursor-pointer ${
-                              saldoPres < 0
-                                ? 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800'
-                                : saldoPres === 0
-                                  ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400'
-                                  : saldoPres <= min
-                                    ? 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
-                            }`}
-                            title="Clic para abrir el Kárdex de esta presentación"
-                          >
-                            {saldoPres} {pres.presentacion_nombre}
-                          </button>
-                        </td>
-
-                        {/* Estado */}
-                        <td className="px-3.5 py-2.5 text-center">
-                          <span
-                            className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              saldoPres < 0
-                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
-                                : saldoPres === 0
-                                  ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                                  : saldoPres <= min
-                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400'
-                                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400'
-                            }`}
-                          >
-                            {saldoPres < 0
-                              ? 'Negativo'
-                              : saldoPres === 0
-                                ? 'Sin Stock'
-                                : saldoPres <= min
-                                  ? 'Bajo Mín.'
-                                  : 'Disponible'}
+                return (
+                  <div
+                    key={pres.id || `${prod.producto_id}-${pres.presentacion_id}`}
+                    className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200/90 dark:border-slate-700 p-3.5 flex flex-col justify-between shadow-2xs hover:shadow-md transition-all border-l-4 ${statusBorder}`}
+                  >
+                    <div>
+                      {/* Top: Nombre de Presentación y Status */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="text-xs font-black uppercase text-slate-900 dark:text-white block truncate tracking-tight">
+                            {pres.presentacion_nombre || 'UNIDAD'} - {pres.codigo_barra || 'Sin Cód.'}
                           </span>
-                        </td>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase shrink-0 ${statusBadge}`}>
+                          {statusLabel}
+                        </span>
+                      </div>
 
-                        {/* Última Actualización */}
-                        <td className="px-3.5 py-2.5 text-center text-slate-400 text-[11px]">
-                          {pres.updated_at ? new Date(pres.updated_at).toLocaleDateString('es-PE') : '-'}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                      {/* Factor de conversión */}
+                      <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 rounded-lg text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold">
+                        <span>Factor:</span>
+                        <strong className="font-mono">x{pres.multiplica_por || 1} {pres.unidad_medida_id || prod.unidad_medida_id}</strong>
+                      </div>
+
+                      {/* Precios: Costo y Venta */}
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div className="bg-slate-50 dark:bg-slate-900/50 p-2 border border-slate-300 dark:border-slate-700/60 rounded-lg">
+                          <span className="text-[9px] uppercase font-bold text-slate-400 block">P. Costo</span>
+                          <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            {formatCurrency(Number(pres.precio_costo || 0))}
+                          </span>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900/50 p-2 border border-slate-300 dark:border-slate-700/60 rounded-lg">
+                          <span className="text-[9px] uppercase font-bold text-slate-400 block">P. Venta</span>
+                          <span className="font-mono text-xs font-black text-slate-900 dark:text-white">
+                            {formatCurrency(Number(pres.precio_venta || 0))}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stock y Botón Kárdex */}
+                    <div className="mt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-2">
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-slate-400 block">Stock Disponible</span>
+                        <span className={`font-mono text-sm font-black ${isNeg
+                          ? 'text-rose-600 dark:text-rose-400'
+                          : isZero
+                            ? 'text-slate-400'
+                            : isLow
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : 'text-emerald-600 dark:text-emerald-400'
+                          }`}>
+                          {saldoPres} <span className="text-[10px] font-sans font-bold uppercase">{pres.presentacion_nombre}</span>
+                        </span>
+                      </div>
+
+                      {canViewKardex && (
+                        <button
+                          type="button"
+                          onClick={() => handleAbrirKardexPresentacion(pres, prod)}
+                          className="px-3 py-1.5 rounded-lg bg-[#01a59c] hover:bg-[#018e86] text-white font-bold text-[11px] flex items-center gap-1.5 cursor-pointer transition-all shadow-xs hover:shadow-md"
+                          title={`Ver historial de ${pres.presentacion_nombre}`}
+                        >
+                          <ClipboardDocumentListIcon className="h-3.5 w-3.5" />
+                          <span>Kárdex</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -725,7 +705,7 @@ export default function Stock() {
                 title="Exportar reporte de Stock y Kárdex a Excel"
               />
             </Can>
-            {canAdjustStock && productosAgrupados.length > 0 && (
+            {/* {canAdjustStock && productosAgrupados.length > 0 && (
               <button
                 type="button"
                 onClick={() => handleAbrirKardexProducto(productosAgrupados[0])}
@@ -735,7 +715,7 @@ export default function Stock() {
                 <PlusCircleIcon className="h-4 w-4" />
                 <span>Ajuste / Kárdex</span>
               </button>
-            )}
+            )} */}
           </>
         }
       />
@@ -744,11 +724,10 @@ export default function Stock() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div
           onClick={() => setEstadoStock('todos')}
-          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${
-            estadoStock === 'todos'
-              ? 'border-[#01a59c] ring-1 ring-[#01a59c]/40'
-              : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300'
-          }`}
+          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${estadoStock === 'todos'
+            ? 'border-[#01a59c] ring-1 ring-[#01a59c]/40'
+            : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300'
+            }`}
         >
           <div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-[#01a59c]">
             <CubeIcon className="h-5 w-5" />
@@ -768,11 +747,10 @@ export default function Stock() {
 
         <div
           onClick={() => setEstadoStock('positivo')}
-          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${
-            estadoStock === 'positivo'
-              ? 'border-emerald-500 ring-1 ring-emerald-500/40'
-              : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300'
-          }`}
+          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${estadoStock === 'positivo'
+            ? 'border-emerald-500 ring-1 ring-emerald-500/40'
+            : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300'
+            }`}
         >
           <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
             <CheckCircleIcon className="h-5 w-5" />
@@ -789,11 +767,10 @@ export default function Stock() {
 
         <div
           onClick={() => setEstadoStock('sin_stock')}
-          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${
-            estadoStock === 'sin_stock'
-              ? 'border-amber-500 ring-1 ring-amber-500/40'
-              : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300'
-          }`}
+          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${estadoStock === 'sin_stock'
+            ? 'border-amber-500 ring-1 ring-amber-500/40'
+            : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300'
+            }`}
         >
           <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
             <ArchiveBoxXMarkIcon className="h-5 w-5" />
@@ -810,11 +787,10 @@ export default function Stock() {
 
         <div
           onClick={() => setEstadoStock('negativo')}
-          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${
-            estadoStock === 'negativo'
-              ? 'border-rose-500 ring-1 ring-rose-500/40'
-              : 'border-slate-200/80 dark:border-slate-800 hover:border-rose-300'
-          }`}
+          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${estadoStock === 'negativo'
+            ? 'border-rose-500 ring-1 ring-rose-500/40'
+            : 'border-slate-200/80 dark:border-slate-800 hover:border-rose-300'
+            }`}
         >
           <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
             <ExclamationTriangleIcon className="h-5 w-5" />
@@ -844,13 +820,12 @@ export default function Stock() {
               key={f.id}
               type="button"
               onClick={() => setEstadoStock(f.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                estadoStock === f.id
-                  ? f.id === 'negativo'
-                    ? 'bg-rose-600 text-white'
-                    : 'bg-[#01a59c] text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${estadoStock === f.id
+                ? f.id === 'negativo'
+                  ? 'bg-rose-600 text-white'
+                  : 'bg-[#01a59c] text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
             >
               {f.label}
             </button>
@@ -870,13 +845,12 @@ export default function Stock() {
                 key={f.id}
                 type="button"
                 onClick={() => setFiltroActivo(f.id)}
-                className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
-                  filtroActivo === f.id
-                    ? f.id === 'inactivos'
-                      ? 'bg-rose-600 text-white shadow-xs'
-                      : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
-                }`}
+                className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${filtroActivo === f.id
+                  ? f.id === 'inactivos'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                  }`}
               >
                 {f.label}
               </button>
@@ -923,27 +897,34 @@ export default function Stock() {
         </div>
       </div>
 
-      {/* ── TABLA PRINCIPAL AGRUPADA POR PRODUCTO CON DESGLOSE DE PRESENTACIONES ── */}
-      <DataTable
-        data={productosAgrupados}
-        columns={columns}
-        pagination={true}
-        getRowClassName={getRowClassName}
-        onFilteredData={setFilteredProducts}
-        renderExpandedRow={renderExpandedRow}
-        expanded={expanded}
-        onExpandedChange={setExpanded}
-      />
-
-      {/* ── MODAL DE KÁRDEX PERSONAL POR PRODUCTO / PRESENTACIÓN ── */}
-      <StockKardexModal
-        isOpen={isKardexOpen}
-        onClose={() => setIsKardexOpen(false)}
-        itemSeleccionado={selectedItem}
-        presentacionesProducto={presentacionesDelProductoActivo}
-        almacenes={almacenes}
-        onStockUpdated={loadStock}
-      />
+      {/* ── PANEL IN-PLACE CON TRANSICIÓN ANIMADA O TABLA PRINCIPAL ── */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden transition-all duration-300">
+        {isKardexOpen ? (
+          <StockKardexModal
+            isOpen={isKardexOpen}
+            onClose={() => setIsKardexOpen(false)}
+            itemSeleccionado={selectedItem}
+            presentacionesProducto={presentacionesDelProductoActivo}
+            almacenes={almacenes}
+            onStockUpdated={loadStock}
+            variant="inline"
+          />
+        ) : (
+          <div className="animate-in fade-in duration-200">
+            {/* ── TABLA PRINCIPAL AGRUPADA POR PRODUCTO CON DESGLOSE DE PRESENTACIONES ── */}
+            <DataTable
+              data={productosAgrupados}
+              columns={columns}
+              pagination={true}
+              getRowClassName={getRowClassName}
+              onFilteredData={setFilteredProducts}
+              renderExpandedRow={renderExpandedRow}
+              expanded={expanded}
+              onExpandedChange={setExpanded}
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
