@@ -388,7 +388,7 @@ export default function Stock() {
                   className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[10px] font-semibold border border-slate-200/80 dark:border-slate-700"
                 >
                   <span className="uppercase">{p.presentacion_nombre}</span>
-                  <span className="text-teal-600 dark:text-teal-400 font-mono font-bold">x{p.multiplica_por || 1}</span>
+                  {/* <span className="text-teal-600 dark:text-teal-400 font-mono font-bold">x{p.multiplica_por || 1}</span> */}
                 </span>
               ))}
               {presentaciones.length > 3 && (
@@ -543,7 +543,7 @@ export default function Stock() {
           {/* Cabecera del Desglose con identidad visual marcada */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-white/90 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-teal-500 text-white shadow-xs">
+              <div className="p-2 rounded-lg border border-teal-500 dark:border-teal-500 text-teal-500 dark:text-teal-500 shadow-xs">
                 <CubeIcon className="h-4 w-4" />
               </div>
               <div>
@@ -558,17 +558,6 @@ export default function Stock() {
               </div>
             </div>
 
-            {canViewKardex && (
-              <button
-                type="button"
-                onClick={() => handleAbrirKardexProducto(prod)}
-                className="px-3 py-1.5 rounded-lg bg-[#01a59c] hover:bg-[#018e86] text-white font-bold text-[11px] flex items-center gap-1.5 cursor-pointer transition-all shadow-xs hover:shadow-md"
-                title="Ver historial de kárdex consolidado del producto"
-              >
-                <ClipboardDocumentListIcon className="h-4 w-4" />
-                <span>Kárdex General del Producto</span>
-              </button>
-            )}
           </div>
 
           {/* Grid de Cards de Presentaciones con diferenciación visual absoluta */}
@@ -634,7 +623,7 @@ export default function Stock() {
                       </div>
 
                       {/* Precios: Costo y Venta */}
-                      <div className="grid grid-cols-2 gap-2 mt-2">
+                      {/* <div className="grid grid-cols-2 gap-2 mt-2">
                         <div className="bg-slate-50 dark:bg-slate-900/50 p-2 border border-slate-300 dark:border-slate-700/60 rounded-lg">
                           <span className="text-[9px] uppercase font-bold text-slate-400 block">P. Costo</span>
                           <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -647,7 +636,7 @@ export default function Stock() {
                             {formatCurrency(Number(pres.precio_venta || 0))}
                           </span>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
 
                     {/* Stock y Botón Kárdex */}
@@ -665,18 +654,6 @@ export default function Stock() {
                           {saldoPres} <span className="text-[10px] font-sans font-bold uppercase">{pres.presentacion_nombre}</span>
                         </span>
                       </div>
-
-                      {canViewKardex && (
-                        <button
-                          type="button"
-                          onClick={() => handleAbrirKardexPresentacion(pres, prod)}
-                          className="px-3 py-1.5 rounded-lg bg-[#01a59c] hover:bg-[#018e86] text-white font-bold text-[11px] flex items-center gap-1.5 cursor-pointer transition-all shadow-xs hover:shadow-md"
-                          title={`Ver historial de ${pres.presentacion_nombre}`}
-                        >
-                          <ClipboardDocumentListIcon className="h-3.5 w-3.5" />
-                          <span>Kárdex</span>
-                        </button>
-                      )}
                     </div>
                   </div>
                 )
@@ -744,27 +721,25 @@ export default function Stock() {
             </p>
           </div>
         </div>
-
         <div
-          onClick={() => setEstadoStock('positivo')}
-          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${estadoStock === 'positivo'
-            ? 'border-emerald-500 ring-1 ring-emerald-500/40'
-            : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300'
+          onClick={() => setEstadoStock('negativo')}
+          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${estadoStock === 'negativo'
+            ? 'border-rose-500 ring-1 ring-rose-500/40'
+            : 'border-slate-200/80 dark:border-slate-800 hover:border-rose-300'
             }`}
         >
-          <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
-            <CheckCircleIcon className="h-5 w-5" />
+          <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
+            <ExclamationTriangleIcon className="h-5 w-5" />
           </div>
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              Con Stock Positivo (&gt; 0)
+              En Stock Negativo (&lt; 0)
             </span>
-            <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
-              {resumen.conStockPositivo}
+            <p className="text-lg font-black text-rose-600 dark:text-rose-400 font-mono mt-0.5">
+              {resumen.conStockNegativo}
             </p>
           </div>
         </div>
-
         <div
           onClick={() => setEstadoStock('sin_stock')}
           className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${estadoStock === 'sin_stock'
@@ -784,23 +759,22 @@ export default function Stock() {
             </p>
           </div>
         </div>
-
         <div
-          onClick={() => setEstadoStock('negativo')}
-          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${estadoStock === 'negativo'
-            ? 'border-rose-500 ring-1 ring-rose-500/40'
-            : 'border-slate-200/80 dark:border-slate-800 hover:border-rose-300'
+          onClick={() => setEstadoStock('positivo')}
+          className={`p-3.5 bg-white dark:bg-slate-900 rounded-xl border shadow-xs flex items-center gap-3 cursor-pointer transition-all ${estadoStock === 'positivo'
+            ? 'border-emerald-500 ring-1 ring-emerald-500/40'
+            : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300'
             }`}
         >
-          <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
-            <ExclamationTriangleIcon className="h-5 w-5" />
+          <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+            <CheckCircleIcon className="h-5 w-5" />
           </div>
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              En Stock Negativo (&lt; 0)
+              Con Stock Positivo (&gt; 0)
             </span>
-            <p className="text-lg font-black text-rose-600 dark:text-rose-400 font-mono mt-0.5">
-              {resumen.conStockNegativo}
+            <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+              {resumen.conStockPositivo}
             </p>
           </div>
         </div>
