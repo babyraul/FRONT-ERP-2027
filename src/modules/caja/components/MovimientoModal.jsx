@@ -31,6 +31,7 @@ export default function MovimientoModal({
   onClose,
   onSave,
   turno,
+  saldoDisponible = 0,
   isProcessing = false,
   variant = 'drawer'
 }) {
@@ -89,6 +90,12 @@ export default function MovimientoModal({
       return
     }
 
+    // Validación de saldo disponible en EGRESO para evitar montos en negativo
+    if (tipoMovimiento === 'EGRESO' && totalCalculado > saldoDisponible) {
+      toast.error(`Saldo insuficiente en caja. El saldo disponible es de S/ ${saldoDisponible.toFixed(2)}, no se puede egresar S/ ${totalCalculado.toFixed(2)}.`)
+      return
+    }
+
     const conteos = desglose
       .filter(d => d.cantidad > 0)
       .map(d => ({
@@ -97,12 +104,27 @@ export default function MovimientoModal({
         subtotal: d.subtotal
       }))
 
+    const arqueo = {
+      billete_200: cantidades[200] || 0,
+      billete_100: cantidades[100] || 0,
+      billete_50: cantidades[50] || 0,
+      billete_20: cantidades[20] || 0,
+      billete_10: cantidades[10] || 0,
+      moneda_5: cantidades[5] || 0,
+      moneda_2: cantidades[2] || 0,
+      moneda_1: cantidades[1] || 0,
+      moneda_050: cantidades[0.5] || 0,
+      moneda_020: cantidades[0.2] || 0,
+      moneda_010: cantidades[0.1] || 0
+    }
+
     onSave({
       tipo_movimiento: tipoMovimiento,
       concepto: concepto.trim(),
       monto: totalCalculado,
       observacion: observacion.trim(),
-      conteos
+      conteos,
+      arqueo
     })
   }
 
@@ -176,6 +198,11 @@ export default function MovimientoModal({
               }`}>
               {tipoMovimiento === 'INGRESO' ? '+' : '-'} S/ {totalCalculado.toFixed(2)}
             </span>
+            {tipoMovimiento === 'EGRESO' && (
+              <span className={`block text-[11px] font-medium mt-0.5 ${totalCalculado > saldoDisponible ? 'text-red-500 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>
+                Disponible en caja: S/ {Number(saldoDisponible || 0).toFixed(2)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -185,7 +212,7 @@ export default function MovimientoModal({
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Desglose de Efectivo por Denominación <span className="text-red-500">*</span>
             </label>
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[12px] text-slate-400">
               {desglose.filter(d => d.cantidad > 0).length} de {DENOMINACIONES_ESTANDAR.length} denominaciones
             </span>
           </div>
@@ -222,7 +249,7 @@ export default function MovimientoModal({
                         />
                       </div>
 
-                      <div className="w-20 text-right font-mono font-bold text-slate-800 dark:text-slate-200 text-xs">
+                      <div className="w-20 text-right font-bold text-slate-800 dark:text-slate-200 text-sm">
                         S/ {item.subtotal.toFixed(2)}
                       </div>
                     </div>

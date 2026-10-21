@@ -107,10 +107,20 @@ export const cajaController = {
   getArqueo: async (turnoId) => {
     try {
       const response = await api.get(`/cajas/turnos/${turnoId}/arqueos`)
-      return { success: true, data: response.data?.data || { detalles: [], total_arqueo: 0 } }
+      return { success: true, data: response.data?.data || [] }
     } catch (error) {
       console.error('Error al obtener arqueo:', error)
-      return { success: false, data: { detalles: [], total_arqueo: 0 } }
+      return { success: false, data: [] }
+    }
+  },
+
+  getArqueoPorMovimiento: async (movimientoId) => {
+    try {
+      const response = await api.get(`/cajas/movimientos/${movimientoId}/arqueo`)
+      return { success: true, data: response.data?.data || null }
+    } catch (error) {
+      console.error('Error al obtener arqueo por movimiento:', error)
+      return { success: false, error: error.response?.data?.message || 'Error al obtener arqueo' }
     }
   },
 

@@ -14,7 +14,8 @@ import {
   ShieldCheckIcon,
   CheckCircleIcon,
   InformationCircleIcon,
-  PrinterIcon
+  PrinterIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
 import AperturaTurnoModal from '../components/AperturaTurnoModal.jsx'
 import CierreTurnoModal from '../components/CierreTurnoModal.jsx'
@@ -41,6 +42,29 @@ export default function Caja() {
   const [isCierreOpen, setCierreOpen] = useState(false)
   const [isMovimientoOpen, setMovimientoOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+
+  // Estado para ver arqueo por movimiento
+  const [expandedMovimientoId, setExpandedMovimientoId] = useState(null)
+  const [arqueosMap, setArqueosMap] = useState({})
+  const [loadingArqueoId, setLoadingArqueoId] = useState(null)
+
+  const toggleVerArqueo = async (movimientoId) => {
+    if (expandedMovimientoId === movimientoId) {
+      setExpandedMovimientoId(null)
+      return
+    }
+
+    setExpandedMovimientoId(movimientoId)
+
+    if (!arqueosMap[movimientoId]) {
+      setLoadingArqueoId(movimientoId)
+      const res = await cajaController.getArqueoPorMovimiento(movimientoId)
+      if (res.success && res.data) {
+        setArqueosMap(prev => ({ ...prev, [movimientoId]: res.data }))
+      }
+      setLoadingArqueoId(null)
+    }
+  }
 
   const { user } = useAuthStore()
   const branchId = user?.active_acceso?.branch_id
@@ -266,6 +290,7 @@ export default function Caja() {
                 onClose={() => setMovimientoOpen(false)}
                 onSave={handleSaveMovimiento}
                 turno={turnoActivo}
+                saldoDisponible={totalEfectivoSistema}
                 isProcessing={isProcessing}
                 variant="inline"
               />
@@ -316,48 +341,170 @@ export default function Caja() {
                         </div>
                       ) : (
                         <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden">
-                          {movimientosTurno.map((m) => (
-                            <div key={m.id} className="p-3.5 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 text-xs">
-                              <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-xl ${m.tipo_movimiento === 'INGRESO' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                                  {m.tipo_movimiento === 'INGRESO' ? (
-                                    <ArrowTrendingUpIcon className="h-5 w-5" />
-                                  ) : (
-                                    <ArrowTrendingDownIcon className="h-5 w-5" />
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-slate-900 dark:text-white">{m.concepto}</p>
-                                  <p className="text-[11px] text-slate-400 mt-0.5">
-                                    {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Registrado por: {m.usuario_nombre || 'Usuario'}
-                                  </p>
-                                  {m.observacion && <p className="text-[11px] text-slate-500 mt-0.5">{m.observacion}</p>}
-                                </div>
-                              </div>
+                          {movimientosTurno.map((m) => {
+                            const isExpanded = expandedMovimientoId === m.id
+                            const arq = arqueosMap[m.id]
+                            const isLoadingArq = loadingArqueoId === m.id
 
-                              <div className="flex items-center gap-3">
-                                <div className={`font-mono text-sm font-black ${m.tipo_movimiento === 'INGRESO' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                  {m.tipo_movimiento === 'INGRESO' ? '+' : '-'} S/ {Number(m.monto_total || 0).toFixed(2)}
+                            return (
+                              <div key={m.id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
+                                <div className="p-3.5 flex items-center justify-between gap-4 text-xs">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-xl shrink-0 ${m.tipo_movimiento === 'INGRESO' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'}`}>
+                                      {m.tipo_movimiento === 'INGRESO' ? (
+                                        <ArrowTrendingUpIcon className="h-5 w-5" />
+                                      ) : (
+                                        <ArrowTrendingDownIcon className="h-5 w-5" />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-slate-900 dark:text-white">{m.concepto}</p>
+                                      <p className="text-[11px] text-slate-600 mt-0.5">
+                                        {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Registrado por: {m.usuario_nombre || 'Usuario'}
+                                      </p>
+                                      {m.observacion && <p className="text-[11px] text-slate-500 mt-0.5">{m.observacion}</p>}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-3">
+                                    <div className={`font-mono text-sm font-black ${m.tipo_movimiento === 'INGRESO' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                      {m.tipo_movimiento === 'INGRESO' ? '+' : '-'} S/ {Number(m.monto_total || 0).toFixed(2)}
+                                    </div>
+
+                                    {/* Botón Ver Arqueo Desglosado */}
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleVerArqueo(m.id)}
+                                      className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1 ${isExpanded
+                                        ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300'
+                                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'
+                                        }`}
+                                      title="Ver desglose del arqueo registrado en este movimiento"
+                                    >
+                                      <EyeIcon className="h-3.5 w-3.5" />
+                                      <span>{isExpanded ? 'Ocultar' : 'Ver'}</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const infoEmpresa = {
+                                          razon_social: user?.empresa_nombre || user?.active_acceso?.empresa_nombre || 'EMPRESA',
+                                          ruc: user?.empresa_ruc || user?.active_acceso?.empresa_ruc || '',
+                                          direccion: user?.sucursal_direccion || user?.active_acceso?.sucursal_nombre || '',
+                                          identificador_caja: turnoActivo?.identificador_caja
+                                        }
+                                        imprimirTicketMovimiento(m, infoEmpresa)
+                                      }}
+                                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                      title="Reimprimir Ticket de Movimiento (80mm)"
+                                    >
+                                      <PrinterIcon className="h-4 w-4" />
+                                    </button>
+                                  </div>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const infoEmpresa = {
-                                      razon_social: user?.empresa_nombre || user?.active_acceso?.empresa_nombre || 'EMPRESA',
-                                      ruc: user?.empresa_ruc || user?.active_acceso?.empresa_ruc || '',
-                                      direccion: user?.sucursal_direccion || user?.active_acceso?.sucursal_nombre || '',
-                                      identificador_caja: turnoActivo?.identificador_caja
-                                    }
-                                    imprimirTicketMovimiento(m, infoEmpresa)
-                                  }}
-                                  className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                  title="Reimprimir Ticket de Movimiento (80mm)"
-                                >
-                                  <PrinterIcon className="h-4 w-4" />
-                                </button>
+
+                                {/* Desglose del Arqueo en acordeón / panel desplegable */}
+                                {isExpanded && (
+                                  <div className="bg-slate-50/80 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 p-4">
+                                    {isLoadingArq ? (
+                                      <div className="text-center py-3 text-xs text-slate-400">
+                                        Cargando desglose de arqueo...
+                                      </div>
+                                    ) : arq ? (
+                                      <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                                            Desglose de Efectivo por Denominación
+                                          </span>
+                                          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                            Total: S/ {Number(arq.subtotal || m.monto_total || 0).toFixed(2)}
+                                          </span>
+                                        </div>
+
+                                        {(() => {
+                                          const billetesRegistrados = [
+                                            { label: 'S/ 200', cant: arq.billete_200, val: 200 },
+                                            { label: 'S/ 100', cant: arq.billete_100, val: 100 },
+                                            { label: 'S/ 50', cant: arq.billete_50, val: 50 },
+                                            { label: 'S/ 20', cant: arq.billete_20, val: 20 },
+                                            { label: 'S/ 10', cant: arq.billete_10, val: 10 }
+                                          ].filter(item => Number(item.cant || 0) > 0)
+
+                                          const monedasRegistradas = [
+                                            { label: 'S/ 5.00', cant: arq.moneda_5, val: 5 },
+                                            { label: 'S/ 2.00', cant: arq.moneda_2, val: 2 },
+                                            { label: 'S/ 1.00', cant: arq.moneda_1, val: 1 },
+                                            { label: 'S/ 0.50', cant: arq.moneda_050, val: 0.5 },
+                                            { label: 'S/ 0.20', cant: arq.moneda_020, val: 0.2 },
+                                            { label: 'S/ 0.10', cant: arq.moneda_010, val: 0.1 }
+                                          ].filter(item => Number(item.cant || 0) > 0)
+
+                                          const tieneRegistros = billetesRegistrados.length > 0 || monedasRegistradas.length > 0
+
+                                          if (!tieneRegistros) {
+                                            return (
+                                              <div className="text-center py-2 text-xs text-slate-400">
+                                                No hay denominaciones registradas para este movimiento.
+                                              </div>
+                                            )
+                                          }
+
+                                          return (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                              {/* Columna Billetes (solo si tiene registrados) */}
+                                              {billetesRegistrados.length > 0 && (
+                                                <div className="border border-slate-200 dark:border-slate-700/60 rounded-xl bg-white dark:bg-slate-900 overflow-hidden">
+                                                  <div className="bg-slate-100/60 dark:bg-slate-800/60 px-3 py-1 font-bold text-[10px] uppercase text-slate-500">
+                                                    Billetes
+                                                  </div>
+                                                  <div className="divide-y divide-slate-100 dark:divide-slate-800 p-2 space-y-1">
+                                                    {billetesRegistrados.map(item => (
+                                                      <div key={item.label} className="flex justify-between items-center text-[12px]">
+                                                        <span className="text-slate-500 dark:text-slate-300 font-semibold">{item.label}</span>
+                                                        <span className="text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[11px] font-bold">x{item.cant}</span>
+                                                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                                                          S/ {(item.cant * item.val).toFixed(2)}
+                                                        </span>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+
+                                              {/* Columna Monedas (solo si tiene registradas) */}
+                                              {monedasRegistradas.length > 0 && (
+                                                <div className="border border-slate-200 dark:border-slate-700/60 rounded-xl bg-white dark:bg-slate-900 overflow-hidden">
+                                                  <div className="bg-slate-100/60 dark:bg-slate-800/60 px-3 py-1 font-bold text-[10px] uppercase text-slate-500">
+                                                    Monedas
+                                                  </div>
+                                                  <div className="divide-y divide-slate-100 dark:divide-slate-800 p-2 space-y-1">
+                                                    {monedasRegistradas.map(item => (
+                                                      <div key={item.label} className="flex justify-between items-center text-[12px]">
+                                                        <span className="text-slate-600 dark:text-slate-300 font-semibold">{item.label}</span>
+                                                        <span className="text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px] font-bold">x{item.cant}</span>
+                                                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                                                          S/ {(item.cant * item.val).toFixed(2)}
+                                                        </span>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )
+                                        })()}
+                                      </div>
+                                    ) : (
+                                      <div className="text-center py-2 text-xs text-slate-400">
+                                        No se encontró registro de arqueo para este movimiento.
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                     </div>
