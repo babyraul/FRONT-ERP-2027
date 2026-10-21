@@ -309,7 +309,7 @@ export default function MovimientoModal({
             type="text"
             required
             value={concepto}
-            onChange={(e) => setConcepto(e.target.value)}
+            onChange={(e) => setConcepto(e.target.value.toUpperCase())}
             placeholder="Ej. Pago a proveedor de delivery, compra de insumos, sencillo, etc."
             className="input-field text-sm"
           />
