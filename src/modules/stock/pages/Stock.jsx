@@ -881,7 +881,7 @@ export default function Stock() {
             variant="inline"
           />
         ) : (
-          <div className="animate-in fade-in duration-200">
+          <div className="transition-all duration-300 ease-in-out opacity-100 translate-y-0">
             {/* ── TABLA PRINCIPAL AGRUPADA POR PRODUCTO CON DESGLOSE DE PRESENTACIONES ── */}
             <DataTable
               data={productosAgrupados}

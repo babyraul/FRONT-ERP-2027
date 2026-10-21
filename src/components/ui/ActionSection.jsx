@@ -60,16 +60,24 @@ export default function ActionSection({
     return () => clearTimeout(timer)
   }, [isOpen])
 
-  // Soporte de tecla Escape para regresar
+  const handleClose = () => {
+    if (!active) return
+    setActive(false)
+    setTimeout(() => {
+      onClose?.()
+    }, 250)
+  }
+
+  // Soporte de tecla Escape para regresar con animación
   useEffect(() => {
     const handleEsc = (e) => {
-      if (e.key === 'Escape' && isOpen && onClose) {
-        onClose()
+      if (e.key === 'Escape' && isOpen) {
+        handleClose()
       }
     }
     window.addEventListener('keydown', handleEsc)
     return () => window.removeEventListener('keydown', handleEsc)
-  }, [isOpen, onClose])
+  }, [isOpen, active])
 
   if (!mounted) return null
 
@@ -88,7 +96,7 @@ export default function ActionSection({
         <div className="flex items-center gap-3">
           <button 
             type="button"
-            onClick={onClose} 
+            onClick={handleClose} 
             className="p-1.5 -ml-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Volver atrás"
             title="Volver atrás (Esc)"
@@ -128,7 +136,7 @@ export default function ActionSection({
         <div className="px-6 py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex justify-end items-center gap-3 shrink-0">
           <button 
             type="button" 
-            onClick={onClose} 
+            onClick={handleClose} 
             className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 dark:bg-red-600/90 dark:hover:bg-red-600 rounded-lg transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900 cursor-pointer"
           >
             {cancelText}

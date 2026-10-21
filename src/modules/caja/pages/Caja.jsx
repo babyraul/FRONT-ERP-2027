@@ -305,7 +305,7 @@ export default function Caja() {
                 variant="inline"
               />
             ) : (
-              <div className="animate-in fade-in duration-200">
+              <div className="transition-all duration-300 ease-in-out opacity-100 translate-y-0">
                 <div className="flex items-center gap-4 border-b border-slate-200 dark:border-slate-800 px-5 pt-3">
                   <button
                     onClick={() => setActiveTab('movimientos')}
