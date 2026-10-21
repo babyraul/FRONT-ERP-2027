@@ -715,9 +715,6 @@ export default function Stock() {
             </span>
             <p className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">
               {productosAgrupados.length}{' '}
-              <span className="text-xs font-normal text-slate-400">
-                ({resumen.totalItems} pres.)
-              </span>
             </p>
           </div>
         </div>
@@ -733,7 +730,7 @@ export default function Stock() {
           </div>
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              En Stock Negativo (&lt; 0)
+              En Stock Negativo
             </span>
             <p className="text-lg font-black text-rose-600 dark:text-rose-400 font-mono mt-0.5">
               {resumen.conStockNegativo}
@@ -771,7 +768,7 @@ export default function Stock() {
           </div>
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              Con Stock Positivo (&gt; 0)
+              Con Stock Positivo
             </span>
             <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
               {resumen.conStockPositivo}

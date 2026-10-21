@@ -330,7 +330,7 @@ export default function StockKardexModal({
             <div className="min-w-0">
               <span className="text-[10px] font-bold uppercase text-slate-400 block">Código / UM</span>
               <p className="font-mono font-bold text-slate-800 dark:text-white truncate">
-                {itemSeleccionado.codigo || 'S/C'} · {itemSeleccionado.unidad_medida_id || 'NIU'} (x{itemSeleccionado.multiplica_por || 1})
+                {itemSeleccionado.codigo || 'S/C'} · {itemSeleccionado.unidad_medida_id || 'NIU'}
               </p>
             </div>
           </div>
@@ -341,7 +341,7 @@ export default function StockKardexModal({
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase text-emerald-700/70 dark:text-emerald-400/80 block">
-                Total Entradas (1)
+                Total Entradas
               </span>
               <p className="text-sm font-black font-mono text-emerald-700 dark:text-emerald-400">
                 +{resumen.totalEntradas}
@@ -355,7 +355,7 @@ export default function StockKardexModal({
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase text-rose-700/70 dark:text-rose-400/80 block">
-                Total Salidas (2)
+                Total Salidas
               </span>
               <p className="text-sm font-black font-mono text-rose-700 dark:text-rose-400">
                 -{resumen.totalSalidas}
@@ -371,7 +371,7 @@ export default function StockKardexModal({
           >
             <div>
               <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-300 block">
-                Saldo Vigente (`stock_actual`)
+                Saldo Actual
               </span>
               <p
                 className={`text-base font-black font-mono ${resumen.saldoActual < 0
@@ -403,7 +403,7 @@ export default function StockKardexModal({
                 onChange={(e) => setPresentacionFiltro(e.target.value)}
                 className="py-1.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium outline-none focus:ring-1 focus:ring-[#01a59c]"
               >
-                <option value="">Todas las presentaciones del producto</option>
+                <option value="">Todas las presentaciones</option>
                 {presentacionesProducto.length > 0 ? (
                   presentacionesProducto.map((p) => (
                     <option key={p.presentacion_id} value={p.presentacion_id}>
@@ -451,9 +451,9 @@ export default function StockKardexModal({
                 onChange={(e) => setTipoMovFiltro(e.target.value)}
                 className="py-1.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium outline-none focus:ring-1 focus:ring-[#01a59c]"
               >
-                <option value="">Todos (1 y 2)</option>
-                <option value="1">1 · Solo Entradas (+)</option>
-                <option value="2">2 · Solo Salidas (-)</option>
+                <option value="">Todos</option>
+                <option value="1">Solo Entradas (+)</option>
+                <option value="2">Solo Salidas (-)</option>
               </select>
             </div>
 

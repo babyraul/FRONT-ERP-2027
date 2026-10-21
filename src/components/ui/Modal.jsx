@@ -146,12 +146,11 @@ export default function Modal({
 
   // VARIANTE DRAWER / MODAL
   return (
-    <div 
-      className={`fixed inset-0 z-[100] transition-colors duration-300 ${
-        isDrawer 
-          ? 'overflow-hidden flex justify-end bg-slate-900/30 dark:bg-black/40 backdrop-blur-[2px]' 
-          : 'flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs'
-      } ${active ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+    <div
+      className={`fixed inset-0 z-[100] transition-colors duration-300 ${isDrawer
+        ? 'overflow-hidden flex justify-end bg-slate-900/30 dark:bg-black/40 backdrop-blur-[2px]'
+        : 'flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs'
+        } ${active ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
       onClick={(e) => {
         // Cierra si se hace clic en el backdrop directamente
         if (e.target === e.currentTarget) {
@@ -159,21 +158,19 @@ export default function Modal({
         }
       }}
     >
-      <div 
+      <div
         className={
           isDrawer
-            ? `bg-slate-50 dark:bg-slate-900 h-full w-full ${resolvedMaxWidth} shadow-2xl flex flex-col border-l border-slate-200/80 dark:border-slate-800 transform transition-all duration-300 ease-out ${
-                active ? 'translate-x-0' : 'translate-x-full'
-              }`
-            : `bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-2xl w-full ${resolvedMaxWidth} overflow-hidden flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out ${
-                active ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
-              }`
+            ? `bg-slate-50 dark:bg-slate-900 h-full w-full ${resolvedMaxWidth} shadow-2xl flex flex-col border-l border-slate-200/80 dark:border-slate-800 transform transition-all duration-300 ease-out ${active ? 'translate-x-0' : 'translate-x-full'
+            }`
+            : `bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-2xl w-full ${resolvedMaxWidth} overflow-hidden flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out ${active ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
+            }`
         }
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
       >
-        
+
         {/* Header */}
         <div className="flex items-start justify-between px-6 py-4.5 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shrink-0">
           <div>
@@ -186,9 +183,9 @@ export default function Modal({
               </div>
             )}
           </div>
-          <button 
+          <button
             type="button"
-            onClick={onClose} 
+            onClick={onClose}
             className="p-1.5 -mr-1 -mt-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Cerrar panel"
           >
@@ -204,18 +201,18 @@ export default function Modal({
         {/* Footer */}
         {showFooter && (
           <div className="px-6 py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm flex justify-end items-center gap-3 shrink-0">
-            <button 
-              type="button" 
-              onClick={onClose} 
-              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-500"
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 dark:bg-red-600/90 dark:hover:bg-red-600 rounded-lg transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900 cursor-pointer"
             >
               {cancelText}
             </button>
             {!hideConfirm && (
-              <button 
+              <button
                 type={confirmButtonId ? "submit" : "button"}
                 form={confirmButtonId}
-                onClick={!confirmButtonId && onConfirm ? onConfirm : undefined} 
+                onClick={!confirmButtonId && onConfirm ? onConfirm : undefined}
                 disabled={isProcessing}
                 className="btn-primary px-5 py-2 text-sm rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
               >
