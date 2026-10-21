@@ -153,6 +153,11 @@ export default function ResumenProductosTabla({
                       {/* Nombre del Producto + Badges de Afectación */}
                       <td className="py-2 px-3 font-semibold text-slate-800 dark:text-slate-100" title={item.nombre_completo}>
                         <div className="flex items-center gap-1.5 flex-wrap">
+                          {item.es_combo && (
+                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500 text-white shadow-2xs">
+                              COMBO
+                            </span>
+                          )}
                           <span className="truncate max-w-[200px] font-medium">{item.nombre_completo}</span>
                           {item.tipo_afectacion_igv === '20' && (
                             <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300">

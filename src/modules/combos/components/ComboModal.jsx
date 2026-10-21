@@ -291,8 +291,8 @@ export default function ComboModal({ isOpen, onClose, comboId, onSaved, variant 
       ) : (
         <form id="form-combo-modal" onSubmit={handleSubmit} className="space-y-5">
           {/* SECCIÓN 1: DATOS PRINCIPALES DEL COMBO */}
-          <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80">
+          <div className="space-y-4">
+            {/* <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-[#01a59c] border border-teal-100 dark:border-teal-900/50">
                   <TagIcon className="h-4 w-4" />
@@ -311,7 +311,7 @@ export default function ComboModal({ isOpen, onClose, comboId, onSaved, variant 
                   <CheckCircleIcon className="h-3.5 w-3.5" /> Nombre Válido
                 </span>
               )}
-            </div>
+            </div> */}
 
             <div className="space-y-3.5">
               {/* Nombre Comercial del Combo */}
@@ -325,7 +325,7 @@ export default function ComboModal({ isOpen, onClose, comboId, onSaved, variant 
                     type="text"
                     name="nombre"
                     value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
+                    onChange={(e) => setNombre(e.target.value.toUpperCase())}
                     placeholder="Ej. Pack Parrillero 2026 (Carne + Chorizo + Carbón)"
                     required
                     className="w-full px-3.5 py-2.5 bg-slate-50/60 dark:bg-slate-800/70 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#01a59c] focus:ring-2 focus:ring-[#01a59c]/20 outline-none text-sm font-medium dark:text-white transition-all placeholder:text-slate-400"
@@ -336,9 +336,7 @@ export default function ComboModal({ isOpen, onClose, comboId, onSaved, variant 
               {/* Código de Barras */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1.5">
-                  <QrCodeIcon className="h-3.5 w-3.5 text-slate-500" />
                   <span>Código de Barras del Combo</span>
-                  <span className="text-[11px] font-normal text-slate-400">(Opcional para lectura por scanner)</span>
                 </label>
                 <input
                   type="text"
@@ -539,7 +537,6 @@ export default function ComboModal({ isOpen, onClose, comboId, onSaved, variant 
                         >
                           <td className="py-2.5 px-4 font-semibold text-slate-800 dark:text-slate-200">
                             <div className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-[#01a59c] shrink-0" />
                               <span>{item.producto_nombre}</span>
                             </div>
                             {item.presentacion_nombre && (

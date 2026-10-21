@@ -1,11 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   TrashIcon,
   ShoppingCartIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CubeIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline'
 import { permiteDecimales } from '../../../utils/unidades.js'
 import { toast } from '../../../utils/toast.js'
+import { combosService } from '../../combos/controller/combos.js'
 
 export default function CarritoList({
   cartItems = [],
@@ -15,6 +20,41 @@ export default function CarritoList({
   onRemoveItem,
   onClearCart
 }) {
+  // Estado para ítems de combos expandidos y su detalle cargado en cache
+  const [expandedCombos, setExpandedCombos] = useState({}) // { [uniqueId]: boolean }
+  const [combosDetalleCache, setCombosDetalleCache] = useState({}) // { [comboId]: items[] }
+  const [loadingComboId, setLoadingComboId] = useState(null)
+
+  const toggleDesgloseCombo = async (item) => {
+    const isCurrentlyExpanded = Boolean(expandedCombos[item.uniqueId])
+    if (isCurrentlyExpanded) {
+      setExpandedCombos(prev => ({ ...prev, [item.uniqueId]: false }))
+      return
+    }
+
+    // Expandir
+    setExpandedCombos(prev => ({ ...prev, [item.uniqueId]: true }))
+
+    const comboId = item.producto_id
+    if (!comboId || combosDetalleCache[comboId]) return
+
+    try {
+      setLoadingComboId(item.uniqueId)
+      const res = await combosService.fetchDetail(comboId)
+      const componentes = res.data?.detalles || res.data?.items || (Array.isArray(res.data) ? res.data : [])
+      if (res.success && componentes) {
+        setCombosDetalleCache(prev => ({
+          ...prev,
+          [comboId]: componentes
+        }))
+      }
+    } catch (err) {
+      console.error('Error al cargar desglose del combo:', err)
+      toast.error('Error', 'No se pudo cargar la composición del combo.')
+    } finally {
+      setLoadingComboId(null)
+    }
+  }
   return (
     <div className="flex flex-col h-full dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border dark:border-slate-800 shadow-sm overflow-hidden">
       {/* Cabecera del Carrito como en el Mockup */}
@@ -146,11 +186,10 @@ export default function CarritoList({
             return (
               <div
                 key={item.uniqueId}
-                className={`dark:bg-slate-800/90 rounded-bl-xl border-b-2 border-l-2 p-2 shadow-xs transition-all ${
-                  esBajoCosto
-                    ? 'border-red-500 bg-red-50/20 dark:bg-red-950/20'
-                    : 'dark:border-slate-700/80 hover:border-[#01a59c]/50'
-                }`}
+                className={`dark:bg-slate-800/90 rounded-bl-xl border-b-2 border-l-2 p-2 shadow-xs transition-all ${esBajoCosto
+                  ? 'border-red-500 bg-red-50/20 dark:bg-red-950/20'
+                  : 'dark:border-slate-700/80 hover:border-[#01a59c]/50'
+                  }`}
               >
                 {/* Fila superior: Nombre de producto + Indicadores */}
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -161,6 +200,24 @@ export default function CarritoList({
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                    {/* Badge / Botón Distintivo de Desglose de COMBO */}
+                    {item.es_combo && (
+                      <button
+                        type="button"
+                        onClick={() => toggleDesgloseCombo(item)}
+                        className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white shadow-2xs uppercase tracking-wider flex items-center gap-1 transition-colors cursor-pointer select-none"
+                        title={expandedCombos[item.uniqueId] ? 'Ocultar composición del combo' : 'Ver productos que componen este combo'}
+                      >
+                        <CubeIcon className="h-3 w-3" />
+                        <span>COMBO</span>
+                        {expandedCombos[item.uniqueId] ? (
+                          <ChevronUpIcon className="h-3 w-3 stroke-[3]" />
+                        ) : (
+                          <ChevronDownIcon className="h-3 w-3 stroke-[3]" />
+                        )}
+                      </button>
+                    )}
+
                     {/* Badge de Afectación Fiscal SUNAT */}
                     {item.tipo_afectacion_igv === '20' && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
@@ -192,11 +249,10 @@ export default function CarritoList({
 
                     {/* Indicador de Tipo de Unidad (Permite decimales vs Entero) */}
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        esDecimal
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
-                          : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                      }`}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${esDecimal
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                        : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                        }`}
                       title={esDecimal ? 'Unidad de medida continua: permite decimales' : 'Unidad entera: solo cantidades enteras'}
                     >
                       {item.unidad_medida_id || (esDecimal ? 'KGM' : 'NIU')}
@@ -205,11 +261,10 @@ export default function CarritoList({
                     {/* Indicador de Precio Costo */}
                     {costo > 0 && (
                       <span
-                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg shadow-sm flex items-center gap-1 shrink-0 ${
-                          esBajoCosto
-                            ? 'bg-red-600 text-white animate-pulse'
-                            : 'bg-[#01a59c] text-white'
-                        }`}
+                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg shadow-sm flex items-center gap-1 shrink-0 ${esBajoCosto
+                          ? 'bg-red-600 text-white animate-pulse'
+                          : 'bg-[#01a59c] text-white'
+                          }`}
                         title={esBajoCosto ? `El precio no puede ser menor a S/ ${costo.toFixed(2)}` : 'Precio de costo referencial'}
                       >
                         {esBajoCosto && <ExclamationTriangleIcon className="h-3.5 w-3.5 inline" />}
@@ -250,11 +305,10 @@ export default function CarritoList({
                         onChange={handleChangePrecio}
                         onBlur={handleBlurPrecio}
                         onKeyDown={handleKeyDownPrecio}
-                        className={`w-full rounded-lg pl-5 pr-2 py-1 text-center font-bold text-sm outline-none transition-colors ${
-                          esBajoCosto
-                            ? 'bg-red-100/50 dark:bg-red-950/40 border-2 border-red-500 text-red-700 dark:text-red-300 focus:ring-2 focus:ring-red-500'
-                            : 'bg-[#018e86]/10 dark:bg-[#018e86]/20 border border-[#01a59c]/30 text-teal-900 dark:text-teal-200 focus:ring-1 focus:ring-[#01a59c]'
-                        }`}
+                        className={`w-full rounded-lg pl-5 pr-2 py-1 text-center font-bold text-sm outline-none transition-colors ${esBajoCosto
+                          ? 'bg-red-100/50 dark:bg-red-950/40 border-2 border-red-500 text-red-700 dark:text-red-300 focus:ring-2 focus:ring-red-500'
+                          : 'bg-[#018e86]/10 dark:bg-[#018e86]/20 border border-[#01a59c]/30 text-teal-900 dark:text-teal-200 focus:ring-1 focus:ring-[#01a59c]'
+                          }`}
                         title={costo > 0 ? `Precio mínimo permitido: S/ ${costo.toFixed(2)}` : 'Precio de venta'}
                       />
                     </div>
@@ -289,6 +343,62 @@ export default function CarritoList({
                     <ExclamationTriangleIcon className="h-3.5 w-3.5 inline shrink-0" />
                     El precio no puede ser menor al costo (S/ {costo.toFixed(2)}). Se corregirá al salir del campo.
                   </p>
+                )}
+
+                {/* Desglose de componentes del combo (Expandible) */}
+                {item.es_combo && expandedCombos[item.uniqueId] && (
+                  <div className="mt-2.5 pt-2 border-t border-amber-200/60 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 rounded-lg p-2 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-amber-200/50 dark:border-amber-900/30">
+                      <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1">
+                        <CubeIcon className="h-3 w-3" />
+                        Composición del Combo
+                      </span>
+                      <span className="text-[10px] text-amber-700/80 dark:text-amber-400">
+                        {loadingComboId === item.uniqueId ? 'Consultando...' : 'Descarga por cada unidad'}
+                      </span>
+                    </div>
+
+                    {loadingComboId === item.uniqueId ? (
+                      <div className="py-2.5 text-center text-xs text-amber-700 dark:text-amber-300 flex items-center justify-center gap-2">
+                        <div className="h-3 w-3 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                        <span>Cargando productos del paquete...</span>
+                      </div>
+                    ) : combosDetalleCache[item.producto_id] && combosDetalleCache[item.producto_id].length > 0 ? (
+                      <div className="mt-1.5 space-y-1">
+                        {combosDetalleCache[item.producto_id].map((comp, cIdx) => {
+                          const cantUnitaria = Number(comp.cantidad || comp.Cantidad || 1)
+                          const cantTotal = (cantUnitaria * Number(item.cantidad || 1)).toFixed(2).replace(/\.00$/, '')
+                          return (
+                            <div
+                              key={comp.id || cIdx}
+                              className="flex items-center justify-between text-[11px] py-1 px-1.5 bg-white/80 dark:bg-slate-900/60 rounded border border-amber-100 dark:border-amber-900/30"
+                            >
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 px-1 py-0.2 rounded">
+                                  {cantUnitaria}x
+                                </span>
+                                <span className="font-medium text-slate-800 dark:text-slate-200 truncate" title={comp.producto_nombre || comp.nombre || comp.prod_nombre || comp.Nombre}>
+                                  {comp.producto_nombre || comp.nombre || comp.prod_nombre || comp.Nombre}
+                                  {(comp.presentacion_nombre || comp.comp_nombre) && (
+                                    <span className="text-slate-400 ml-1 text-[10px]">
+                                      ({comp.presentacion_nombre || comp.comp_nombre})
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 shrink-0 ml-2">
+                                total: {cantTotal}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-amber-700/80 dark:text-amber-400 py-1.5 text-center">
+                        Este combo no tiene componentes registrados en la base de datos.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )

@@ -167,6 +167,7 @@ export default function Vender() {
             descuento: 0,
             tipo_afectacion_igv: String(item.tipo_afectacion_igv || item.tipo_tributo_id || '10'),
             es_facturable: item.es_facturable !== false && item.es_facturable !== 0 && item.es_facturable !== '0',
+            es_combo: Boolean(item.es_combo),
             tipo_stock_id: item.tipo_stock_id || 'GENERAL',
             gratuito: Boolean(item.gratuito || item.es_gratuito),
             tarifa: 'menor'

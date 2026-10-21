@@ -46,6 +46,7 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
             tipo_afectacion_igv: String(prod.tipo_tributo_id || prod.tipo_tributo || '10'),
             tipo_tributo_id: String(prod.tipo_tributo_id || prod.tipo_tributo || '10'),
             es_facturable: prod.es_facturable !== false && prod.es_facturable !== 0 && prod.es_facturable !== '0',
+            es_combo: Boolean(prod.es_combo),
             tipo_stock_id: prod.tipo_stock_id || prod.tipo_stock || 'GENERAL',
             presentaciones_disponibles: prod.presentaciones
           })
@@ -74,6 +75,7 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
           tipo_afectacion_igv: String(prod.tipo_tributo_id || prod.tipo_tributo || '10'),
           tipo_tributo_id: String(prod.tipo_tributo_id || prod.tipo_tributo || '10'),
           es_facturable: prod.es_facturable !== false && prod.es_facturable !== 0 && prod.es_facturable !== '0',
+          es_combo: Boolean(prod.es_combo),
           tipo_stock_id: prod.tipo_stock_id || prod.tipo_stock || 'GENERAL',
           presentaciones_disponibles: []
         })
@@ -207,14 +209,27 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
                   : 'hover:bg-slate-200/80 dark:hover:bg-slate-800/40'
                   }`}
               >
-                {/* Nombre de producto con presentación */}
+                {/* Nombre de producto con presentación y distintivo de COMBO */}
                 <div className="flex items-center gap-2 min-w-0 pr-2">
-                  <span className="w-5 h-5 rounded bg-[#01a59c] text-white flex items-center justify-center shrink-0">
-                    <ChevronDownIcon className="h-4 w-4" />
+                  <span className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${
+                    item.es_combo ? 'bg-amber-500 text-white shadow-2xs' : 'bg-[#01a59c] text-white'
+                  }`}>
+                    {item.es_combo ? (
+                      <span className="text-[10px] font-black leading-none">C</span>
+                    ) : (
+                      <ChevronDownIcon className="h-4 w-4" />
+                    )}
                   </span>
-                  <span className="font-bold text-slate-800 dark:text-slate-100 truncate">
-                    {item.nombre_completo}
-                  </span>
+                  <div className="flex items-center gap-1.5 min-w-0 truncate">
+                    {item.es_combo && (
+                      <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded bg-amber-500 text-white shrink-0 shadow-2xs">
+                        COMBO
+                      </span>
+                    )}
+                    <span className="font-bold text-slate-800 dark:text-slate-100 truncate">
+                      {item.nombre_completo}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Precio */}
