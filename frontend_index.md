@@ -73,6 +73,7 @@ La navegación del sistema está centralizada en [`FRONT/src/router/index.jsx`](
 | `/` | `Navigate -> /dashboard` | Sesión activa | Redirección por defecto a la vista principal del dashboard. |
 | `/dashboard` | `<Dashboard />` (`modules/dashboard`) | Dentro de `<Layout />` | Métricas de ventas, accesos directos y gráficos estadísticos. |
 | `/productos` | `<Productos />` (`modules/productos`) | Dentro de `<Layout />` | Catálogo de productos, filtros por categoría, búsqueda y CRUD básico. |
+| `/combos` | `<Combos />` (`modules/combos`) | Dentro de `<Layout />` | Gestión de paquetes comerciales/combos, stock dinámico, precios y edición de composición. |
 | `/clientes` | `<Clientes />` (`modules/clientes`) | Dentro de `<Layout />` | Directorio de clientes con filtros por RUC/Nombre y exportación. |
 | `/ventas` / `/listventas` | `<Ventas />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Histórico y listado de comprobantes emitidos con DataTable y filtros de fecha. |
 | `/vales` / `/listvales` | `<Vales />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Histórico y listado de vales / notas de venta internas con DataTable y filtros de fecha. |

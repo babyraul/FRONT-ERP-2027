@@ -901,30 +901,6 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave, varia
                         </button>
                       </div>
 
-                      {/* Switch 4: Es Combo / Pack */}
-                      <div className="py-2.5 flex items-center justify-between gap-4">
-                        <div className="min-w-0">
-                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                            Es Combo / Paquete Promocional
-                          </span>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            Agrupa múltiples productos secundarios en una sola tarifa comercial.
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={formData.es_combo}
-                          onClick={() => setFormData(prev => ({ ...prev, es_combo: !prev.es_combo }))}
-                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#01a59c] focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${formData.es_combo ? 'bg-[#01a59c]' : 'bg-slate-200 dark:bg-slate-700'
-                            }`}
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${formData.es_combo ? 'translate-x-5' : 'translate-x-0'
-                              }`}
-                          />
-                        </button>
-                      </div>
 
                       {/* Switch 5: Es Insumo */}
                       <div className="py-2.5 flex items-center justify-between gap-4">

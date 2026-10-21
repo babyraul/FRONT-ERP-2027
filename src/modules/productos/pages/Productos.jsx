@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import {
   MagnifyingGlassIcon,
   ArrowDownTrayIcon,
@@ -9,7 +10,8 @@ import {
   TagIcon,
   ClipboardDocumentListIcon,
   ExclamationTriangleIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline'
 import { useProductosStore } from '../../../store/useProductosStore.js'
 import { productoController } from '../controllers/producto.js'
