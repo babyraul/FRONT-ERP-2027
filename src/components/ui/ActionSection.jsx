@@ -82,21 +82,20 @@ export default function ActionSection({
   if (!mounted) return null
 
   return (
-    <div 
-      className={`w-full bg-white dark:bg-slate-900 rounded-2xl flex flex-col transition-all duration-300 ease-in-out transform ${
-        active 
-          ? 'opacity-100 translate-y-0 scale-100' 
-          : 'opacity-0 -translate-y-2 scale-[0.99] pointer-events-none'
-      }`}
+    <div
+      className={`w-full bg-white dark:bg-slate-900 rounded-2xl flex flex-col transition-all duration-300 ease-in-out transform ${active
+        ? 'opacity-100 translate-y-0 scale-100'
+        : 'opacity-0 -translate-y-2 scale-[0.99] pointer-events-none'
+        }`}
       role="region"
       aria-label={typeof title === 'string' ? title : 'Panel de acción'}
     >
       {/* Cabecera Estilizada con botón de retorno contextual */}
       <div className="flex items-start justify-between px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 shrink-0">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             type="button"
-            onClick={handleClose} 
+            onClick={handleClose}
             className="p-1.5 -ml-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Volver atrás"
             title="Volver atrás (Esc)"
@@ -134,18 +133,18 @@ export default function ActionSection({
       {/* Footer de Acciones Sticky */}
       {showFooter && (
         <div className="px-6 py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex justify-end items-center gap-3 shrink-0">
-          <button 
-            type="button" 
-            onClick={handleClose} 
+          <button
+            type="button"
+            onClick={handleClose}
             className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 dark:bg-red-600/90 dark:hover:bg-red-600 rounded-lg transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900 cursor-pointer"
           >
             {cancelText}
           </button>
           {!hideConfirm && (
-            <button 
+            <button
               type={confirmButtonId ? "submit" : "button"}
               form={confirmButtonId}
-              onClick={!confirmButtonId && onConfirm ? onConfirm : undefined} 
+              onClick={!confirmButtonId && onConfirm ? onConfirm : undefined}
               disabled={isProcessing}
               className="btn-primary px-5 py-2 text-sm rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
             >

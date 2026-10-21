@@ -194,7 +194,7 @@ export default function Modal({
         </div>
 
         {/* Body */}
-        <div className={`overflow-y-auto flex-1 bg-slate-50/50 dark:bg-slate-900/50 ${noPadding ? '' : 'p-6'}`}>
+        <div className={`overflow-y-auto flex-1  dark:bg-slate-900/50 ${noPadding ? '' : 'p-6'}`}>
           {children}
         </div>
 

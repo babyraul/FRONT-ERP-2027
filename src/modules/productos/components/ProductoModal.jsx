@@ -9,7 +9,10 @@ import {
   CubeIcon,
   DocumentTextIcon,
   ArrowRightIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline'
 import Modal from '../../../components/ui/Modal.jsx'
 import SearchableSelect from '../../../components/ui/SearchableSelect.jsx'
@@ -18,11 +21,12 @@ import { productoController } from '../controllers/producto.js'
 import { toast } from '../../../utils/toast.js'
 import { useFactoresStore } from '../../../store/useFactoresStore.js'
 
-export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
+export default function ProductoModal({ isOpen, onClose, producto, onSave, variant = 'drawer' }) {
   const [loading, setLoading] = useState(false)
   const [touched, setTouched] = useState({}) // Control de campos interactuados
   const [submitted, setSubmitted] = useState(false) // Flag de intento de envío
   const [activeTab, setActiveTab] = useState('producto') // 'producto' | 'presentaciones'
+  const [mostrarOpcionesAvanzadas, setMostrarOpcionesAvanzadas] = useState(false) // Dropdown desplegable opcional oculto por defecto
 
   const { factorPrecio, factorVolumen } = useFactoresStore()
 
@@ -77,6 +81,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
     setActiveTab('producto')
     setTouched({})
     setSubmitted(false)
+    setMostrarOpcionesAvanzadas(false)
 
     if (producto) {
       setFormData({
@@ -487,13 +492,13 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      variant={variant}
       title={producto?.id ? 'Editar Producto y Precios' : 'Nuevo Producto y Precios'}
       subtitle={
         producto?.codigo ? (
           <span className="flex items-center gap-2">
-            <span>Define el catálogo del producto, facturación y presentaciones comerciales.</span>
-            <span className="px-2 py-0.5 rounded-md font-mono text-xs bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">
-              Cód: {producto.codigo}
+            <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+              {producto.codigo} - {producto.nombre}
             </span>
           </span>
         ) : (
@@ -509,7 +514,7 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
       <form id="productoForm" onSubmit={handleSubmit} className="space-y-4">
 
         {/* ── NAVEGACIÓN TIPO FIXED SUB-HEADER ── */}
-        <div className="sticky -top-6 -mx-6 px-6 pt-2 pb-3 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md z-20 border-b border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+        <div className="sticky -top-6 -mx-6 px-6 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md z-20 border-b border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-1.5 p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-xl">
             <button
               type="button"
@@ -581,29 +586,17 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
             SECCIÓN 1: DATOS DEL PRODUCTO Y FACTURACIÓN
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'producto' && (
-          <div className="space-y-5 animate-in fade-in duration-150">
-            {/* 1.1 Columnas en orden de datos del producto */}
-            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                  <TagIcon className="h-4 w-4 text-[#01a59c]" />
-                  <span>Identificación y Parámetros del Producto</span>
-                </h3>
-                {formData.nombre.trim().length >= 3 && (
-                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                    <CheckCircleIcon className="h-4 w-4" /> Nombre Válido
-                  </span>
-                )}
-              </div>
-
-              {/* Grid ordenado como columnas consecutivas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-4 animate-in fade-in duration-150 mx-auto">
+            {/* 1.1 Identificación del Producto (Cada campo en una fila / columna completa) */}
+            <div className="">
+              {/* Campos en Una Sola Columna */}
+              <div className="space-y-3.5">
                 {/* 1. Nombre Comercial */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 items-center justify-between">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1 flex items-center justify-between">
                     <span>Nombre Comercial *</span>
                     {(submitted || touched.nombre) && errors.nombre && (
-                      <span className="text-[11px] text-red-500 font-normal flex items-center gap-1 animate-pulse">
+                      <span className="text-[11px] text-rose-500 font-semibold flex items-center gap-1 animate-pulse">
                         <ExclamationCircleIcon className="h-3.5 w-3.5" />
                         {errors.nombre}
                       </span>
@@ -618,15 +611,15 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                       onChange={handleChange}
                       onBlur={() => handleBlurField('nombre')}
                       placeholder="Ej. Arroz Extra Costeño 1kg"
-                      className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border rounded-lg focus:outline-none transition-all text-sm dark:text-white ${(submitted || touched.nombre) && errors.nombre
-                        ? 'border-red-400 dark:border-red-500/80 bg-red-50/20 ring-2 ring-red-400/20'
-                        : 'border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#01a59c]'
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 dark:bg-slate-800/70 border-2 rounded-xl focus:outline-none transition-all text-sm font-medium dark:text-white placeholder:text-slate-400 ${(submitted || touched.nombre) && errors.nombre
+                        ? 'border-rose-400 dark:border-rose-500/80 bg-rose-50/20 ring-2 ring-rose-400/20'
+                        : 'border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-900 focus:border-[#01a59c] focus:ring-2 focus:ring-[#01a59c]/20'
                         }`}
                     />
                     {(submitted || touched.nombre) && errors.nombre && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 group">
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-rose-500 group">
                         <ExclamationCircleIcon className="h-4 w-4" />
-                        <span className="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-slate-900 text-white text-[11px] px-2 py-1 rounded shadow-lg whitespace-nowrap z-30">
+                        <span className="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-slate-900 text-white text-[11px] px-2.5 py-1 rounded-lg shadow-xl whitespace-nowrap z-30">
                           {errors.nombre}
                         </span>
                       </div>
@@ -635,8 +628,8 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                 </div>
 
                 {/* 2. Código de Barras / SKU Principal */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
                     Código de Barras / SKU Principal
                   </label>
                   <input
@@ -644,65 +637,38 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                     name="codigo_barra"
                     value={formData.codigo_barra}
                     onChange={handleChange}
-                    placeholder="Ej. 775123456789"
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#01a59c] outline-none text-sm dark:text-white font-mono"
+                    placeholder="Ej. 775123456789 (o escanee con lector de barras)"
+                    className="w-full px-3.5 py-2.5 bg-slate-50/60 dark:bg-slate-800/70 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#01a59c] focus:ring-2 focus:ring-[#01a59c]/20 outline-none text-sm dark:text-white font-mono transition-all placeholder:text-slate-400"
                   />
                 </div>
-
-                {/* 3. Descripción Detallada */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Descripción Detallada <span className="text-[11px] text-slate-400 font-normal">(Opcional)</span>
+                {/* 11. Código SUNAT */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
+                    Código de Producto SUNAT / UNSPSC <span className="text-[11px] text-slate-400 font-normal">(8 dígitos)</span>
                   </label>
                   <input
                     type="text"
-                    name="descripcion"
-                    value={formData.descripcion}
+                    name="codigo_sunat"
+                    value={formData.codigo_sunat}
                     onChange={handleChange}
-                    placeholder="Detalle o notas del producto para presupuestos o reportes"
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#01a59c] outline-none text-sm dark:text-white"
+                    placeholder="Ej. 50192701 (Opcional según normativa)"
+                    className="w-full px-3.5 py-2.5 bg-slate-50/60 dark:bg-slate-800/70 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#01a59c] focus:ring-2 focus:ring-[#01a59c]/20 outline-none text-sm dark:text-white font-mono transition-all placeholder:text-slate-400"
                   />
                 </div>
-
                 {/* 4. Palabras Clave */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Palabras Clave <span className="text-[11px] text-slate-400 font-normal">(Tags de Búsqueda)</span>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
+                    Palabras Clave
                   </label>
                   <input
                     type="text"
                     name="palabra_clave"
                     value={formData.palabra_clave}
                     onChange={handleChange}
-                    placeholder="arroz, grano, costeño"
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#01a59c] outline-none text-sm dark:text-white"
+                    placeholder="Ej. arroz, grano, costeño, abarrotes"
+                    className="w-full px-3.5 py-2.5 bg-slate-50/60 dark:bg-slate-800/70 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#01a59c] focus:ring-2 focus:ring-[#01a59c]/20 outline-none text-xs dark:text-white transition-all placeholder:text-slate-400"
                   />
                 </div>
-
-                {/* 5. Categoría */}
-                <div>
-                  <SearchableSelect
-                    label="Categoría"
-                    options={opcionesCategorias}
-                    value={formData.categoria_id}
-                    onChange={(val) => handleSelectField('categoria_id', val)}
-                    placeholder="Buscar categoría..."
-                    emptyOptionLabel="-- Sin Categoría --"
-                  />
-                </div>
-
-                {/* 6. Subcategoría */}
-                <div>
-                  <SearchableSelect
-                    label="Subcategoría"
-                    options={opcionesSubcategorias}
-                    value={formData.sub_categoria_id}
-                    onChange={(val) => handleSelectField('sub_categoria_id', val)}
-                    placeholder="Buscar subcategoría..."
-                    emptyOptionLabel="-- Sin Subcategoría --"
-                  />
-                </div>
-
                 {/* 7. Unidad de Medida Base */}
                 <div>
                   <SearchableSelect
@@ -714,17 +680,21 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                     allowEmpty={false}
                     error={(submitted || touched.unidad_medida_id) ? errors.unidad_medida_id : ''}
                   />
-                  <span className="text-[10px] text-slate-400 block mt-1 leading-tight">
-                    * La presentación <strong className="text-teal-600 dark:text-teal-400">PRINCIPAL</strong> heredará automáticamente esta unidad base.
-                  </span>
+                  <div className="mt-1 px-3 py-1.5 rounded-lg bg-teal-50/50 dark:bg-teal-950/30 border border-teal-100 dark:border-teal-900/40 flex items-center justify-between">
+                    <span className="text-[11px] text-teal-800 dark:text-teal-300">
+                      La presentación <strong className="font-bold">PRINCIPAL</strong> heredará esta unidad base.
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-[#01a59c] dark:text-teal-400 uppercase">
+                      {formData.unidad_medida_id || 'NIU'}
+                    </span>
+                  </div>
                 </div>
-
                 {/* 8. Stock Mínimo */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 items-center justify-between">
-                    <span>Stock Mínimo (Alerta)</span>
-                    <span className="text-[10px] text-teal-600 dark:text-teal-400 font-mono">
-                      Base: {formData.unidad_medida_id || 'NIU'}
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1 flex items-center justify-between">
+                    <span>Stock Mínimo para Alerta</span>
+                    <span className="text-[10px] font-mono font-bold text-[#01a59c] dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-2 py-0.5 rounded">
+                      En unidades base: {formData.unidad_medida_id || 'NIU'}
                     </span>
                   </label>
                   <input
@@ -735,120 +705,255 @@ export default function ProductoModal({ isOpen, onClose, producto, onSave }) {
                     value={formData.stock_minimo}
                     onChange={handleChange}
                     placeholder="Ej. 5"
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#01a59c] outline-none text-sm dark:text-white font-mono"
+                    className="w-full px-3.5 py-2.5 bg-slate-50/60 dark:bg-slate-800/70 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#01a59c] focus:ring-2 focus:ring-[#01a59c]/20 outline-none text-sm dark:text-white font-mono transition-all"
                   />
                 </div>
               </div>
             </div>
 
-            {/* 1.2 Datos de Facturación SUNAT */}
-            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                  <DocumentTextIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                  <span>Datos de Facturación y Parámetros Fiscales (SUNAT)</span>
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {/* 9. Tipo de Existencia */}
-                <SearchableSelect
-                  label="Tipo de Existencia"
-                  options={opcionesExistencias}
-                  value={formData.tipo_existencia_id}
-                  onChange={(val) => handleSelectField('tipo_existencia_id', val)}
-                  placeholder="Buscar tipo existencia..."
-                  allowEmpty={false}
-                />
-
-                {/* 10. Afectación al IGV */}
-                <SearchableSelect
-                  label="Afectación al IGV"
-                  options={opcionesAfectaciones}
-                  value={formData.tipo_tributo_id}
-                  onChange={(val) => handleSelectField('tipo_tributo_id', val)}
-                  placeholder="Buscar afectación..."
-                  allowEmpty={false}
-                />
-
-                {/* 11. Código SUNAT */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Código SUNAT / UNSPSC
-                  </label>
-                  <input
-                    type="text"
-                    name="codigo_sunat"
-                    value={formData.codigo_sunat}
-                    onChange={handleChange}
-                    placeholder="Ej. 50192701"
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#01a59c] outline-none text-sm dark:text-white font-mono"
-                  />
+            {/* 1.2 Sección Unificada de Configuración Avanzada y Opcional (Dropdown / Acordeón) */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm overflow-hidden transition-all">
+              {/* Cabecera / Disparador del Dropdown */}
+              <button
+                type="button"
+                onClick={() => setMostrarOpcionesAvanzadas(prev => !prev)}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors cursor-pointer select-none"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700">
+                    <AdjustmentsHorizontalIcon className="h-4 w-4 text-[#01a59c]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                        Configuración Opcional y Avanzada del Producto
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        Opcional
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Categorías, descripción detallada, parámetros fiscales SUNAT y opciones operativas de venta.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* 1.3 Flags y Parámetros Booleanos */}
-            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Comportamiento Operativo y Opciones de Venta
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <input
-                    type="checkbox"
-                    name="es_facturable"
-                    checked={formData.es_facturable}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-[#01a59c] rounded border-slate-300 focus:ring-[#01a59c]"
-                  />
-                  <span>Facturable (FE)</span>
-                </label>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
+                  <span className="hidden sm:inline">
+                    {mostrarOpcionesAvanzadas ? 'Ocultar' : 'Configurar'}
+                  </span>
+                  {mostrarOpcionesAvanzadas ? (
+                    <ChevronUpIcon className="h-4 w-4 text-[#01a59c]" />
+                  ) : (
+                    <ChevronDownIcon className="h-4 w-4 text-slate-400" />
+                  )}
+                </div>
+              </button>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <input
-                    type="checkbox"
-                    name="es_vendible"
-                    checked={formData.es_vendible}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-[#01a59c] rounded border-slate-300 focus:ring-[#01a59c]"
-                  />
-                  <span>Vendible en POS</span>
-                </label>
+              {/* Contenido Desplegable (Dropdown) */}
+              {mostrarOpcionesAvanzadas && (
+                <div className="p-5 border-t border-slate-100 dark:border-slate-800/80 space-y-5 animate-in fade-in duration-200 bg-slate-50/30 dark:bg-slate-900/40">
+                  {/* Subsección A: Clasificación y Categorización */}
+                  <div className="space-y-3.5">
+                    {/* Descripción Detallada */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
+                        Descripción Detallada
+                      </label>
+                      <textarea
+                        rows={2}
+                        name="descripcion"
+                        value={formData.descripcion}
+                        onChange={handleChange}
+                        placeholder="Detalle o notas del producto para cotizaciones, presupuestos o reportes..."
+                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800/70 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#01a59c] focus:ring-2 focus:ring-[#01a59c]/20 outline-none text-xs dark:text-white transition-all resize-none placeholder:text-slate-400"
+                      />
+                    </div>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <input
-                    type="checkbox"
-                    name="es_producido"
-                    checked={formData.es_producido}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-[#01a59c] rounded border-slate-300 focus:ring-[#01a59c]"
-                  />
-                  <span>Es Producido</span>
-                </label>
+                    {/* Categoría */}
+                    <div>
+                      <SearchableSelect
+                        label="Categoría del Producto"
+                        options={opcionesCategorias}
+                        value={formData.categoria_id}
+                        onChange={(val) => handleSelectField('categoria_id', val)}
+                        placeholder="Buscar categoría..."
+                        emptyOptionLabel="-- Sin Categoría --"
+                      />
+                    </div>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <input
-                    type="checkbox"
-                    name="es_combo"
-                    checked={formData.es_combo}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-[#01a59c] rounded border-slate-300 focus:ring-[#01a59c]"
-                  />
-                  <span>Es Combo / Pack</span>
-                </label>
+                    {/* Subcategoría */}
+                    <div>
+                      <SearchableSelect
+                        label="Subcategoría"
+                        options={opcionesSubcategorias}
+                        value={formData.sub_categoria_id}
+                        onChange={(val) => handleSelectField('sub_categoria_id', val)}
+                        placeholder="Buscar subcategoría..."
+                        emptyOptionLabel="-- Sin Subcategoría --"
+                      />
+                    </div>
+                  </div>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <input
-                    type="checkbox"
-                    name="es_insumo"
-                    checked={formData.es_insumo}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-[#01a59c] rounded border-slate-300 focus:ring-[#01a59c]"
-                  />
-                  <span>Es Insumo</span>
-                </label>
-              </div>
+                  {/* Subsección B: Parámetros Fiscales y Facturación Electrónica (SUNAT) */}
+                  <div className="space-y-3.5">
+
+                    {/* Tipo de Existencia */}
+                    <div>
+                      <SearchableSelect
+                        label="Tipo de Existencia"
+                        options={opcionesExistencias}
+                        value={formData.tipo_existencia_id}
+                        onChange={(val) => handleSelectField('tipo_existencia_id', val)}
+                        placeholder="Buscar tipo existencia..."
+                        allowEmpty={false}
+                      />
+                    </div>
+
+                    {/* Afectación al IGV */}
+                    <div>
+                      <SearchableSelect
+                        label="Tipo de Afectación al IGV"
+                        options={opcionesAfectaciones}
+                        value={formData.tipo_tributo_id}
+                        onChange={(val) => handleSelectField('tipo_tributo_id', val)}
+                        placeholder="Buscar afectación..."
+                        allowEmpty={false}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Subsección C: Comportamiento Operativo y Opciones de Venta */}
+                  <div className="space-y-3">
+                    <div className="divide-y divide-slate-200/60 dark:divide-slate-800/60">
+                      {/* Switch 1: Facturable (FE) */}
+                      <div className="py-2.5 flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                            Facturación Electrónica (FE)
+                          </span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Permite emitir facturas, boletas y notas electrónicas con este ítem.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={formData.es_facturable}
+                          onClick={() => setFormData(prev => ({ ...prev, es_facturable: !prev.es_facturable }))}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#01a59c] focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${formData.es_facturable ? 'bg-[#01a59c]' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${formData.es_facturable ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Switch 2: Vendible en POS */}
+                      <div className="py-2.5 flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                            Vendible en Punto de Venta (POS)
+                          </span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Aparece visible en el buscador y catálogo rápido del módulo de ventas.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={formData.es_vendible}
+                          onClick={() => setFormData(prev => ({ ...prev, es_vendible: !prev.es_vendible }))}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#01a59c] focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${formData.es_vendible ? 'bg-[#01a59c]' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${formData.es_vendible ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Switch 3: Es Producido */}
+                      <div className="py-2.5 flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                            Producto Elaborado / Producido
+                          </span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Indica que el producto se fabrica mediante órdenes de producción o recetas.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={formData.es_producido}
+                          onClick={() => setFormData(prev => ({ ...prev, es_producido: !prev.es_producido }))}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#01a59c] focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${formData.es_producido ? 'bg-[#01a59c]' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${formData.es_producido ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Switch 4: Es Combo / Pack */}
+                      <div className="py-2.5 flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                            Es Combo / Paquete Promocional
+                          </span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Agrupa múltiples productos secundarios en una sola tarifa comercial.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={formData.es_combo}
+                          onClick={() => setFormData(prev => ({ ...prev, es_combo: !prev.es_combo }))}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#01a59c] focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${formData.es_combo ? 'bg-[#01a59c]' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${formData.es_combo ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Switch 5: Es Insumo */}
+                      <div className="py-2.5 flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                            Es Insumo o Materia Prima
+                          </span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Utilizado como insumo de descargo en procesos de transformación.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={formData.es_insumo}
+                          onClick={() => setFormData(prev => ({ ...prev, es_insumo: !prev.es_insumo }))}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#01a59c] focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${formData.es_insumo ? 'bg-[#01a59c]' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${formData.es_insumo ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

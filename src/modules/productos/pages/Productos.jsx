@@ -14,7 +14,9 @@ import {
 import { useProductosStore } from '../../../store/useProductosStore.js'
 import { productoController } from '../controllers/producto.js'
 import { exportToExcel, formatCurrency } from '../../../utils/exportExcel.js'
+import PageHeader from '../../../components/ui/PageHeader.jsx'
 import ProductoModal from '../components/ProductoModal.jsx'
+import StockKardexModal from '../../stock/components/StockKardexModal.jsx'
 import Modal from '../../../components/ui/Modal.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import Can from '../../../components/ui/Can.jsx'
@@ -23,7 +25,10 @@ import {
   EditRowButton,
   DeleteRowButton,
   ReactivateRowButton,
-  KardexRowButton
+  KardexRowButton,
+  ExportExcelButton,
+  RefreshButton,
+  NewButton
 } from '../../../components/ui/ActionButtons.jsx'
 import { toast } from '../../../utils/toast.js'
 
@@ -36,26 +41,22 @@ export default function Productos() {
   const [productoEdit, setProductoEdit] = useState(null)
   const [kardexModalOpen, setKardexModalOpen] = useState(false)
   const [kardexProducto, setKardexProducto] = useState(null)
-  const [kardexRows, setKardexRows] = useState([])
-  const [loadingKardex, setLoadingKardex] = useState(false)
 
   // Estado para el Modal de confirmación de Baja / Inactivación
   const [bajaModalOpen, setBajaModalOpen] = useState(false)
   const [productoABajar, setProductoABajar] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const handleOpenKardex = async (prod) => {
-    setKardexProducto(prod)
-    setKardexRows([])
+  const handleOpenKardex = (prod) => {
+    setKardexProducto({
+      ...prod,
+      producto_id: prod.id,
+      producto_nombre: prod.nombre,
+      codigo: prod.codigo,
+      unidad_medida_id: prod.unidad_medida_id || 'NIU',
+      saldo_actual: Number(prod.stock_actual ?? prod.stock ?? 0)
+    })
     setKardexModalOpen(true)
-    setLoadingKardex(true)
-    const res = await productoController.getKardex(prod.id)
-    if (res.success) {
-      setKardexRows(res.data)
-    } else {
-      toast.error('Error al cargar Kárdex', res.error || 'No se pudo obtener el historial de movimientos.')
-    }
-    setLoadingKardex(false)
   }
 
   useEffect(() => {
@@ -163,10 +164,6 @@ export default function Productos() {
         const isActivo = p.activo !== false
         return (
           <ActionCell>
-            <KardexRowButton
-              onClick={() => handleOpenKardex(p)}
-              title="Ver Kárdex / Movimientos de Stock"
-            />
             <Can I="editar" a="productos">
               <EditRowButton
                 onClick={() => handleOpenEdit(p)}
@@ -198,7 +195,7 @@ export default function Productos() {
       cell: (info) => {
         const codigo = info.getValue()
         return codigo ? (
-          <span className="font-mono text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-md inline-block tracking-wide">
+          <span className="text-xs font-bold text-slate-800 dark:text-slate-300 inline-block tracking-wide">
             {codigo}
           </span>
         ) : (
@@ -217,7 +214,7 @@ export default function Productos() {
             {cod}
           </span>
         ) : (
-          <span className="text-slate-400 text-xs italic">Sin SKU</span>
+          <span className="text-slate-600 text-xs italic">Sin SKU</span>
         )
       },
       size: 120
@@ -355,24 +352,20 @@ export default function Productos() {
         const min = Number(p.stock_minimo ?? 0)
         const badgeCls =
           stock < 0
-            ? 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800/60'
+            ? 'text-rose-700 border-rose-200 dark:text-rose-400 dark:border-rose-800/60'
             : stock <= min
-              ? 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/60'
-              : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/60'
+              ? 'text-amber-800 border-amber-200 dark:text-amber-400 dark:border-amber-800/60'
+              : 'text-emerald-700 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800/60'
 
         return (
           <div className="flex flex-col items-center gap-1">
-            <button
-              type="button"
-              onClick={() => handleOpenKardex(p)}
-              className={`font-mono text-xs font-bold px-3 py-1.5 rounded-lg border transition-all hover:scale-105 active:scale-95 shadow-2xs ${badgeCls}`}
-              title="Clic para ver el Kárdex histórico de movimientos"
+            <span
+              className={`font-mono text-xs font-bold ${badgeCls}`}
             >
               {stock} {p.unidad_medida_id || 'NIU'}
-            </button>
+            </span>
             {stock < 0 ? (
               <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
-                Stock negativo
               </span>
             ) : (
               <span className="text-[10px] text-slate-400 font-mono">
@@ -392,29 +385,29 @@ export default function Productos() {
         // Mapeo amigable de Tipo de Afectación al IGV (SUNAT)
         const tributoId = String(p.tipo_tributo_id || '10')
         const afectacionLabel = tributoId === '10'
-          ? 'Gravado (10)'
+          ? 'Gravado'
           : tributoId === '20'
-            ? 'Exonerado (20)'
+            ? 'Exonerado'
             : tributoId === '30'
-              ? 'Inafecto (30)'
+              ? 'Inafecto'
               : tributoId === '40'
-                ? 'Exportación (40)'
+                ? 'Exportación'
                 : `Afect. ${tributoId}`
 
         const afectacionBadgeCls = tributoId === '10'
-          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
+          ? 'text-emerald-700 dark:text-emerald-400'
           : tributoId === '20'
-            ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800'
+            ? 'text-sky-700 dark:text-sky-400'
             : tributoId === '30'
-              ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
-              : 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800'
+              ? 'text-amber-700 dark:text-amber-400'
+              : 'text-purple-700 dark:text-purple-400'
 
         return (
           <div className="space-y-1.5 text-xs">
             {/* Categorías y Afectación al IGV */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-md border tracking-tight uppercase shadow-2xs ${afectacionBadgeCls}`}
+                className={`text-[10px] font-bold tracking-tight uppercase shadow-2xs ${afectacionBadgeCls}`}
                 title={`Afectación al IGV código ${tributoId}`}
               >
                 {afectacionLabel}
@@ -466,92 +459,113 @@ export default function Productos() {
   ], [expandedRows])
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            Catálogo de Productos
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Gestión de artículos, unidades de medida SUNAT, afectaciones de IGV y tarifas de venta.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          {/* Selector de Estado: Activos, Inactivos, Todos */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            {[
-              { id: 'activos', label: 'Activos' },
-              { id: 'inactivos', label: 'Dados de Baja' },
-              { id: 'todos', label: 'Todos' }
-            ].map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setEstadoFiltro(f.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${estadoFiltro === f.id
-                  ? f.id === 'inactivos'
-                    ? 'bg-rose-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
-                  }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative flex-1 sm:flex-none">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar por nombre o código..."
-              value={busq}
-              onChange={(e) => setBusq(e.target.value)}
-              className="w-full sm:w-64 pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm dark:text-white transition-all"
+    <div className="space-y-4">
+      {/* ── ENCABEZADO MODULAR GLOBAL ── */}
+      <PageHeader
+        title="Catálogo de Productos"
+        actions={
+          <>
+            <RefreshButton
+              onClick={fetchProductos}
+              loading={loading}
+              title="Actualizar catálogo de productos"
             />
-          </div>
 
-          <Can I="ver" a="productos">
-            <button onClick={handleExport} className="btn-primary flex items-center gap-2">
-              <ArrowDownTrayIcon className="h-4 w-4" />
-              Exportar
-            </button>
-          </Can>
+            <Can I="ver" a="productos">
+              <ExportExcelButton
+                onClick={handleExport}
+                disabled={loading || filtered.length === 0}
+                label="Excel"
+                title="Exportar catálogo de productos a Excel"
+              />
+            </Can>
 
-          <Can I="crear" a="productos">
-            <button onClick={handleOpenNew} className="btn-primary flex items-center gap-2">
-              <PlusIcon className="h-4 w-4" />
-              Nuevo Producto
-            </button>
-          </Can>
-        </div>
-      </div>
-
-      {/* Tabla con TanStack Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-xs overflow-hidden">
-        <DataTable
-          data={filtered}
-          columns={columns}
-          loading={loading}
-          emptyMessage={
-            estadoFiltro === 'inactivos'
-              ? 'No hay productos dados de baja en el catálogo.'
-              : 'No se encontraron productos registrados en esta sucursal.'
-          }
-        />
-      </div>
-
-      {/* Modal Crear / Editar */}
-      <ProductoModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        producto={productoEdit}
-        onSave={fetchProductos}
+            <Can I="crear" a="productos">
+              <NewButton
+                onClick={handleOpenNew}
+                label="Nuevo Producto"
+                title="Registrar nuevo producto y presentaciones"
+              />
+            </Can>
+          </>
+        }
       />
 
-      {/* Modal Confirmación de Baja / Inactivación */}
+      {/* ── BARRA DE BÚSQUEDA Y FILTROS RÁPIDOS ── */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+        {/* Selector de Estado: Activos, Inactivos, Todos */}
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 w-full sm:w-auto">
+          {[
+            { id: 'activos', label: 'Activos' },
+            { id: 'inactivos', label: 'Dados de Baja' },
+            { id: 'todos', label: 'Todos' }
+          ].map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setEstadoFiltro(f.id)}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${estadoFiltro === f.id
+                ? f.id === 'inactivos'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Input Buscador */}
+        <div className="relative w-full sm:w-80">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, código o SKU..."
+            value={busq}
+            onChange={(e) => setBusq(e.target.value)}
+            className="w-full pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#01a59c] focus:bg-white dark:focus:bg-slate-900 outline-none text-xs dark:text-white transition-all"
+          />
+        </div>
+      </div>
+
+      {/* ── CONTENEDOR IN-PLACE CON TRANSICIÓN ANIMADA ── */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden transition-all duration-300">
+        {isModalOpen ? (
+          <ProductoModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            producto={productoEdit}
+            onSave={fetchProductos}
+            variant="inline"
+          />
+        ) : kardexModalOpen ? (
+          <StockKardexModal
+            isOpen={kardexModalOpen}
+            onClose={() => setKardexModalOpen(false)}
+            itemSeleccionado={kardexProducto}
+            onStockUpdated={fetchProductos}
+            variant="inline"
+          />
+        ) : (
+          <div className="transition-all duration-300 ease-in-out opacity-100 translate-y-0">
+            {/* Tabla con TanStack Table */}
+            <DataTable
+              data={filtered}
+              columns={columns}
+              pagination={true}
+              loading={loading}
+              emptyMessage={
+                estadoFiltro === 'inactivos'
+                  ? 'No hay productos dados de baja en el catálogo.'
+                  : 'No se encontraron productos registrados en esta sucursal.'
+              }
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Modal Confirmación de Baja / Inactivación (Modal flotante contextual) */}
       <Modal
         isOpen={bajaModalOpen}
         onClose={() => {
@@ -596,110 +610,6 @@ export default function Productos() {
                   {Number(productoABajar.stock_actual ?? productoABajar.stock ?? 0)} {productoABajar.unidad_medida_id || 'NIU'}
                 </span>
               </div>
-            </div>
-          )}
-        </div>
-      </Modal>
-
-      {/* Modal Kárdex Histórico (tabla stock) */}
-      <Modal
-        isOpen={kardexModalOpen}
-        onClose={() => setKardexModalOpen(false)}
-        title={`Kárdex de Stock: ${kardexProducto?.nombre || ''}`}
-        maxWidth="max-w-5xl w-full"
-        size="4xl"
-      >
-        <div className="space-y-4 text-xs min-h-[380px]">
-          {kardexProducto && (
-            <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-              <div>
-                <span className="text-slate-500 dark:text-slate-400">Producto: </span>
-                <strong className="text-slate-800 dark:text-white">{kardexProducto.nombre}</strong>
-                {kardexProducto.codigo && (
-                  <span className="ml-2 font-mono text-slate-500">({kardexProducto.codigo})</span>
-                )}
-              </div>
-              <div className="font-mono">
-                <span className="text-slate-500 dark:text-slate-400 mr-1.5">Saldo Actual:</span>
-                <span
-                  className={`font-bold px-2 py-0.5 rounded ${Number(kardexProducto.stock_actual || 0) < 0
-                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
-                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
-                    }`}
-                >
-                  {Number(kardexProducto.stock_actual || 0)}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {loadingKardex ? (
-            <div className="p-8 text-center text-slate-400">Cargando movimientos de kárdex...</div>
-          ) : kardexRows.length === 0 ? (
-            <div className="p-8 text-center text-slate-400">
-              No existen movimientos registrados en la tabla `stock` para este producto.
-            </div>
-          ) : (
-            <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl max-h-[480px] overflow-y-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="sticky top-0 z-10">
-                  <tr className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-[10px] font-bold border-b border-slate-200 dark:border-slate-700">
-                    <th className="px-3 py-2.5">Fecha</th>
-                    <th className="px-3 py-2.5">Documento</th>
-                    <th className="px-3 py-2.5">Concepto</th>
-                    <th className="px-3 py-2.5 text-center">Tipo</th>
-                    <th className="px-3 py-2.5 text-right">Cant.</th>
-                    <th className="px-3 py-2.5 text-right">Factor</th>
-                    <th className="px-3 py-2.5 text-right">Cant. Base</th>
-                    <th className="px-3 py-2.5 text-right">Saldo</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono text-xs">
-                  {kardexRows.map((m) => {
-                    const esEntrada = Number(m.tipo_mov) === 1
-                    const saldoNum = Number(m.saldo || 0)
-                    return (
-                      <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                        <td className="px-3 py-2 whitespace-nowrap text-slate-600 dark:text-slate-300">
-                          {m.created_at ? new Date(m.created_at).toLocaleString('es-PE') : '-'}
-                        </td>
-                        <td className="px-3 py-2 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                          {m.documento || '-'}
-                        </td>
-                        <td className="px-3 py-2 font-sans text-slate-600 dark:text-slate-300">
-                          {m.concepto || '-'}
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${esEntrada
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400'
-                              : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400'
-                              }`}
-                          >
-                            {esEntrada ? '1 · Entrada' : '2 · Salida'}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-right">{m.cantidad}</td>
-                        <td className="px-3 py-2 text-right text-slate-400">x{m.multiplica_por || 1}</td>
-                        <td
-                          className={`px-3 py-2 text-right font-bold ${esEntrada ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                            }`}
-                        >
-                          {esEntrada ? `+${m.cantidad_base}` : `-${m.cantidad_base}`}
-                        </td>
-                        <td
-                          className={`px-3 py-2 text-right font-bold ${saldoNum < 0
-                            ? 'text-rose-600 dark:text-rose-400'
-                            : 'text-slate-900 dark:text-white'
-                            }`}
-                        >
-                          {saldoNum}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
             </div>
           )}
         </div>

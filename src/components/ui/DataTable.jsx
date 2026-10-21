@@ -143,8 +143,8 @@ export function DataTable({
                   <React.Fragment key={row.id}>
                     <tr
                       className={`transition-colors group/row ${isExpanded
-                          ? 'bg-teal-50/20 dark:bg-slate-800/60'
-                          : customClass || 'hover:bg-blue-50/40 dark:hover:bg-blue-900/10'
+                        ? 'bg-teal-50/20 dark:bg-slate-800/60'
+                        : customClass || 'hover:bg-blue-50/40 dark:hover:bg-blue-900/10'
                         }`}
                     >
                       {row.getVisibleCells().map((cell) => {
@@ -159,7 +159,7 @@ export function DataTable({
                         return (
                           <td
                             key={cell.id}
-                            className={`px-5 py-3.5 text-slate-600 dark:text-slate-300 ${isAcciones ? 'text-center' : ''} ${cellClass}`}
+                            className={`px-3 py-1 text-slate-600 dark:text-slate-300 ${isAcciones ? 'text-center' : ''} ${cellClass}`}
                             style={tdStyle}
                           >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
