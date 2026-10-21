@@ -122,6 +122,12 @@ La navegación del sistema está centralizada en [`FRONT/src/router/index.jsx`](
 * **`<RolPermisosModal />`**: Matriz de permisos por módulo asignables a roles.
 * **`<ModuloModal />`**: Catálogo de módulos y rutas del sistema.
 
+### D. Modales del Módulo de Caja (`modules/caja/components`)
+* **`<AperturaTurnoModal />`**: Identificación de caja física, verificación de series fiscales e inicialización de fondo en efectivo (`monto_apertura`).
+* **`<MovimientoModal />`**: Registro transaccional de ingresos o egresos manuales con desglose de denominaciones (`caja_arqueos`) y validación de saldo disponible.
+* **`<CierreTurnoModal />`**: Cierre de turno y liquidación con desglose interactivo de billetes/monedas (Opción 1), validación de efectivo físico (VAL-DUR-02 Opción B) y declaración por método de pago.
+* **`<DetalleTurnoModal />`**: Visualización del balance del turno por métodos de pago (`caja_turno_pagos`), fondo de apertura y tarjetas analíticas del snapshot de cierre (`caja_turnos_resumen`).
+
 ---
 
 ## 4. ⚡ Gestión del Estado Global (Zustand)

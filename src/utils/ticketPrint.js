@@ -153,21 +153,19 @@ export function imprimirTicketCierre(turno, infoEmpresa = {}) {
   const caja = turno.identificador_caja || 'CAJA'
 
   const totales = Array.isArray(turno.totales) ? turno.totales : []
+  const montoAperturaGeneral = Number(turno.monto_apertura || 0)
 
   // Calcular sumatorias
-  let totalApertura = 0
   let totalSistema = 0
   let totalDeclarado = 0
   let totalDiferencia = 0
 
   const filasHtml = totales.map((t) => {
-    const apertura = Number(t.monto_apertura || 0)
     const sistema = Number(t.monto_sistema || 0)
     const declarado = Number(t.monto_declarado || 0)
-    const dif = Number(t.diferencia || (declarado - (apertura + sistema)))
+    const dif = Number(t.diferencia !== undefined ? t.diferencia : (declarado - sistema))
 
-    totalApertura += apertura
-    totalSistema += (apertura + sistema)
+    totalSistema += sistema
     totalDeclarado += declarado
     totalDiferencia += dif
 
@@ -178,7 +176,7 @@ export function imprimirTicketCierre(turno, infoEmpresa = {}) {
         <td colspan="3" style="font-weight: bold; padding-top: 4px;">${nombreMetodo}</td>
       </tr>
       <tr style="font-size: 10px;">
-        <td style="padding-left: 6px;">Sist: S/ ${(apertura + sistema).toFixed(2)}</td>
+        <td style="padding-left: 6px;">Sist: S/ ${sistema.toFixed(2)}</td>
         <td class="text-right">Decl: S/ ${declarado.toFixed(2)}</td>
         <td class="text-right font-bold" style="color: ${dif < 0 ? '#b00' : '#000'}">Dif: ${dif >= 0 ? '+' : ''}${dif.toFixed(2)}</td>
       </tr>
@@ -199,6 +197,7 @@ export function imprimirTicketCierre(turno, infoEmpresa = {}) {
     <table class="table-full" style="font-size: 10px;">
       <tr><td><strong>Cajero:</strong></td><td class="text-right">${usuario}</td></tr>
       <tr><td><strong>Apertura:</strong></td><td class="text-right">${fechaApertura}</td></tr>
+      <tr><td><strong>Fondo Inicial Efectivo:</strong></td><td class="text-right font-bold">S/ ${montoAperturaGeneral.toFixed(2)}</td></tr>
       <tr><td><strong>Cierre:</strong></td><td class="text-right">${fechaCierre}</td></tr>
     </table>
 

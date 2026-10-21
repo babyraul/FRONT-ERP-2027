@@ -39,12 +39,41 @@ export default function DetalleTurnoModal({ isOpen, onClose, turno }) {
           </div>
 
           <div>
+            <span className="text-slate-400 block mb-0.5">Fondo Inicial en Efectivo</span>
+            <span className="font-semibold font-mono text-slate-800 dark:text-slate-200">
+              S/ {Number(turno.monto_apertura || 0).toFixed(2)}
+            </span>
+          </div>
+
+          <div>
             <span className="text-slate-400 block mb-0.5">Cierre</span>
             <span className="font-semibold text-slate-800 dark:text-slate-200">
               {turno.fecha_cierre_f ? new Date(turno.fecha_cierre_f).toLocaleString() : 'En curso...'}
             </span>
           </div>
         </div>
+
+        {/* Resumen Analítico del Turno (si ya fue cerrado) */}
+        {turno.resumen && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-200/70 dark:border-slate-800 text-xs">
+            <div>
+              <span className="text-[10px] text-slate-400 block font-semibold uppercase">Ventas Brutas</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">S/ {Number(turno.resumen.total_ventas_brutas || 0).toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 block font-semibold uppercase">Comprobantes</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{turno.resumen.cantidad_documentos_emitidos || 0} emitidos</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 block font-semibold uppercase">Facturas / Boletas</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{turno.resumen.cantidad_facturas || 0} F / {turno.resumen.cantidad_boletas || 0} B</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 block font-semibold uppercase">Ingresos / Egresos</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">+S/ {Number(turno.resumen.total_ingresos || 0).toFixed(2)} / -S/ {Number(turno.resumen.total_egresos || 0).toFixed(2)}</span>
+            </div>
+          </div>
+        )}
 
         {/* Desglose de Totales por Método de Pago */}
         <div className="space-y-2">
@@ -58,7 +87,6 @@ export default function DetalleTurnoModal({ isOpen, onClose, turno }) {
               <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 border-b border-slate-200/70 dark:border-slate-800">
                 <tr>
                   <th className="px-3.5 py-2.5 font-semibold">Método de Pago</th>
-                  <th className="px-3.5 py-2.5 font-semibold text-right">Apertura (S/)</th>
                   <th className="px-3.5 py-2.5 font-semibold text-right">Ventas Sistema (S/)</th>
                   <th className="px-3.5 py-2.5 font-semibold text-right">Declarado (S/)</th>
                   <th className="px-3.5 py-2.5 font-semibold text-right">Diferencia</th>
@@ -72,9 +100,6 @@ export default function DetalleTurnoModal({ isOpen, onClose, turno }) {
                       <tr key={t.id || t.metodo_pago_id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                         <td className="px-3.5 py-2 font-sans font-medium text-slate-800 dark:text-slate-200">
                           {t.metodo_pago_nombre || `Método ${t.metodo_pago_id}`}
-                        </td>
-                        <td className="px-3.5 py-2 text-right">
-                          {Number(t.monto_apertura || 0).toFixed(2)}
                         </td>
                         <td className="px-3.5 py-2 text-right text-blue-600 dark:text-blue-400 font-semibold">
                           {Number(t.monto_sistema || 0).toFixed(2)}
@@ -96,7 +121,7 @@ export default function DetalleTurnoModal({ isOpen, onClose, turno }) {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="5" className="px-3.5 py-4 text-center text-slate-400 font-sans italic">
+                    <td colSpan="4" className="px-3.5 py-4 text-center text-slate-400 font-sans italic">
                       Sin movimientos registrados aún en este turno.
                     </td>
                   </tr>
