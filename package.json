@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@rive-app/react-canvas": "^4.37.1",
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.7.3",
     "lucide-react": "^1.52.0",

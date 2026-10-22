@@ -51,6 +51,35 @@
   }
 }
 
+/* ==========================================================================
+   Animaciones del Fondo Enterprise Modern — Login MIFACTURA ERP
+   ========================================================================== */
+@keyframes erpOrbitRotate {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.erp-orbit-slow {
+  will-change: transform;
+  animation: erpOrbitRotate 90s linear infinite;
+}
+
+.erp-orbit-reverse {
+  will-change: transform;
+  animation: erpOrbitRotate 120s linear infinite reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-orbit-slow,
+  .erp-orbit-reverse {
+    animation: none !important;
+  }
+}
+
 @layer components {
   .panel {
     background-color: var(--panel);
