@@ -110,6 +110,7 @@ export default function Stock() {
           codigo_barra: item.codigo_barra || '',
           producto_nombre: item.producto_nombre,
           activo: item.activo !== false,
+          es_combo: Boolean(item.es_combo),
           categoria_id: item.categoria_id,
           categoria_nombre: item.categoria_nombre || 'General',
           sub_categoria_nombre: item.sub_categoria_nombre || '',

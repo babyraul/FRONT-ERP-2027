@@ -40,36 +40,55 @@ export default function StockCargaMasivaModal({
   const [valoresEditados, setValoresEditados] = useState({})
 
   // Extraer las presentaciones principales de cada producto agrupado
-  // (la de multiplica_por = 1 o la primera en la lista)
+  // (la de multiplica_por = 1 o la primera en la lista), excluyendo productos tipo combo
   const productosPrincipales = useMemo(() => {
-    return productosAgrupados.map((prod) => {
-      const presentaciones = prod.presentaciones || []
-      const principal =
-        presentaciones.find((p) => Number(p.multiplica_por || 1) === 1) ||
-        presentaciones[0] || {
-          id: null,
-          presentacion_id: null,
-          presentacion_nombre: 'UNIDAD',
-          multiplica_por: 1,
-          saldo_actual: prod.saldo_producto_total || 0,
-          codigo_barra: prod.codigo_barra
+    return productosAgrupados
+      .filter((prod) => {
+        // Excluir si la bandera es_combo viene en true
+        if (prod.es_combo) return false
+
+        // Excluir si alguna presentación indica es_combo
+        if (prod.presentaciones?.some((p) => p.es_combo)) return false
+
+        // Detección de respaldo por nombre de presentación o producto
+        const tienePresentacionCombo = prod.presentaciones?.some(
+          (p) => String(p.presentacion_nombre || '').toUpperCase().trim() === 'COMBO'
+        )
+        if (tienePresentacionCombo) return false
+
+        const nombreProd = String(prod.producto_nombre || '').toUpperCase().trim()
+        if (nombreProd.startsWith('COMBO ') || nombreProd === 'COMBO') return false
+
+        return true
+      })
+      .map((prod) => {
+        const presentaciones = prod.presentaciones || []
+        const principal =
+          presentaciones.find((p) => Number(p.multiplica_por || 1) === 1) ||
+          presentaciones[0] || {
+            id: null,
+            presentacion_id: null,
+            presentacion_nombre: 'UNIDAD',
+            multiplica_por: 1,
+            saldo_actual: prod.saldo_producto_total || 0,
+            codigo_barra: prod.codigo_barra
+          }
+
+        const saldoBase = Number(prod.saldo_producto_total ?? principal.saldo_actual ?? 0)
+
+        return {
+          producto_id: prod.producto_id,
+          codigo: prod.codigo || '-',
+          codigo_barra: principal.codigo_barra || prod.codigo_barra || '-',
+          producto_nombre: prod.producto_nombre,
+          categoria_nombre: prod.categoria_nombre || 'General',
+          unidad_medida: principal.unidad_medida_id || prod.unidad_medida_id || 'NIU',
+          presentacion_id: principal.id || principal.presentacion_id,
+          presentacion_nombre: principal.presentacion_nombre || 'UNIDAD',
+          multiplica_por: Math.max(1, Number(principal.multiplica_por || 1)),
+          saldo_actual: saldoBase
         }
-
-      const saldoBase = Number(prod.saldo_producto_total ?? principal.saldo_actual ?? 0)
-
-      return {
-        producto_id: prod.producto_id,
-        codigo: prod.codigo || '-',
-        codigo_barra: principal.codigo_barra || prod.codigo_barra || '-',
-        producto_nombre: prod.producto_nombre,
-        categoria_nombre: prod.categoria_nombre || 'General',
-        unidad_medida: principal.unidad_medida_id || prod.unidad_medida_id || 'NIU',
-        presentacion_id: principal.id || principal.presentacion_id,
-        presentacion_nombre: principal.presentacion_nombre || 'UNIDAD',
-        multiplica_por: Math.max(1, Number(principal.multiplica_por || 1)),
-        saldo_actual: saldoBase
-      }
-    })
+      })
   }, [productosAgrupados])
 
   // Filtrado de la lista en memoria
@@ -103,8 +122,23 @@ export default function StockCargaMasivaModal({
     return Object.values(valoresEditados).filter((v) => v !== '' && v !== null && v !== undefined && !isNaN(Number(v))).length
   }, [valoresEditados])
 
-  // Modificar valor de un producto
+  // Modificar valor de un producto (solo números positivos >= 0)
   const handleChangeCantidad = (prodId, val) => {
+    // Si se limpia el input
+    if (val === '' || val === null || val === undefined) {
+      setValoresEditados((prev) => ({
+        ...prev,
+        [prodId]: ''
+      }))
+      return
+    }
+
+    // Rechazar inmediatamente valores que contengan signos negativos
+    if (typeof val === 'string' && val.includes('-')) return
+
+    const num = Number(val)
+    if (isNaN(num) || num < 0) return
+
     setValoresEditados((prev) => ({
       ...prev,
       [prodId]: val
@@ -126,14 +160,14 @@ export default function StockCargaMasivaModal({
     toast.info('Valores asignados', `Se asignó 0 a ${productosFiltrados.length} productos visibles.`)
   }
 
-  // Copiar saldo actual al campo nuevo (para solo modificar excepciones)
+  // Copiar saldo actual al campo nuevo (para solo modificar excepciones, asegurando valores positivos)
   const handleCopiarSaldoActual = () => {
     const nuevos = { ...valoresEditados }
     productosFiltrados.forEach((p) => {
-      nuevos[p.producto_id] = p.saldo_actual
+      nuevos[p.producto_id] = Math.max(0, Number(p.saldo_actual || 0))
     })
     setValoresEditados(nuevos)
-    toast.info('Valores copiados', `Se copió el saldo actual en ${productosFiltrados.length} productos.`)
+    toast.info('Valores copiados', `Se asignó el stock en ${productosFiltrados.length} productos (mínimo 0).`)
   }
 
   // Guardar / Confirmar Carga Masiva
@@ -161,6 +195,14 @@ export default function StockCargaMasivaModal({
       return
     }
 
+    console.log('[StockCargaMasivaModal] Enviando Carga Masiva:', {
+      almacen_id: almacenId || undefined,
+      modo,
+      motivo: motivo || 'TOMA DE INVENTARIO FÍSICO / CARGA MASIVA',
+      total_items: itemsToSend.length,
+      items: itemsToSend
+    })
+
     setIsSubmitting(true)
     try {
       const res = await stockController.cargaMasivaStock({
@@ -169,6 +211,8 @@ export default function StockCargaMasivaModal({
         motivo: motivo || 'TOMA DE INVENTARIO FÍSICO / CARGA MASIVA',
         items: itemsToSend
       })
+
+      console.log('[StockCargaMasivaModal] Respuesta servidor:', res)
 
       if (res.success) {
         toast.success('Inventario Actualizado', res.message || 'Se procesó la carga masiva correctamente.')
@@ -225,8 +269,8 @@ export default function StockCargaMasivaModal({
               disabled={isSubmitting}
               className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-[#01a59c] focus:ring-1 focus:ring-[#01a59c] focus:outline-none"
             >
-              <option value="conteo_fisico">Toma de Inventario Físico (Nuevo Stock Exacto)</option>
-              <option value="incremento">Ingreso / Entrada (Sumar al stock existente)</option>
+              <option value="conteo_fisico">Stock Final</option>
+              <option value="incremento">Sumar al stock existente</option>
             </select>
           </div>
 
@@ -238,7 +282,7 @@ export default function StockCargaMasivaModal({
             <input
               type="text"
               value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
+              onChange={(e) => setMotivo(e.target.value.toUpperCase())}
               disabled={isSubmitting}
               placeholder="Ej. TOMA DE INVENTARIO FÍSICO GENERAL"
               className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl font-medium focus:ring-1 focus:ring-[#01a59c] focus:outline-none"
@@ -246,20 +290,6 @@ export default function StockCargaMasivaModal({
           </div>
         </div>
 
-        {/* Explicación de la regla de presentaciones (Enfoque 1) */}
-        <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-200/80 dark:border-slate-800 pt-2.5">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
-              Enfoque 1: Unidad Base
-            </span>
-            <span className="text-[11px]">
-              El stock se ingresa a la <strong>presentación principal</strong>. Las cajas, paquetes y sub-presentaciones se derivan automáticamente dividiendo por su factor.
-            </span>
-          </div>
-          <div className="text-[11px] font-mono font-bold text-slate-700 dark:text-slate-200 shrink-0">
-            {totalEditados} producto(s) listo(s) para actualizar
-          </div>
-        </div>
       </div>
 
       {/* ── BARRA DE BÚSQUEDA Y ACCIONES RÁPIDAS ── */}
@@ -270,7 +300,7 @@ export default function StockCargaMasivaModal({
             <input
               type="text"
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => setBusqueda(e.target.value.toUpperCase())}
               placeholder="Buscar por código, barras, producto o categoría..."
               className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-1 focus:ring-[#01a59c] focus:outline-none"
             />
@@ -281,36 +311,32 @@ export default function StockCargaMasivaModal({
             <button
               type="button"
               onClick={() => setFiltroEstado('todos')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                filtroEstado === 'todos' ? 'bg-white dark:bg-slate-900 text-[#01a59c] shadow-xs' : 'text-slate-600 dark:text-slate-400'
-              }`}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${filtroEstado === 'todos' ? 'bg-white dark:bg-slate-900 text-[#01a59c] shadow-xs' : 'text-slate-600 dark:text-slate-400'
+                }`}
             >
               Todos ({productosPrincipales.length})
             </button>
             <button
               type="button"
               onClick={() => setFiltroEstado('editados')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                filtroEstado === 'editados' ? 'bg-white dark:bg-slate-900 text-[#01a59c] shadow-xs' : 'text-slate-600 dark:text-slate-400'
-              }`}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${filtroEstado === 'editados' ? 'bg-white dark:bg-slate-900 text-[#01a59c] shadow-xs' : 'text-slate-600 dark:text-slate-400'
+                }`}
             >
               Editados ({totalEditados})
             </button>
             <button
               type="button"
               onClick={() => setFiltroEstado('sin_stock')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                filtroEstado === 'sin_stock' ? 'bg-white dark:bg-slate-900 text-rose-600 shadow-xs' : 'text-slate-600 dark:text-slate-400'
-              }`}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${filtroEstado === 'sin_stock' ? 'bg-white dark:bg-slate-900 text-rose-600 shadow-xs' : 'text-slate-600 dark:text-slate-400'
+                }`}
             >
               Sin Stock
             </button>
             <button
               type="button"
               onClick={() => setFiltroEstado('negativos')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                filtroEstado === 'negativos' ? 'bg-white dark:bg-slate-900 text-rose-600 shadow-xs' : 'text-slate-600 dark:text-slate-400'
-              }`}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${filtroEstado === 'negativos' ? 'bg-white dark:bg-slate-900 text-rose-600 shadow-xs' : 'text-slate-600 dark:text-slate-400'
+                }`}
             >
               Negativos
             </button>
@@ -358,12 +384,11 @@ export default function StockCargaMasivaModal({
                 <th className="py-2.5 px-3">Código</th>
                 <th className="py-2.5 px-3">Cód. Barras</th>
                 <th className="py-2.5 px-3">Producto (Presentación Principal)</th>
-                <th className="py-2.5 px-3">Categoría</th>
                 <th className="py-2.5 px-3 text-right">Stock Actual</th>
                 <th className="py-2.5 px-3 text-center w-48">
                   {modo === 'incremento' ? 'Cantidad a Ingresar (+)' : 'Nuevo Stock Físico'}
                 </th>
-                <th className="py-2.5 px-3 text-right">Diferencia Kárdex</th>
+                <th className="py-2.5 px-3 text-right">Saldo Resultante (Kárdex)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -377,27 +402,30 @@ export default function StockCargaMasivaModal({
                 productosFiltrados.map((prod) => {
                   const valorEditado = valoresEditados[prod.producto_id]
                   const tieneValor = valorEditado !== undefined && valorEditado !== ''
-                  const cantNueva = tieneValor ? Number(valorEditado) : null
+                  const cantIngresada = tieneValor ? Number(valorEditado) : null
 
-                  let diffKardex = 0
-                  if (tieneValor && !isNaN(cantNueva)) {
+                  const saldoActual = Number(prod.saldo_actual || 0)
+                  let saldoFinal = saldoActual
+
+                  if (tieneValor && !isNaN(cantIngresada)) {
                     if (modo === 'incremento') {
-                      diffKardex = cantNueva
+                      // Modo incremento: suma al stock existente
+                      saldoFinal = saldoActual + cantIngresada
                     } else {
-                      diffKardex = cantNueva - Number(prod.saldo_actual || 0)
+                      // Modo conteo físico: el valor ingresado es el nuevo saldo final exacto
+                      saldoFinal = cantIngresada
                     }
                   }
 
-                  const isModified = tieneValor && diffKardex !== 0
+                  const isModified = tieneValor && saldoFinal !== saldoActual
 
                   return (
                     <tr
                       key={prod.producto_id}
-                      className={`transition-colors ${
-                        isModified
-                          ? 'bg-teal-50/40 dark:bg-teal-950/20'
-                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                      }`}
+                      className={`transition-colors ${isModified
+                        ? 'bg-teal-50/40 dark:bg-teal-950/20'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                        }`}
                     >
                       <td className="py-2 px-3 font-mono text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
                         {prod.codigo}
@@ -409,22 +437,15 @@ export default function StockCargaMasivaModal({
                         <div className="font-bold text-slate-900 dark:text-white uppercase truncate max-w-sm">
                           {prod.producto_nombre}
                         </div>
-                        <div className="text-[10px] text-slate-400">
-                          {prod.presentacion_nombre} • Factor: x{prod.multiplica_por} {prod.unidad_medida}
-                        </div>
                       </td>
-                      <td className="py-2 px-3 text-slate-500 whitespace-nowrap">
-                        {prod.categoria_nombre}
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                      <td className="py-2 px-3 text-right font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 rounded-md ${
-                            prod.saldo_actual < 0
-                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-                              : prod.saldo_actual === 0
+                          className={`px-2 py-0.5 rounded-md ${prod.saldo_actual < 0
+                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                            : prod.saldo_actual === 0
                               ? 'bg-slate-100 text-slate-500 dark:bg-slate-800'
                               : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                          }`}
+                            }`}
                         >
                           {Number(prod.saldo_actual || 0).toFixed(2)}
                         </span>
@@ -437,12 +458,16 @@ export default function StockCargaMasivaModal({
                             min="0"
                             value={valorEditado !== undefined ? valorEditado : ''}
                             onChange={(e) => handleChangeCantidad(prod.producto_id, e.target.value)}
-                            placeholder={modo === 'incremento' ? '+0.00' : Number(prod.saldo_actual || 0).toFixed(2)}
-                            className={`w-28 px-2.5 py-1 text-xs text-right font-mono font-bold rounded-lg border transition-all focus:outline-none focus:ring-2 ${
-                              isModified
-                                ? 'border-[#01a59c] bg-white dark:bg-slate-950 text-[#01a59c] focus:ring-[#01a59c]/30'
-                                : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:ring-slate-300'
-                            }`}
+                            onKeyDown={(e) => {
+                              if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+                                e.preventDefault()
+                              }
+                            }}
+                            placeholder={modo === 'incremento' ? '+0.00' : '0.00'}
+                            className={`w-28 px-2.5 py-1 text-xs text-right font-bold rounded-lg border transition-all focus:outline-none focus:ring-2 ${isModified
+                              ? 'border-[#01a59c] bg-white dark:bg-slate-950 text-[#01a59c] focus:ring-[#01a59c]/30'
+                              : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:ring-slate-300'
+                              }`}
                           />
                           {tieneValor && (
                             <button
@@ -456,18 +481,17 @@ export default function StockCargaMasivaModal({
                           )}
                         </div>
                       </td>
-                      <td className="py-2 px-3 text-right font-mono font-bold whitespace-nowrap">
+                      <td className="py-2 px-3 text-right font-bold whitespace-nowrap">
                         {tieneValor ? (
                           <span
-                            className={`px-2 py-0.5 rounded-md text-[11px] ${
-                              diffKardex > 0
-                                ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                : diffKardex < 0
+                            className={`px-2 py-0.5 rounded-md text-[12px] ${saldoFinal > 0
+                              ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300'
+                              : saldoFinal < 0
                                 ? 'text-rose-700 bg-rose-50 dark:bg-rose-950/40 dark:text-rose-300'
-                                : 'text-slate-400 bg-slate-100 dark:bg-slate-800'
-                            }`}
+                                : 'text-slate-500 bg-slate-100 dark:bg-slate-800'
+                              }`}
                           >
-                            {diffKardex > 0 ? `+${diffKardex.toFixed(2)}` : diffKardex.toFixed(2)}
+                            {saldoFinal.toFixed(2)}
                           </span>
                         ) : (
                           <span className="text-slate-300 dark:text-slate-700">-</span>
@@ -490,7 +514,6 @@ export default function StockCargaMasivaModal({
         isOpen={isOpen}
         onClose={onClose}
         title="Ingreso Masivo de Stock / Toma de Inventario"
-        subtitle="Actualiza el inventario físico en la presentación principal y registra la compensación en el Kárdex histórico."
         confirmText={`Guardar Inventario (${totalEditados} Productos)`}
         onConfirm={handleSubmit}
         isProcessing={isSubmitting}
