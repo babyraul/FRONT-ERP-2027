@@ -31,7 +31,7 @@ export default function StockCargaMasivaModal({
 }) {
   const [almacenId, setAlmacenId] = useState(almacenInicial || '')
   const [modo, setModo] = useState('conteo_fisico') // 'conteo_fisico' (nuevo stock exacto) | 'incremento' (sumar)
-  const [motivo, setMotivo] = useState('TOMA DE INVENTARIO FÍSICO GENERAL')
+  const [motivo, setMotivo] = useState('CARGA MASIVA STOCK')
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos') // 'todos' | 'editados' | 'sin_stock' | 'negativos'
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -198,7 +198,7 @@ export default function StockCargaMasivaModal({
     console.log('[StockCargaMasivaModal] Enviando Carga Masiva:', {
       almacen_id: almacenId || undefined,
       modo,
-      motivo: motivo || 'TOMA DE INVENTARIO FÍSICO / CARGA MASIVA',
+      motivo: motivo || 'CARGA MASIVA STOCK',
       total_items: itemsToSend.length,
       items: itemsToSend
     })
@@ -208,7 +208,7 @@ export default function StockCargaMasivaModal({
       const res = await stockController.cargaMasivaStock({
         almacen_id: almacenId || undefined,
         modo,
-        motivo: motivo || 'TOMA DE INVENTARIO FÍSICO / CARGA MASIVA',
+        motivo: motivo || 'CARGA MASIVA STOCK',
         items: itemsToSend
       })
 
@@ -284,7 +284,7 @@ export default function StockCargaMasivaModal({
               value={motivo}
               onChange={(e) => setMotivo(e.target.value.toUpperCase())}
               disabled={isSubmitting}
-              placeholder="Ej. TOMA DE INVENTARIO FÍSICO GENERAL"
+              placeholder="Ej. CARGA MASIVA STOCK"
               className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl font-medium focus:ring-1 focus:ring-[#01a59c] focus:outline-none"
             />
           </div>
