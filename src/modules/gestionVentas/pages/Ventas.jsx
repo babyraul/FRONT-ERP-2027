@@ -554,7 +554,7 @@ export default function Ventas() {
       {/* ── TARJETAS DE RESUMEN DE TOTALES (Sin redondeos) ── */}
       {canSeeTotalOnVentas && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+          <div className="p-3.5 bg-slate-100/40 shadow-sm dark:bg-slate-900 rounded-xl border-[1px] border-teal-700 dark:border-slate-800 flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
               <CheckCircleIcon className="h-5 w-5" />
             </div>

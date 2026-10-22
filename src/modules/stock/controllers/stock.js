@@ -94,6 +94,48 @@ export const stockController = {
         message: error.response?.data?.message || error.message || 'Error al registrar movimiento de stock'
       }
     }
+  },
+
+  /**
+   * Reinicia masivamente a 0 el stock_actual y registra la regularización en la tabla stock
+   * @param {Object} payload - { almacen_id, motivo, tipo_saldo }
+   */
+  reiniciarStockMasivo: async (payload = {}) => {
+    try {
+      const response = await api.post('/stock/reiniciar-masivo', payload)
+      return {
+        success: true,
+        message: response.data?.message || 'Stock reiniciado correctamente',
+        data: response.data?.data
+      }
+    } catch (error) {
+      console.error('Error al reiniciar stock masivamente:', error)
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || 'Error al reiniciar stock masivamente'
+      }
+    }
+  },
+
+  /**
+   * Carga masiva de stock para presentaciones principales con cálculo de diferencias en kárdex
+   * @param {Object} payload - { almacen_id, modo, motivo, items: [{ producto_id, presentacion_id, cantidad }] }
+   */
+  cargaMasivaStock: async (payload = {}) => {
+    try {
+      const response = await api.post('/stock/carga-masiva', payload)
+      return {
+        success: true,
+        message: response.data?.message || 'Carga masiva completada exitosamente',
+        data: response.data?.data
+      }
+    } catch (error) {
+      console.error('Error al procesar carga masiva de stock:', error)
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || 'Error al procesar la carga masiva de stock'
+      }
+    }
   }
 }
 

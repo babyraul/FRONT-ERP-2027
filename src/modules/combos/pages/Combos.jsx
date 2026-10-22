@@ -8,7 +8,8 @@ import {
   ArrowPathIcon,
   CheckCircleIcon,
   XCircleIcon,
-  CubeIcon
+  CubeIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import PageHeader from '../../../components/ui/PageHeader.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
@@ -19,10 +20,12 @@ import {
   EditRowButton,
   DeleteRowButton,
   ReactivateRowButton,
+  KardexRowButton,
   RefreshButton,
   NewButton
 } from '../../../components/ui/ActionButtons.jsx'
 import ComboModal from '../components/ComboModal.jsx'
+import StockKardexModal from '../../stock/components/StockKardexModal.jsx'
 import { combosService } from '../controller/combos.js'
 import { toast } from '../../../utils/toast.js'
 
@@ -36,10 +39,14 @@ export default function Combos() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedComboId, setSelectedComboId] = useState(null)
 
-  // Modal Confirmación de Eliminación / Anulación
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [comboToDelete, setComboToDelete] = useState(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  // Modal / Panel Inline Kárdex
+  const [kardexModalOpen, setKardexModalOpen] = useState(false)
+  const [kardexCombo, setKardexCombo] = useState(null)
+
+  // Modal Confirmación de Inactivación
+  const [inactivarModalOpen, setInactivarModalOpen] = useState(false)
+  const [comboAInactivar, setComboAInactivar] = useState(null)
+  const [isInactivating, setIsInactivating] = useState(false)
 
   const fetchCombos = async () => {
     setLoading(true)
@@ -88,42 +95,99 @@ export default function Combos() {
     setIsFormOpen(true)
   }
 
-  // Alternar Activar / Desactivar
-  const handleToggleState = async (combo) => {
-    const isActivo = combo.activo !== false && combo.Estado === 'Activo'
-    const nuevoEstado = isActivo ? 'Inactivo' : 'Activo'
+  // Abrir modal Kárdex para el combo
+  const handleOpenKardex = (combo) => {
+    // Estructurar el ítem en el formato esperado por StockKardexModal
+    const itemData = {
+      id: combo.id || combo.IdCombo,
+      nombre: combo.nombre || combo.Nombre,
+      codigo: combo.codigo || '',
+      codigo_barra: combo.codigo_barra || combo.CodigoBarras || '',
+      presentacion_id: combo.presentacion_id || null,
+      presentacion_nombre: 'UNIDAD',
+      unidad_medida_id: combo.unidad_medida_id || 'NIU',
+      stock_actual: Number(combo.stock ?? combo.Stock ?? 0)
+    }
+    setKardexCombo(itemData)
+    setKardexModalOpen(true)
+  }
+
+  // Solicitar confirmación de inactivación (dar de baja)
+  const handleSolicitarInactivar = (combo) => {
+    setComboAInactivar(combo)
+    setInactivarModalOpen(true)
+  }
+
+  // Confirmar inactivación
+  const handleConfirmarInactivar = async () => {
+    if (!comboAInactivar) return
+    setIsInactivating(true)
+    const comboId = comboAInactivar.id || comboAInactivar.IdCombo
+    const res = await combosService.toggleState(comboId, 'Inactivo')
+    setIsInactivating(false)
+
+    if (res.success) {
+      toast.success('Inactivado', `El combo "${comboAInactivar.nombre || comboAInactivar.Nombre}" fue dado de baja correctamente.`)
+      setInactivarModalOpen(false)
+      setComboAInactivar(null)
+      fetchCombos()
+    } else {
+      toast.error('Error', res.error || 'No se pudo inactivar el combo.')
+    }
+  }
+
+  // Reactivar combo directamente
+  const handleReactivar = async (combo) => {
     const comboId = combo.id || combo.IdCombo
-
-    const res = await combosService.toggleState(comboId, nuevoEstado)
+    const res = await combosService.toggleState(comboId, 'Activo')
     if (res.success) {
-      toast.success('Actualizado', 'Se actualizó correctamente el combo.')
+      toast.success('Reactivado', `El combo "${combo.nombre || combo.Nombre}" fue reactivado exitosamente.`)
       fetchCombos()
     } else {
-      toast.error('Error', res.error || 'No se pudo actualizar el estado.')
+      toast.error('Error', res.error || 'No se pudo reactivar el combo.')
     }
   }
 
-  // Confirmar eliminación
-  const handleConfirmDelete = async () => {
-    if (!comboToDelete) return
-    setIsDeleting(true)
-    const comboId = comboToDelete.id || comboToDelete.IdCombo
-    const res = await combosService.delete(comboId)
-    setIsDeleting(false)
-
-    if (res.success) {
-      toast.success('Eliminado', 'Se eliminó correctamente.')
-      setDeleteModalOpen(false)
-      setComboToDelete(null)
-      fetchCombos()
-    } else {
-      toast.error('Error', res.error || 'No se pudo eliminar el combo.')
-    }
-  }
-
-  // Columnas TanStack DataTable respetando contrato legacy y ActionButtons del sistema
+  // Columnas TanStack DataTable respetando contrato unificado y ActionButtons
   const columns = useMemo(
     () => [
+      {
+        id: 'acciones',
+        header: 'Acciones',
+        size: 130,
+        cell: ({ row }) => {
+          const combo = row.original
+          const isActivo = combo.activo !== false && combo.Estado === 'Activo'
+          return (
+            <ActionCell align="center">
+              {/* Botón Editar */}
+              <EditRowButton
+                onClick={() => handleEdit(combo)}
+                title="Editar combo"
+              />
+
+              {/* Botón Kárdex (Movimientos y Ventas del combo) */}
+              <KardexRowButton
+                onClick={() => handleOpenKardex(combo)}
+                title="Ver Kárdex y ventas del combo"
+              />
+
+              {/* Botón Único de Inactivar / Reactivar (Nunca eliminación física) */}
+              {isActivo ? (
+                <DeleteRowButton
+                  onClick={() => handleSolicitarInactivar(combo)}
+                  title="Inactivar / Dar de baja el combo"
+                />
+              ) : (
+                <ReactivateRowButton
+                  onClick={() => handleReactivar(combo)}
+                  title="Reactivar combo"
+                />
+              )}
+            </ActionCell>
+          )
+        }
+      },
       {
         accessorKey: 'Estado',
         header: 'Estado',
@@ -134,8 +198,8 @@ export default function Combos() {
             <div className="flex items-center justify-center">
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${isActivo
-                    ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                    : 'text-red-700 bg-red-50 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-800'
+                  ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                  : 'text-red-700 bg-red-50 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-800'
                   }`}
               >
                 <span
@@ -182,19 +246,24 @@ export default function Combos() {
       },
       {
         accessorKey: 'Stock',
-        header: 'Stock disponible',
-        size: 140,
+        header: 'Stock / Ventas',
+        size: 160,
         cell: ({ row }) => {
-          const stock = Number(row.original.stock ?? row.original.Stock ?? 0)
+          const rawStock = Number(row.original.stock_actual ?? row.original.stock ?? row.original.Stock ?? 0)
+          // Si el saldo_actual es negativo (-9), significa que han salido / se han vendido 9 unidades del combo
+          const ventas = row.original.ventas_totales !== undefined
+            ? Number(row.original.ventas_totales)
+            : Math.abs(rawStock < 0 ? rawStock : 0)
+
           return (
-            <div className="text-center">
+            <div className="text-center" title="Total de combos vendidos registrados en el Kárdex">
               <span
-                className={`font-mono text-xs font-bold px-2 py-0.5 rounded ${stock > 0
-                    ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60'
-                    : 'text-amber-700 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60'
+                className={`font-mono text-xs font-bold px-2.5 py-0.5 rounded-full border inline-block ${ventas > 0
+                  ? 'text-teal-700 bg-teal-50 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800/60'
+                  : 'text-slate-600 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 dark:text-slate-400'
                   }`}
               >
-                {stock} {stock === 1 ? 'unidad' : 'unidades'}
+                {ventas} {ventas === 1 ? 'vendido' : 'vendidos'}
               </span>
             </div>
           )
@@ -210,50 +279,6 @@ export default function Combos() {
             <div className="text-right font-mono font-bold text-slate-900 dark:text-white">
               S/ {precio.toFixed(2)}
             </div>
-          )
-        }
-      },
-      {
-        id: 'acciones',
-        header: 'Acciones',
-        size: 240,
-        cell: ({ row }) => {
-          const combo = row.original
-          const isActivo = combo.activo !== false && combo.Estado === 'Activo'
-          return (
-            <ActionCell align="right">
-              {/* Botón Editar con ActionButtons */}
-              <EditRowButton
-                onClick={() => handleEdit(combo)}
-                title="Editar combo"
-              />
-
-              {/* Botón Alternar Estado Activar / Desactivar */}
-              {isActivo ? (
-                <button
-                  type="button"
-                  onClick={() => handleToggleState(combo)}
-                  className="p-1.5 rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer shrink-0 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40"
-                  title="Desactivar combo"
-                >
-                  <XCircleIcon className="h-4 w-4" />
-                </button>
-              ) : (
-                <ReactivateRowButton
-                  onClick={() => handleToggleState(combo)}
-                  title="Activar combo"
-                />
-              )}
-
-              {/* Botón Anular / Eliminar */}
-              <DeleteRowButton
-                onClick={() => {
-                  setComboToDelete(combo)
-                  setDeleteModalOpen(true)
-                }}
-                title="Anular / Eliminar combo"
-              />
-            </ActionCell>
           )
         }
       }
@@ -298,12 +323,12 @@ export default function Combos() {
               type="button"
               onClick={() => setEstadoFiltro(f.id)}
               className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${estadoFiltro === f.id
-                  ? f.id === 'inactivos'
-                    ? 'bg-rose-600 text-white shadow-xs'
-                    : f.id === 'activos'
-                      ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                      : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+                ? f.id === 'inactivos'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : f.id === 'activos'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                    : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
                 }`}
             >
               {f.label}
@@ -324,7 +349,7 @@ export default function Combos() {
         </div>
       </div>
 
-      {/* ── CONTENEDOR IN-PLACE CON TRANSICIÓN ANIMADA DE LA LISTA / FORMULARIO ── */}
+      {/* ── CONTENEDOR IN-PLACE CON TRANSICIÓN ANIMADA DE LA LISTA / FORMULARIO / KARDEX ── */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden transition-all duration-300">
         {isFormOpen ? (
           <ComboModal
@@ -341,6 +366,17 @@ export default function Combos() {
             }}
             variant="inline"
           />
+        ) : kardexModalOpen ? (
+          <StockKardexModal
+            isOpen={kardexModalOpen}
+            onClose={() => {
+              setKardexModalOpen(false)
+              setKardexCombo(null)
+            }}
+            itemSeleccionado={kardexCombo}
+            onStockUpdated={fetchCombos}
+            variant="inline"
+          />
         ) : (
           <div className="transition-all duration-300 ease-in-out opacity-100 translate-y-0">
             <DataTable
@@ -354,51 +390,35 @@ export default function Combos() {
         )}
       </div>
 
-      {/* MODAL CONFIRMACIÓN DE ANULACIÓN / ELIMINACIÓN */}
+      {/* MODAL CONFIRMACIÓN DE INACTIVACIÓN / DAR DE BAJA (Nunca eliminación de BD) */}
       <Modal
-        isOpen={deleteModalOpen}
+        isOpen={inactivarModalOpen}
         onClose={() => {
-          if (!isDeleting) setDeleteModalOpen(false)
+          if (!isInactivating) {
+            setInactivarModalOpen(false)
+            setComboAInactivar(null)
+          }
         }}
-        title="Confirmar eliminación"
+        title="Confirmar Baja de Combo"
         size="md"
+        confirmText={isInactivating ? 'Inactivando...' : 'Sí, dar de baja'}
+        cancelText="Cancelar"
+        isProcessing={isInactivating}
+        onConfirm={handleConfirmarInactivar}
       >
         <div className="space-y-4">
-          <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-full">
-              <TrashIcon className="h-6 w-6" />
+          <div className="flex items-start gap-3 text-amber-600 dark:text-amber-400">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-full shrink-0">
+              <ExclamationTriangleIcon className="h-6 w-6" />
             </div>
             <div>
               <h4 className="font-semibold text-slate-900 dark:text-white">
-                ¿Está seguro de eliminar este combo?
+                ¿Está seguro de dar de baja este combo?
               </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Se eliminará el combo &quot;{comboToDelete?.nombre || comboToDelete?.Nombre}&quot; y
-                su composición de productos. Esta acción no se puede deshacer.
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                El combo <strong>&quot;{comboAInactivar?.nombre || comboAInactivar?.Nombre}&quot;</strong> pasará al estado <strong>Inactivo</strong> y ya no se mostrará como opción disponible para facturación rápida en la pantalla de ventas. Podrás reactivarlo en cualquier momento.
               </p>
             </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={() => setDeleteModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium rounded-lg text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={handleConfirmDelete}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {isDeleting && (
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-              )}
-              <span>Eliminar</span>
-            </button>
           </div>
         </div>
       </Modal>

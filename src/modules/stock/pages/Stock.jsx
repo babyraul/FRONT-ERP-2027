@@ -8,15 +8,20 @@ import {
   BuildingStorefrontIcon,
   PlusCircleIcon,
   ChevronDownIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ArrowPathRoundedSquareIcon,
+  ArrowUpTrayIcon
 } from '@heroicons/react/24/outline'
 import PageHeader from '../../../components/ui/PageHeader.jsx'
 import { ExportExcelButton, RefreshButton } from '../../../components/ui/ActionButtons.jsx'
+import Button from '../../../components/ui/Button.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import Can from '../../../components/ui/Can.jsx'
 import { usePermission } from '../../../hooks/usePermission.js'
 import { stockController } from '../controllers/stock.js'
 import StockKardexModal from '../components/StockKardexModal.jsx'
+import StockReinicioModal from '../components/StockReinicioModal.jsx'
+import StockCargaMasivaModal from '../components/StockCargaMasivaModal.jsx'
 import { exportToExcel, formatCurrency } from '../../../utils/exportExcel.js'
 import { toast } from '../../../utils/toast.js'
 
@@ -60,6 +65,12 @@ export default function Stock() {
   // Estado del Modal de Kárdex Personal
   const [selectedItem, setSelectedItem] = useState(null)
   const [isKardexOpen, setIsKardexOpen] = useState(false)
+
+  // Estado del Modal / Panel Inline de Reinicio Masivo de Stock
+  const [isResetOpen, setIsResetOpen] = useState(false)
+
+  // Estado del Modal / Panel Inline de Carga Masiva de Stock
+  const [isCargaMasivaOpen, setIsCargaMasivaOpen] = useState(false)
 
   // Cargar datos desde stock_actual a través de stockController
   const loadStock = useCallback(async () => {
@@ -258,6 +269,12 @@ export default function Stock() {
     })
 
     exportToExcel(rows, 'Reporte_Stock_Control_Kardex', 'StockActual')
+  }
+
+  // Abrir Modal / Panel Inline de Reinicio Masivo
+  const handleAbrirReinicio = () => {
+    setIsKardexOpen(false)
+    setIsResetOpen(true)
   }
 
   // Columnas principales de la tabla de Productos
@@ -682,17 +699,30 @@ export default function Stock() {
                 title="Exportar reporte de Stock y Kárdex a Excel"
               />
             </Can>
-            {/* {canAdjustStock && productosAgrupados.length > 0 && (
-              <button
-                type="button"
-                onClick={() => handleAbrirKardexProducto(productosAgrupados[0])}
-                className="px-3.5 py-2 bg-[#01a59c] hover:bg-[#018e86] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                title="Abrir modal de Kárdex y ajuste de inventario"
-              >
-                <PlusCircleIcon className="h-4 w-4" />
-                <span>Ajuste / Kárdex</span>
-              </button>
-            )} */}
+            {canAdjustStock && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  icon={ArrowUpTrayIcon}
+                  onClick={() => setIsCargaMasivaOpen(true)}
+                  disabled={loading}
+                  title="Carga o ajuste masivo de stock para presentaciones principales"
+                >
+                  Ingreso Masivo
+                </Button>
+                <Button
+                  variant="danger"
+                  size="md"
+                  icon={ArrowPathRoundedSquareIcon}
+                  onClick={handleAbrirReinicio}
+                  disabled={loading}
+                  title="Poner en 0 el stock actual y generar ajuste en kardex"
+                >
+                  Reiniciar Stock
+                </Button>
+              </>
+            )}
           </>
         }
       />
@@ -879,6 +909,25 @@ export default function Stock() {
             almacenes={almacenes}
             onStockUpdated={loadStock}
             variant="inline"
+          />
+        ) : isResetOpen ? (
+          <StockReinicioModal
+            isOpen={isResetOpen}
+            onClose={() => setIsResetOpen(false)}
+            almacenes={almacenes}
+            almacenInicial={almacenId}
+            variant="inline"
+            onReinicioCompletado={loadStock}
+          />
+        ) : isCargaMasivaOpen ? (
+          <StockCargaMasivaModal
+            isOpen={isCargaMasivaOpen}
+            onClose={() => setIsCargaMasivaOpen(false)}
+            productosAgrupados={productosAgrupados}
+            almacenes={almacenes}
+            almacenInicial={almacenId}
+            variant="inline"
+            onCargaCompletada={loadStock}
           />
         ) : (
           <div className="transition-all duration-300 ease-in-out opacity-100 translate-y-0">
