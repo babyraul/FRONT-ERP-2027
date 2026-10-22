@@ -10,7 +10,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../../../store/useAuthStore.js'
 import ThemeToggle from '../../../components/ThemeToggle.jsx'
-import EnterpriseModernBackground from '../components/EnterpriseModernBackground.jsx'
+import AuthBackground from '../components/AuthBackground.jsx'
 
 // Archivos servidos desde /public
 const LOGO_EMPRESA = '/images/LogoMIFACTURA.png'
@@ -79,9 +79,9 @@ export default function Login() {
   const year = new Date().getFullYear()
 
   return (
-    <div className="relative min-h-dvh w-full overflow-hidden bg-slate-50 dark:bg-[#07100f] text-slate-900 dark:text-slate-100 flex items-center justify-center p-4">
-      {/* ─── FONDO FINTECH / ENTERPRISE INDUSTRIAL DE ALTA GAMA ─── */}
-      <EnterpriseModernBackground />
+    <div className="relative min-h-dvh w-full overflow-hidden bg-slate-50 dark:bg-[#03080e] text-slate-900 dark:text-slate-100 flex items-center justify-center p-4">
+      {/* ─── FONDO CANVAS DINÁMICO AUTHBACKGROUND ─── */}
+      <AuthBackground logoUrl={LOGO_EMPRESA} />
 
       {/* ─── BOTÓN MODO OSCURO / DÍA EN ESQUINA SUPERIOR ─── */}
       <div className="absolute top-6 right-6 z-30">

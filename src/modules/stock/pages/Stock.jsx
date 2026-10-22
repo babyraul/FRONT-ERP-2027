@@ -482,6 +482,16 @@ export default function Stock() {
           const saldo = Number(prod.saldo_producto_total || 0)
           const min = Number(prod.stock_minimo || 0)
 
+          if (prod.es_combo) {
+            return (
+              <div className="text-center">
+                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+                  {saldo < 0 ? `Combo (${saldo})` : 'Combo Virtual'}
+                </span>
+              </div>
+            )
+          }
+
           if (saldo < 0) {
             return (
               <div className="text-center">
