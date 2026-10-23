@@ -91,9 +91,12 @@ export function DataTable({
                   const extraClass = colDef.meta?.headerClassName || colDef.headerClassName || ''
                   const colSize = header.getSize()
                   const hasCustomSize = colDef.size !== undefined
+                  const isResizing = header.column.getIsResizing()
                   const thStyle = isAcciones
                     ? { width: '1%', whiteSpace: 'nowrap' }
-                    : (hasCustomSize ? { width: colSize, minWidth: colSize } : (colSize !== 150 ? { width: colSize } : {}))
+                    : (hasCustomSize || isResizing || colSize !== 150
+                      ? { width: colSize, minWidth: colSize }
+                      : {})
                   return (
                     <th
                       key={header.id}
@@ -153,9 +156,12 @@ export function DataTable({
                         const cellClass = colDef.meta?.cellClassName || colDef.cellClassName || colDef.className || ''
                         const colSize = cell.column.getSize()
                         const hasCustomSize = colDef.size !== undefined
+                        const isResizing = cell.column.getIsResizing()
                         const tdStyle = isAcciones
                           ? { width: '1%', whiteSpace: 'nowrap' }
-                          : (hasCustomSize ? { width: colSize, minWidth: colSize } : {})
+                          : (hasCustomSize || isResizing || colSize !== 150
+                            ? { width: colSize, minWidth: colSize }
+                            : {})
                         return (
                           <td
                             key={cell.id}

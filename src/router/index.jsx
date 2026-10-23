@@ -7,6 +7,7 @@ import { Dashboard } from '../modules/dashboard'
 import { Productos } from '../modules/productos'
 import { Clientes } from '../modules/clientes'
 import { Ventas, Preventas, Vales } from '../modules/gestionVentas'
+import { Facturacion } from '../modules/facturacion'
 import { Vender, Pagar } from '../modules/vender'
 import { Reportes } from '../modules/reportes'
 import { Proveedores } from '../modules/proveedores'
@@ -38,6 +39,8 @@ export const router = createBrowserRouter([
       { path: 'clientes', element: <ProtectedRoute><Clientes /></ProtectedRoute> },
       { path: 'caja', element: <ProtectedRoute><Caja /></ProtectedRoute> },
       { path: 'listventas', element: <Ventas /> },
+      { path: 'facturacion', element: <ProtectedRoute><Facturacion /></ProtectedRoute> },
+      { path: 'listfacturacion', element: <ProtectedRoute><Facturacion /></ProtectedRoute> },
       { path: 'vales', element: <Vales /> },
       { path: 'listvales', element: <Vales /> },
       { path: 'gespreventas', element: <Preventas /> },

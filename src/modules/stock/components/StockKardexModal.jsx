@@ -204,9 +204,10 @@ export default function StockKardexModal({
       {
         accessorKey: 'concepto',
         header: 'Concepto / Motivo',
+        size: 220,
         cell: (info) => (
           <span
-            className="text-xs text-slate-600 dark:text-slate-300 block max-w-[200px] truncate"
+            className="text-xs text-slate-600 dark:text-slate-300 block truncate"
             title={info.getValue() || ''}
           >
             {info.getValue() || '-'}

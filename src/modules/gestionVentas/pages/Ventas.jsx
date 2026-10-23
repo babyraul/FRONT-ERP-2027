@@ -520,7 +520,7 @@ export default function Ventas() {
   }, [])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6">
       {/* ── ENCABEZADO Y FILTROS GLOBALES ── */}
       <PageHeader
         title="Reporte de Ventas"

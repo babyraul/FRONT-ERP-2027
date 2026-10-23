@@ -82,6 +82,13 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
       }
     })
 
+    // Ordenar: Combos primero (es_combo: true), y luego por nombre_completo alfabéticamente
+    list.sort((a, b) => {
+      if (a.es_combo && !b.es_combo) return -1
+      if (!a.es_combo && b.es_combo) return 1
+      return a.nombre_completo.localeCompare(b.nombre_completo)
+    })
+
     return list
   }, [productos])
 
@@ -117,8 +124,17 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
       lastKeyTimeRef.current = now
 
       if (itemsFiltrados[selectedIndex]) {
-        console.log('[ProductosList] onAgregarItem vía Enter:', itemsFiltrados[selectedIndex].nombre_completo)
-        onAgregarItem(itemsFiltrados[selectedIndex])
+        const itemSeleccionado = itemsFiltrados[selectedIndex]
+        console.group(`🎯 [ProductosList] Selección vía ENTER: ${itemSeleccionado.nombre_completo}`)
+        console.log('📦 Producto ID:', itemSeleccionado.producto_id)
+        console.log('🏷️ Presentación ID:', itemSeleccionado.presentacion_id)
+        console.log('✨ Es Combo:', itemSeleccionado.es_combo)
+        console.log('💰 Precio Unitario:', itemSeleccionado.precio)
+        console.log('📊 Stock Actual:', itemSeleccionado.stock)
+        console.log('📐 Unidad Medida:', itemSeleccionado.unidad_medida_id)
+        console.log('🏛️ Afectación IGV:', itemSeleccionado.tipo_afectacion_igv)
+        console.groupEnd()
+        onAgregarItem(itemSeleccionado)
       }
     }
   }
@@ -146,7 +162,16 @@ export default function ProductosList({ productos = [], loading = false, onAgreg
       return
     }
     lastClickRef.current = { id: item.uniqueId, time: now }
-    console.log('[ProductosList] Click en producto:', item.nombre_completo, 'uniqueId:', item.uniqueId)
+    console.group(`👆 [ProductosList] Click en producto: ${item.nombre_completo}`)
+    console.log('🔑 UniqueId:', item.uniqueId)
+    console.log('📦 Producto ID:', item.producto_id)
+    console.log('🏷️ Presentación ID:', item.presentacion_id)
+    console.log('✨ Es Combo:', item.es_combo)
+    console.log('💰 Precio Unitario:', item.precio)
+    console.log('📊 Stock Actual:', item.stock)
+    console.log('📐 Unidad Medida:', item.unidad_medida_id)
+    console.log('🏛️ Afectación IGV:', item.tipo_afectacion_igv)
+    console.groupEnd()
     onAgregarItem(item)
   }
 

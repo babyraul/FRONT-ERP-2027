@@ -194,6 +194,7 @@ export default function Vender() {
         } else {
           if (finalCantidad < 0.001) finalCantidad = 0.001
         }
+        console.log(`[Vender.jsx] handleUpdateCantidad -> ${item.nombre_completo} nueva cant: ${finalCantidad}`)
         return { ...item, cantidad: finalCantidad }
       })
     )
@@ -208,7 +209,9 @@ export default function Vender() {
         }
         const num = Number(nuevoPrecio)
         if (isNaN(num)) return item
-        return { ...item, precio_unitario: Math.max(0, num) }
+        const finalPrecio = Math.max(0, num)
+        console.log(`[Vender.jsx] handleUpdatePrecio -> ${item.nombre_completo} nuevo precio: S/ ${finalPrecio}`)
+        return { ...item, precio_unitario: finalPrecio }
       })
     )
   }
@@ -223,22 +226,51 @@ export default function Vender() {
         } else if (nuevaTarifa === 'especial' && item.precio_especial > 0) {
           nuevoPrecio = item.precio_especial
         }
+        console.log(`[Vender.jsx] handleUpdateTarifa -> ${item.nombre_completo} tarifa: ${nuevaTarifa}, precio: S/ ${nuevoPrecio}`)
         return { ...item, tarifa: nuevaTarifa, precio_unitario: nuevoPrecio }
       })
     )
   }
 
   const handleRemoveItem = (uniqueId) => {
+    console.log(`[Vender.jsx] handleRemoveItem -> eliminando uniqueId: ${uniqueId}`)
     setCartItems((prev) => prev.filter((item) => item.uniqueId !== uniqueId))
   }
 
   const handleClearCart = () => {
+    console.log('[Vender.jsx] handleClearCart -> Carrito vaciado por completo')
     setCartItems([])
   }
 
   // 4. Cálculos Matemáticos Centralizados en Operaciones.js (sin redondeo floor, factor 1000)
   const totales = useMemo(() => {
-    return calcularTotalesVenta(cartItems)
+    const res = calcularTotalesVenta(cartItems)
+    if (cartItems.length > 0) {
+      console.group(`🧮 [Vender.jsx] Recálculo de Totales de Venta (${cartItems.length} ítems)`)
+      console.table(
+        cartItems.map((it) => ({
+          Producto: it.nombre_completo,
+          Cantidad: it.cantidad,
+          PrecioU: it.precio_unitario,
+          Subtotal: Number((Number(it.cantidad || 0) * Number(it.precio_unitario || 0)).toFixed(2)),
+          Afectacion: it.tipo_afectacion_igv,
+          EsCombo: it.es_combo ? 'SÍ' : 'NO'
+        }))
+      )
+      console.log('📊 Desglose Fiscal:', {
+        'Gravado (Base)': res.gravado,
+        'IGV (18%)': res.igv,
+        'Exonerado': res.exonerado,
+        'Inafecto': res.inafecto,
+        'Gratuito': res.gratuito,
+        'ICBPER': res.icbper,
+        'TOTAL FINAL': res.total
+      })
+      console.groupEnd()
+    } else {
+      console.log('🧮 [Vender.jsx] Carrito vacío, totales en 0.00')
+    }
+    return res
   }, [cartItems])
 
   // Helper para validar si un string es un UUID válido

@@ -405,7 +405,7 @@ export default function Preventas() {
   ], [tienePermisoCaja, canUpdate, canDelete, navigate])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6">
       {/* ── ENCABEZADO CON WIDGET DE FECHAS EN EL CENTRO ── */}
       <PageHeader
         title="Gestion Pre Ventas"

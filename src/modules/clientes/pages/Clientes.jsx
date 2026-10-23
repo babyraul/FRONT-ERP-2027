@@ -1,10 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
-  ArrowDownTrayIcon,
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  UserGroupIcon,
   PhoneIcon,
   EnvelopeIcon,
   IdentificationIcon,
@@ -17,7 +12,15 @@ import { tablasFijasService } from '../../../utils/tablasFijas.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
 import { toast } from '../../../utils/toast.js'
 import Can from '../../../components/ui/Can.jsx'
-import { ActionCell, EditRowButton, DeleteRowButton } from '../../../components/ui/ActionButtons.jsx'
+import PageHeader from '../../../components/ui/PageHeader.jsx'
+import {
+  ActionCell,
+  EditRowButton,
+  DeleteRowButton,
+  RefreshButton,
+  ExportExcelButton,
+  NewButton
+} from '../../../components/ui/ActionButtons.jsx'
 
 export default function Clientes() {
   const [clientes, setClientes] = useState([])
@@ -261,43 +264,34 @@ export default function Clientes() {
 
   return (
     <div className="space-y-6 p-6">
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Clientes</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              Directorio de clientes comerciales, líneas de crédito y comprobantes
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleExport}
-            className="btn-secondary flex items-center gap-2"
-            title="Exportar listado a Excel"
-          >
-            <ArrowDownTrayIcon className="h-4 w-4" /> Exportar Excel
-          </button>
-
-          <Can I="crear" a="clientes" fallback={
-            <button
-              onClick={handleOpenNew}
-              className="btn-primary flex items-center gap-2 shadow-sm"
-            >
-              <PlusIcon className="h-4 w-4" /> Nuevo Cliente
-            </button>
-          }>
-            <button
-              onClick={handleOpenNew}
-              className="btn-primary flex items-center gap-2 shadow-sm"
-            >
-              <PlusIcon className="h-4 w-4" /> Nuevo Cliente
-            </button>
-          </Can>
-        </div>
-      </div>
+      {/* ── ENCABEZADO MODULAR GLOBAL (PageHeader) ── */}
+      <PageHeader
+        title="Clientes"
+        actions={
+          <>
+            <RefreshButton
+              onClick={loadClientes}
+              loading={loading}
+              title="Actualizar listado de clientes"
+            />
+            <Can I="ver" a="clientes">
+              <ExportExcelButton
+                onClick={handleExport}
+                disabled={loading || clientes.length === 0}
+                label="Excel"
+                title="Exportar listado a Excel"
+              />
+            </Can>
+            <Can I="crear" a="clientes">
+              <NewButton
+                onClick={handleOpenNew}
+                label="Nuevo Cliente"
+                title="Registrar nuevo cliente"
+              />
+            </Can>
+          </>
+        }
+      />
 
       {/* Tabla con TanStack DataTable */}
       <div className="w-full">

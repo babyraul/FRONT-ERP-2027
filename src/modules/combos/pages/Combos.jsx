@@ -287,7 +287,7 @@ export default function Combos() {
   )
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6">
       {/* ── ENCABEZADO MODULAR GLOBAL (PageHeader) ── */}
       <PageHeader
         title="Gestión de Combos"

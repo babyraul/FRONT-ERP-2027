@@ -650,7 +650,7 @@ export default function Vales() {
   }, [])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6">
       {/* ── ENCABEZADO Y FILTROS GLOBALES ── */}
       <PageHeader
         title="Lista de Vales"

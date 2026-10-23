@@ -1,9 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
-  ArrowDownTrayIcon,
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
   TruckIcon,
   PhoneIcon,
   EnvelopeIcon,
@@ -16,7 +12,15 @@ import { proveedorController } from '../controllers/proveedor.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
 import { toast } from '../../../utils/toast.js'
 import Can from '../../../components/ui/Can.jsx'
-import { ActionCell, EditRowButton, DeleteRowButton } from '../../../components/ui/ActionButtons.jsx'
+import PageHeader from '../../../components/ui/PageHeader.jsx'
+import {
+  ActionCell,
+  EditRowButton,
+  DeleteRowButton,
+  RefreshButton,
+  ExportExcelButton,
+  NewButton
+} from '../../../components/ui/ActionButtons.jsx'
 
 export default function Proveedores() {
   const [proveedores, setProveedores] = useState([])
@@ -265,43 +269,34 @@ export default function Proveedores() {
 
   return (
     <div className="space-y-6 p-6">
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Proveedores</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              Directorio de proveedores comerciales, clasificación y datos tributarios
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleExport}
-            className="btn-secondary flex items-center gap-2"
-            title="Exportar listado a Excel"
-          >
-            <ArrowDownTrayIcon className="h-4 w-4" /> Exportar Excel
-          </button>
-
-          <Can I="crear" a="proveedores" fallback={
-            <button
-              onClick={handleOpenNew}
-              className="btn-primary flex items-center gap-2 shadow-sm"
-            >
-              <PlusIcon className="h-4 w-4" /> Nuevo Proveedor
-            </button>
-          }>
-            <button
-              onClick={handleOpenNew}
-              className="btn-primary flex items-center gap-2 shadow-sm"
-            >
-              <PlusIcon className="h-4 w-4" /> Nuevo Proveedor
-            </button>
-          </Can>
-        </div>
-      </div>
+      {/* ── ENCABEZADO MODULAR GLOBAL (PageHeader) ── */}
+      <PageHeader
+        title="Proveedores"
+        actions={
+          <>
+            <RefreshButton
+              onClick={loadProveedores}
+              loading={loading}
+              title="Actualizar listado de proveedores"
+            />
+            <Can I="ver" a="proveedores">
+              <ExportExcelButton
+                onClick={handleExport}
+                disabled={loading || proveedores.length === 0}
+                label="Excel"
+                title="Exportar listado a Excel"
+              />
+            </Can>
+            <Can I="crear" a="proveedores">
+              <NewButton
+                onClick={handleOpenNew}
+                label="Nuevo Proveedor"
+                title="Registrar nuevo proveedor"
+              />
+            </Can>
+          </>
+        }
+      />
 
       {/* Tabla con TanStack Table DataTable */}
       <div className="w-full">

@@ -83,7 +83,7 @@ export default function StockCargaMasivaModal({
           producto_nombre: prod.producto_nombre,
           categoria_nombre: prod.categoria_nombre || 'General',
           unidad_medida: principal.unidad_medida_id || prod.unidad_medida_id || 'NIU',
-          presentacion_id: principal.id || principal.presentacion_id,
+          presentacion_id: principal.presentacion_id || (principal.id && !principal.id.includes('-') ? principal.id : null),
           presentacion_nombre: principal.presentacion_nombre || 'UNIDAD',
           multiplica_por: Math.max(1, Number(principal.multiplica_por || 1)),
           saldo_actual: saldoBase

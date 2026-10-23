@@ -24,6 +24,7 @@ export default function StockReinicioModal({
   const [resetAlmacenId, setResetAlmacenId] = useState(almacenInicial || '')
   const [resetTipoSaldo, setResetTipoSaldo] = useState('todos') // 'todos' | 'solo_negativos' | 'solo_positivos'
   const [resetMotivo, setResetMotivo] = useState('REINICIO GENERAL DE INVENTARIO FÍSICO')
+  const [resetIncluirCombos, setResetIncluirCombos] = useState(false)
   const [resetConfirmWord, setResetConfirmWord] = useState('')
   const [isResetting, setIsResetting] = useState(false)
 
@@ -35,27 +36,60 @@ export default function StockReinicioModal({
 
     setIsResetting(true)
     try {
-      const res = await stockController.reiniciarStockMasivo({
-        almacen_id: resetAlmacenId || undefined,
+      console.log('🔄 [REINICIO STOCK] Enviando solicitud con parámetros:', {
+        almacen_id: resetAlmacenId || 'TODOS',
         tipo_saldo: resetTipoSaldo,
+        incluir_combos: resetIncluirCombos,
         motivo: resetMotivo || 'REINICIO GENERAL DE INVENTARIO FÍSICO'
       })
 
+      const res = await stockController.reiniciarStockMasivo({
+        almacen_id: resetAlmacenId || undefined,
+        tipo_saldo: resetTipoSaldo,
+        incluir_combos: resetIncluirCombos,
+        motivo: resetMotivo || 'REINICIO GENERAL DE INVENTARIO FÍSICO'
+      })
+
+      console.log('📋 [REINICIO STOCK] Respuesta completa del servidor:', res)
+
       if (res.success) {
+        const afectados = res.data?.productos_afectados || []
+        console.group('✅ [REINICIO STOCK] DETALLE DE PRODUCTOS REINICIADOS A 0')
+        console.log(`Total registros afectados: ${res.data?.afectados || 0}`)
+        if (afectados.length > 0) {
+          console.table(
+            afectados.map((item) => ({
+              'Producto': item.producto_nombre,
+              'Presentación': item.presentacion_nombre,
+              'Saldo Anterior': item.saldo_anterior,
+              'Ajuste Aplicado': item.ajuste_aplicado,
+              'Nuevo Saldo': item.saldo_nuevo,
+              'ID Producto': item.producto_id
+            }))
+          )
+        } else {
+          console.log('No hubo productos que cumplieran con el filtro de saldo seleccionado.')
+        }
+        console.groupEnd()
+
         toast.success('Stock Reiniciado', res.message || 'Se ha reiniciado el stock a 0 correctamente.')
+        setIsResetting(false)
+        setResetConfirmWord('')
+
+        // Refrescar los datos reactivamente sin recargar la página completa para preservar la consola intacta
         if (onReinicioCompletado) {
           onReinicioCompletado()
         }
-        // Retardo para retroalimentación visual antes de actualizar la página
-        setTimeout(() => {
-          window.location.reload()
-        }, 1200)
+        if (onClose) {
+          onClose()
+        }
       } else {
+        console.warn('⚠️ [REINICIO STOCK] El servidor respondió sin éxito:', res)
         toast.error('Error al reiniciar stock', res.message || 'No se pudo reiniciar el stock.')
         setIsResetting(false)
       }
     } catch (err) {
-      console.error('Error al reiniciar stock:', err)
+      console.error('❌ [REINICIO STOCK] Error al reiniciar stock:', err)
       toast.error('Error inesperado', err.message || 'Ocurrió un error al procesar el reinicio masivo.')
       setIsResetting(false)
     }
@@ -195,6 +229,27 @@ export default function StockReinicioModal({
             </span>
           </label>
         </div>
+      </div>
+
+      {/* Opción para Combos */}
+      <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/40">
+        <label className="flex items-start gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={resetIncluirCombos}
+            onChange={(e) => setResetIncluirCombos(e.target.checked)}
+            disabled={isResetting}
+            className="mt-0.5 size-4 rounded border-slate-300 dark:border-slate-700 text-[#01a59c] focus:ring-[#01a59c] accent-[#01a59c]"
+          />
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+              Incluir productos tipo COMBO en el reinicio
+            </span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed block">
+              Por defecto está <strong>desactivado</strong> para proteger el contador de combos despachados. Si marcas esta casilla, los combos con saldo negativo también se pondrán en 0.
+            </span>
+          </div>
+        </label>
       </div>
 
       {/* Input de confirmación estricta */}

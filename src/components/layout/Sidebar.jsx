@@ -17,7 +17,8 @@ import {
   FolderIcon,
   TruckIcon,
   BanknotesIcon,
-  SparklesIcon
+  SparklesIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../../store/useAuthStore'
 import api from '../../utils/api'
@@ -25,6 +26,7 @@ import api from '../../utils/api'
 // A helper function to assign icons based on module code or name
 const getIconForModule = (codigo) => {
   const code = codigo?.toUpperCase() || ''
+  if (code.includes('FACTURACION') || code.includes('SUNAT')) return DocumentTextIcon
   if (code.includes('VENTAS') || code.includes('VENDER')) return ShoppingCartIcon
   if (code.includes('CAJA')) return BanknotesIcon
   if (code.includes('COMBO')) return SparklesIcon

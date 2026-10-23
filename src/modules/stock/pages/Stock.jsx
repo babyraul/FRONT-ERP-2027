@@ -695,7 +695,7 @@ export default function Stock() {
   )
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6">
       {/* ── ENCABEZADO PRINCIPAL ── */}
       <PageHeader
         title="Control de Stock y Kárdex"

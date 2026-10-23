@@ -116,6 +116,7 @@ export default function CarritoList({
             const handleChangeCantidad = (e) => {
               const valStr = e.target.value
               if (valStr === '') {
+                console.log(`🛒 [CarritoList] Cantidad borrada para: ${item.nombre_completo}`)
                 onUpdateCantidad(item.uniqueId, '')
                 return
               }
@@ -128,12 +129,18 @@ export default function CarritoList({
                     'Unidad no divisible',
                     `El producto se vende por ${item.unidad_medida_id || 'UNIDAD'}. Solo se permiten enteros.`
                   )
-                  onUpdateCantidad(item.uniqueId, Math.max(1, Math.round(parsed)))
+                  const cantAjustada = Math.max(1, Math.round(parsed))
+                  console.log(`🛒 [CarritoList] Ajuste entero forzado: ${item.nombre_completo} -> Cantidad: ${cantAjustada}`)
+                  onUpdateCantidad(item.uniqueId, cantAjustada)
                   return
                 }
-                onUpdateCantidad(item.uniqueId, Math.max(1, Math.floor(parsed)))
+                const cantEntera = Math.max(1, Math.floor(parsed))
+                console.log(`🛒 [CarritoList] Cambio Cantidad (Entero): ${item.nombre_completo} -> ${cantEntera}`)
+                onUpdateCantidad(item.uniqueId, cantEntera)
               } else {
-                onUpdateCantidad(item.uniqueId, Math.max(0.001, parsed))
+                const cantDec = Math.max(0.001, parsed)
+                console.log(`🛒 [CarritoList] Cambio Cantidad (Decimal): ${item.nombre_completo} -> ${cantDec}`)
+                onUpdateCantidad(item.uniqueId, cantDec)
               }
             }
 
@@ -141,9 +148,13 @@ export default function CarritoList({
             const handleBlurCantidad = () => {
               const num = Number(item.cantidad)
               if (isNaN(num) || num <= 0) {
-                onUpdateCantidad(item.uniqueId, esDecimal ? 0.01 : 1)
+                const defaultCant = esDecimal ? 0.01 : 1
+                console.log(`🛒 [CarritoList] Blur Cantidad inválida, restableciendo a default ${defaultCant}: ${item.nombre_completo}`)
+                onUpdateCantidad(item.uniqueId, defaultCant)
               } else if (!esDecimal && num % 1 !== 0) {
-                onUpdateCantidad(item.uniqueId, Math.max(1, Math.round(num)))
+                const cantRedondeada = Math.max(1, Math.round(num))
+                console.log(`🛒 [CarritoList] Blur Cantidad no entera redondeada a ${cantRedondeada}: ${item.nombre_completo}`)
+                onUpdateCantidad(item.uniqueId, cantRedondeada)
               }
             }
 
@@ -151,11 +162,13 @@ export default function CarritoList({
             const handleChangePrecio = (e) => {
               const valStr = e.target.value
               if (valStr === '') {
+                console.log(`💵 [CarritoList] Precio borrado temporalmente para: ${item.nombre_completo}`)
                 onUpdatePrecio(item.uniqueId, '')
                 return
               }
               const parsed = parseFloat(valStr)
               if (isNaN(parsed)) return
+              console.log(`💵 [CarritoList] Cambio Precio: ${item.nombre_completo} -> S/ ${parsed}`)
               onUpdatePrecio(item.uniqueId, parsed)
             }
 
@@ -167,8 +180,10 @@ export default function CarritoList({
                   'Restricción de Precio Costo',
                   `El precio de venta no puede ser menor al precio costo (S/ ${costo.toFixed(2)}). Se ajustó automáticamente.`
                 )
+                console.warn(`⚠️ [CarritoList] Intento de vender bajo costo: S/ ${num} < S/ ${costo}. Se fuerza a costo para: ${item.nombre_completo}`)
                 onUpdatePrecio(item.uniqueId, costo)
               } else if (isNaN(num) || num < 0) {
+                console.log(`💵 [CarritoList] Blur Precio negativo o NaN forzado a 0 para: ${item.nombre_completo}`)
                 onUpdatePrecio(item.uniqueId, 0)
               }
             }
