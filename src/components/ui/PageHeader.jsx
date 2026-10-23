@@ -33,6 +33,7 @@ export default function PageHeader({
     >
       {/* ── LADO IZQUIERDO: Título, Ícono y Acciones adyacentes ── */}
       <div className="flex items-center gap-3">
+        {leftActions && <div className="flex items-center gap-2">{leftActions}</div>}
         <div className="flex items-center gap-2">
           {Icon && (
             <div className="p-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-[#01a59c] shrink-0">
@@ -50,7 +51,6 @@ export default function PageHeader({
             )}
           </div>
         </div>
-        {leftActions && <div className="flex items-center gap-2">{leftActions}</div>}
       </div>
 
       {/* ── CENTRO: Filtro de fechas o filtros generales ── */}

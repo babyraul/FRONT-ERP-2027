@@ -33,7 +33,7 @@ const TriStateSwitch = ({ state, onClick }) => {
   );
 };
 
-export default function EmpresaModulosModal({ isOpen, onClose, empresa }) {
+export default function EmpresaModulosModal({ isOpen, onClose, empresa, variant = 'modal' }) {
   const [modulos, setModulos] = useState([])
   const [assignedIds, setAssignedIds] = useState(new Set())
   const [loading, setLoading] = useState(false)
@@ -196,6 +196,7 @@ export default function EmpresaModulosModal({ isOpen, onClose, empresa }) {
       isProcessing={saving || loading}
       confirmText="Guardar Asignación"
       maxWidth="max-w-3xl"
+      variant={variant}
     >
       {loading ? (
         <div className="flex justify-center items-center py-12 text-slate-500">

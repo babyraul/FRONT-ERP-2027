@@ -5,7 +5,7 @@ import { empresaController } from '../controllers/empresa.js'
 import { sucursalController } from '../controllers/sucursal.js'
 import { rolController } from '../controllers/rol.js'
 
-export default function UsuarioModal({ isOpen, onClose, onSave, usuario }) {
+export default function UsuarioModal({ isOpen, onClose, onSave, usuario, variant = 'modal' }) {
   const { user } = useAuthStore()
   const [formData, setFormData] = useState({
     nombre: '',
@@ -101,6 +101,7 @@ export default function UsuarioModal({ isOpen, onClose, onSave, usuario }) {
       cancelText="Cancelar"
       confirmButtonId="usuario-form"
       maxWidth="max-w-lg"
+      variant={variant}
     >
       <form id="usuario-form" onSubmit={handleSubmit} className="space-y-4">
 

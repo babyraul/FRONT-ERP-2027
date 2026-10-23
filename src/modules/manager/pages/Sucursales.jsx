@@ -1,16 +1,33 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { MagnifyingGlassIcon, ArrowDownTrayIcon, PlusIcon, PencilIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import {
+  MagnifyingGlassIcon,
+  PencilIcon,
+  TrashIcon,
+  ArrowLeftIcon,
+  BuildingStorefrontIcon
+} from '@heroicons/react/24/outline'
 import { Link } from 'react-router-dom'
 import { sucursalController } from '../controllers/sucursal.js'
 import { exportToExcel } from '../../../utils/exportExcel.js'
+import { toast } from '../../../utils/toast'
 import SucursalModal from '../components/SucursalModal.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
+import PageHeader from '../../../components/ui/PageHeader.jsx'
+import {
+  NewButton,
+  ExportExcelButton,
+  RefreshButton,
+  ActionCell
+} from '../../../components/ui/ActionButtons.jsx'
 import Can from '../../../components/ui/Can.jsx'
 
 export function Sucursales() {
   const [sucursales, setSucursales] = useState([])
   const [loading, setLoading] = useState(true)
   const [busq, setBusq] = useState('')
+  const [estadoFiltro, setEstadoFiltro] = useState('todos') // 'todos' | 'activos' | 'inactivos'
+
+  // Modal / Formulario Inline de Sucursal
   const [isModalOpen, setModalOpen] = useState(false)
   const [sucursalEdit, setSucursalEdit] = useState(null)
 
@@ -18,6 +35,7 @@ export function Sucursales() {
     setLoading(true)
     const res = await sucursalController.getAll()
     if (res.success) setSucursales(res.data)
+    else toast.error('Error al cargar las sucursales')
     setLoading(false)
   }, [])
 
@@ -27,12 +45,31 @@ export function Sucursales() {
 
   const handleBusq = (e) => setBusq(e.target.value)
 
-  const filtered = sucursales.filter(s => 
-    s.ruc?.toLowerCase().includes(busq.toLowerCase()) || 
-    s.razon_social?.toLowerCase().includes(busq.toLowerCase()) ||
-    s.sucursal_nombre?.toLowerCase().includes(busq.toLowerCase()) ||
-    s.codigo_anexo?.toLowerCase().includes(busq.toLowerCase())
-  )
+  // Filtrado reactivo en memoria
+  const filtered = useMemo(() => {
+    let items = sucursales
+
+    // Filtro por estado
+    if (estadoFiltro === 'activos') {
+      items = items.filter(s => s.activo)
+    } else if (estadoFiltro === 'inactivos') {
+      items = items.filter(s => !s.activo)
+    }
+
+    // Filtro por texto
+    if (busq.trim()) {
+      const q = busq.toLowerCase().trim()
+      items = items.filter(s =>
+        s.ruc?.toLowerCase().includes(q) ||
+        s.razon_social?.toLowerCase().includes(q) ||
+        s.sucursal_nombre?.toLowerCase().includes(q) ||
+        s.codigo_anexo?.toLowerCase().includes(q) ||
+        s.direccion?.toLowerCase().includes(q)
+      )
+    }
+
+    return items
+  }, [sucursales, estadoFiltro, busq])
 
   const handleExport = () => {
     const data = filtered.map((s) => ({
@@ -40,11 +77,12 @@ export function Sucursales() {
       Sucursal: s.sucursal_nombre,
       RUC: s.ruc,
       'Razón Social': s.razon_social,
-      Teléfono: s.telefono1,
-      Dirección: s.direccion,
+      Teléfono: s.telefono1 || '',
+      Dirección: s.direccion || '',
       Estado: s.activo ? 'Activo' : 'Inactivo',
     }))
     exportToExcel(data, 'sucursales', 'Sucursales')
+    toast.success('Archivo descargado', 'El listado de sucursales se ha exportado correctamente a Excel.')
   }
 
   const handleOpenNew = () => {
@@ -61,9 +99,10 @@ export function Sucursales() {
     if (!confirm('¿Eliminar sucursal?')) return
     const res = await sucursalController.delete(id)
     if (res.success) {
+      toast.success('Sucursal eliminada correctamente')
       loadSucursales()
     } else {
-      alert(res.message || 'Error al eliminar')
+      toast.error(res.message || 'Error al eliminar la sucursal')
     }
   }
 
@@ -74,24 +113,40 @@ export function Sucursales() {
     } else {
       res = await sucursalController.create(data)
     }
-    
+
     if (res.success) {
       setModalOpen(false)
+      setSucursalEdit(null)
+      toast.success(sucursalEdit ? 'Sucursal actualizada correctamente' : 'Sucursal creada correctamente')
       loadSucursales()
     } else {
-      alert(res.message || 'Error al guardar la sucursal')
+      toast.error(res.message || 'Error al guardar la sucursal')
     }
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const columns = useMemo(() => [
     {
       header: 'Anexo',
       accessorKey: 'codigo_anexo',
+      cell: info => (
+        <span className="font-mono text-xs font-semibold tracking-wider text-slate-700 dark:text-slate-300">
+          {info.getValue() || '0000'}
+        </span>
+      ),
+      size: 90
     },
     {
       header: 'Sucursal',
       accessorKey: 'sucursal_nombre',
+      cell: info => (
+        <div className="flex items-center gap-2">
+          <div className="p-1 rounded-md bg-teal-50 dark:bg-teal-950/40 text-[#01a59c] shrink-0">
+            <BuildingStorefrontIcon className="h-4 w-4" />
+          </div>
+          <span className="font-medium text-slate-800 dark:text-slate-100">{info.getValue()}</span>
+        </div>
+      ),
+      size: 260
     },
     {
       header: 'Empresa',
@@ -102,15 +157,16 @@ export function Sucursales() {
           <span className="font-medium text-slate-700 dark:text-slate-200">{row.original.razon_social}</span>
           <span className="text-xs text-slate-500 font-mono">RUC: {row.original.ruc}</span>
         </div>
-      )
+      ),
+      size: 280
     },
     {
       header: 'Ubicación',
       id: 'ubicacion_info',
       accessorFn: row => `${row.direccion} ${row.ubigeo_descripcion || ''}`,
       cell: ({ row }) => (
-        <div className="flex flex-col max-w-[250px]">
-          <span className="text-sm text-slate-700 dark:text-slate-300 truncate" title={row.original.direccion}>
+        <div className="flex flex-col max-w-[280px]">
+          <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 truncate" title={row.original.direccion}>
             {row.original.direccion}
           </span>
           {row.original.ubigeo_descripcion && (
@@ -119,7 +175,8 @@ export function Sucursales() {
             </span>
           )}
         </div>
-      )
+      ),
+      size: 280
     },
     {
       header: 'Estado',
@@ -133,7 +190,9 @@ export function Sucursales() {
             </span>
           </div>
         )
-      }
+      },
+      size: 100,
+      enableColumnFilter: false
     },
     {
       header: 'Acciones',
@@ -141,83 +200,151 @@ export function Sucursales() {
       cell: ({ row }) => {
         const s = row.original
         return (
-          <div className="flex items-center justify-center gap-1">
+          <ActionCell>
             <Can I="editar" a="sucursales" fallback={
-              <button disabled className="p-1.5 rounded bg-slate-50 text-slate-300 cursor-not-allowed" title="Sin permiso">
+              <button disabled className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed" title="Sin permiso">
                 <PencilIcon className="h-4 w-4" />
               </button>
             }>
-              <button onClick={() => handleOpenEdit(s)} className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors" title="Editar">
+              <button
+                onClick={() => handleOpenEdit(s)}
+                className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer"
+                title="Editar Sucursal"
+              >
                 <PencilIcon className="h-4 w-4" />
               </button>
             </Can>
-            
+
             <Can I="eliminar" a="sucursales" fallback={
-              <button disabled className="p-1.5 rounded bg-slate-50 text-slate-300 cursor-not-allowed" title="Sin permiso">
+              <button disabled className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed" title="Sin permiso">
                 <TrashIcon className="h-4 w-4" />
               </button>
             }>
               <button
                 onClick={() => handleDelete(s.id)}
-                className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
-                title="Eliminar"
+                className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer"
+                title="Eliminar Sucursal"
               >
                 <TrashIcon className="h-4 w-4" />
               </button>
             </Can>
-          </div>
+          </ActionCell>
         )
-      }
+      },
+      size: 100,
+      enableColumnFilter: false
     }
   ], [])
 
   return (
-    <div className="space-y-5 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/configuracion" className="p-2 -ml-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500" title="Volver a Configuración">
+    <div className="space-y-6 p-6">
+      {/* ── ENCABEZADO MODULAR GLOBAL ── */}
+      <PageHeader
+        title="Sucursales"
+        subtitle={`${sucursales.length} ${sucursales.length === 1 ? 'sucursal registrada' : 'sucursales registradas'} en el sistema`}
+        leftActions={
+          <Link
+            to="/configuracion"
+            className="p-2 -ml-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Volver a Configuración"
+          >
             <ArrowLeftIcon className="h-5 w-5" />
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sucursales</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{filtered.length} sucursales registradas</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={handleExport} className="btn-secondary">
-            <ArrowDownTrayIcon className="h-4 w-4" /> Exportar Excel
-          </button>
-          <Can I="crear" a="sucursales">
-            <button onClick={handleOpenNew} className="btn-primary">
-              <PlusIcon className="h-4 w-4" /> Nueva Sucursal
-            </button>
-          </Can>
-        </div>
-      </div>
+        }
+        actions={
+          <>
+            <RefreshButton
+              onClick={loadSucursales}
+              loading={loading}
+              title="Actualizar listado de sucursales"
+            />
 
-      <div className="card p-4">
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <ExportExcelButton
+              onClick={handleExport}
+              disabled={loading || filtered.length === 0}
+              label="Excel"
+              title="Exportar listado de sucursales a Excel"
+            />
+
+            <Can I="crear" a="sucursales">
+              <NewButton
+                onClick={handleOpenNew}
+                label="Nueva Sucursal"
+                title="Registrar nueva sucursal"
+              />
+            </Can>
+          </>
+        }
+      />
+
+      {/* ── BARRA DE BÚSQUEDA Y FILTROS RÁPIDOS ── */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+        {/* Selector de Estado */}
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 w-full sm:w-auto">
+          {[
+            { id: 'todos', label: 'Todas' },
+            { id: 'activos', label: 'Activas' },
+            { id: 'inactivos', label: 'Inactivas' }
+          ].map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setEstadoFiltro(f.id)}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                estadoFiltro === f.id
+                  ? f.id === 'inactivos'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Input Buscador */}
+        <div className="relative w-full sm:w-80">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
-            type="text" placeholder="Buscar por Nombre, RUC, Anexo..."
-            value={busq} onChange={handleBusq}
-            className="input-field pl-9"
+            type="text"
+            placeholder="Buscar por Nombre, RUC, Anexo..."
+            value={busq}
+            onChange={handleBusq}
+            className="w-full pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#01a59c] focus:bg-white dark:focus:bg-slate-900 outline-none text-xs dark:text-white transition-all"
           />
         </div>
       </div>
 
-      {loading ? (
-        <div className="py-8 text-center text-slate-500">Cargando sucursales...</div>
-      ) : (
-        <DataTable data={filtered} columns={columns} />
-      )}
-
-      <SucursalModal
-        isOpen={isModalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={handleSaveModal}
-        sucursal={sucursalEdit}
-      />
+      {/* ── CONTENEDOR IN-PLACE CON TRANSICIÓN ANIMADA DE ActionSection ── */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden transition-all duration-300">
+        {isModalOpen ? (
+          <SucursalModal
+            isOpen={isModalOpen}
+            onClose={() => {
+              setModalOpen(false)
+              setSucursalEdit(null)
+            }}
+            onSave={handleSaveModal}
+            sucursal={sucursalEdit}
+            variant="inline"
+          />
+        ) : (
+          <div className="transition-all duration-300 ease-in-out opacity-100 translate-y-0">
+            <DataTable
+              data={filtered}
+              columns={columns}
+              pagination={true}
+              loading={loading}
+              emptyMessage={
+                estadoFiltro === 'inactivos'
+                  ? 'No hay sucursales inactivas registradas.'
+                  : 'No se encontraron sucursales registradas.'
+              }
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
+import { useTheme } from '../../../hooks/useTheme'
 
 /**
  * AuthBackground
@@ -6,36 +7,14 @@ import { useEffect, useRef, useState } from 'react'
  * - Partículas de energía ascendentes con estela y núcleo
  * - Circuito digital en perspectiva
  * - Reactivo al cursor (halo dinámico)
- * - Detección de tema claro/oscuro en tiempo real (MutationObserver)
+ * - Sincronizado reactivamente con useTheme del ERP
  * - Pausa automática al cambiar de pestaña (0% CPU)
  */
 export const AuthBackground = ({ logoUrl }) => {
   const canvasRef = useRef(null)
   const mouseRef = useRef({ x: -1000, y: -1000, targetX: -1000, targetY: -1000, active: false })
-  const [isDark, setIsDark] = useState(() => {
-    return (
-      document.documentElement.getAttribute('data-theme') === 'dark' ||
-      document.documentElement.classList.contains('dark') ||
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    )
-  })
-
-  // Escuchar cambios de tema (claro/oscuro)
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const dark =
-        document.documentElement.getAttribute('data-theme') === 'dark' ||
-        document.documentElement.classList.contains('dark')
-      setIsDark(dark)
-    })
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme', 'class']
-    })
-
-    return () => observer.disconnect()
-  }, [])
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
 
   useEffect(() => {
     const canvas = canvasRef.current

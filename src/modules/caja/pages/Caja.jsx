@@ -23,6 +23,8 @@ import MovimientoModal from '../components/MovimientoModal.jsx'
 import { cajaController } from '../controllers/caja.js'
 import { toast } from '../../../utils/toast.js'
 import Can from '../../../components/ui/Can.jsx'
+import PageHeader from '../../../components/ui/PageHeader.jsx'
+import { RefreshButton } from '../../../components/ui/ActionButtons.jsx'
 import { useAuthStore } from '../../../store/useAuthStore.js'
 import { imprimirTicketMovimiento, imprimirTicketCierre } from '../../../utils/ticketPrint.js'
 
@@ -192,6 +194,65 @@ export default function Caja() {
 
   return (
     <div className="space-y-6 p-6 mx-auto">
+      {/* ── ENCABEZADO MODULAR GLOBAL ── */}
+      <PageHeader
+        title="Gestión de Caja"
+        subtitle={
+          turnoActivo
+            ? `Turno Abierto: ${turnoActivo.identificador_caja} • Cajero: ${turnoActivo.usuario_nombre || user?.nombre || 'Usuario'}`
+            : 'Control de turnos, arqueos y movimientos de gaveta'
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <RefreshButton
+              onClick={loadData}
+              loading={loading}
+              title="Actualizar estado de caja"
+            />
+
+            {turnoActivo ? (
+              <>
+                <button
+                  onClick={() => {
+                    setCierreOpen(false)
+                    setMovimientoOpen(true)
+                  }}
+                  className="btn-primary text-xs flex items-center gap-1.5 py-2 px-3.5 rounded-xl shadow-xs font-semibold cursor-pointer"
+                  title="Registrar entrada o retiro de dinero en gaveta"
+                >
+                  <PlusIcon className="h-4 w-4 text-white" /> Nuevo Movimiento
+                </button>
+
+                <Can I="editar" a="cajas">
+                  <button
+                    onClick={() => {
+                      setMovimientoOpen(false)
+                      setCierreOpen(true)
+                    }}
+                    className="btn-danger text-xs flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-xl shadow-xs font-semibold cursor-pointer"
+                    title="Realizar arqueo y cierre de turno"
+                  >
+                    <LockClosedIcon className="h-4 w-4" /> Cerrar Turno
+                  </button>
+                </Can>
+              </>
+            ) : (
+              !isAperturaOpen && (
+                <Can I="crear" a="cajas">
+                  <button
+                    onClick={() => setAperturaOpen(true)}
+                    className="btn-primary text-xs flex items-center gap-1.5 py-2 px-3.5 rounded-xl shadow-xs font-semibold cursor-pointer"
+                    title="Aperturar turno de caja"
+                  >
+                    <PlusIcon className="h-4 w-4 text-white" /> Aperturar Turno
+                  </button>
+                </Can>
+              )
+            )}
+          </div>
+        }
+      />
+
       {loading ? (
         <div className="flex flex-col items-center justify-center h-64 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -209,9 +270,9 @@ export default function Caja() {
                 <div>
                   <div className="flex items-center gap-2.5">
                     <span className="font-extrabold text-slate-900 dark:text-white text-lg">
-                      Turno Abierto: {turnoActivo.identificador_caja}
+                      Turno Activo: {turnoActivo.identificador_caja}
                     </span>
-
+                    <span className="badge-green text-xs">Abierto</span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
                     <span>Apertura: {new Date(turnoActivo.fecha_apertura).toLocaleString()}</span>
@@ -224,7 +285,10 @@ export default function Caja() {
               {/* Acciones del Turno */}
               <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
                 <button
-                  onClick={() => setMovimientoOpen(true)}
+                  onClick={() => {
+                    setCierreOpen(false)
+                    setMovimientoOpen(true)
+                  }}
                   className="btn-primary text-xs flex items-center gap-1.5 py-1.5 px-3"
                   title="Registrar entrada o retiro de dinero en gaveta"
                 >
@@ -233,7 +297,10 @@ export default function Caja() {
 
                 <Can I="editar" a="cajas">
                   <button
-                    onClick={() => setCierreOpen(true)}
+                    onClick={() => {
+                      setMovimientoOpen(false)
+                      setCierreOpen(true)
+                    }}
                     className="btn-danger text-xs flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-xl shadow-sm font-semibold"
                   >
                     <LockClosedIcon className="h-4 w-4" /> Cerrar Turno
@@ -553,10 +620,10 @@ export default function Caja() {
         </div>
       ) : (
         /* ═════════════════════════════════════════════════════════════════════
-           ESTADO B: EL USUARIO NO TIENE TURNO ABIERTO (UN SOLO BOTÓN DE APERTURA)
+           ESTADO B: EL USUARIO NO TIENE TURNO ABIERTO (APERTURA IN-PLACE)
            ═════════════════════════════════════════════════════════════════════ */
-        isAperturaOpen ? (
-          <div className="max-w-2xl mx-auto">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden transition-all duration-300">
+          {isAperturaOpen ? (
             <AperturaTurnoModal
               isOpen={isAperturaOpen}
               onClose={() => setAperturaOpen(false)}
@@ -566,37 +633,40 @@ export default function Caja() {
               isProcessing={isProcessing}
               variant="inline"
             />
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-8 sm:p-12 shadow-sm text-center max-w-2xl mx-auto space-y-5">
-            <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-sm border border-blue-100 dark:border-blue-900/40">
-              <LockClosedIcon className="h-8 w-8" />
-            </div>
+          ) : (
+            <div className="p-8 sm:p-12 text-center max-w-2xl mx-auto space-y-5 transition-all duration-300 ease-in-out opacity-100 translate-y-0">
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-sm border border-blue-100 dark:border-blue-900/40">
+                <LockClosedIcon className="h-8 w-8" />
+              </div>
 
-            <div className="space-y-1.5">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                No tienes un turno de caja abierto
-              </h2>
-            </div>
+              <div className="space-y-1.5">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                  No tienes un turno de caja abierto
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Para poder emitir comprobantes y cobrar ventas es indispensable contar con una sesión de caja activa.
+                </p>
+              </div>
 
-            <div className="pt-2">
-              <Can I="crear" a="cajas">
-                <button
-                  onClick={() => setAperturaOpen(true)}
-                  className="btn-primary py-3 px-6 text-sm font-bold flex items-center gap-2 mx-auto rounded-xl shadow-md shadow-blue-500/20"
-                >
-                  <PlusIcon className="h-5 w-5" /> Aperturar Mi Turno Ahora
-                </button>
-              </Can>
-            </div>
+              <div className="pt-2">
+                <Can I="crear" a="cajas">
+                  <button
+                    onClick={() => setAperturaOpen(true)}
+                    className="btn-primary py-3 px-6 text-sm font-bold flex items-center gap-2 mx-auto rounded-xl shadow-md shadow-blue-500/20 cursor-pointer"
+                  >
+                    <PlusIcon className="h-5 w-5" /> Aperturar Mi Turno Ahora
+                  </button>
+                </Can>
+              </div>
 
-            {cajasConfiguradas.length > 0 && (
-              <p className="text-xs text-slate-400 pt-2">
-                {cajasConfiguradas.filter(c => c.disponible).length} de {cajasConfiguradas.length} cajas físicas disponibles en esta sucursal.
-              </p>
-            )}
-          </div>
-        )
+              {cajasConfiguradas.length > 0 && (
+                <p className="text-xs text-slate-400 pt-2">
+                  {cajasConfiguradas.filter(c => c.disponible).length} de {cajasConfiguradas.length} cajas físicas disponibles en esta sucursal.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

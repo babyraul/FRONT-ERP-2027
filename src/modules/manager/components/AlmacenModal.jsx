@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Modal from '../../../components/ui/Modal.jsx'
 
-export default function AlmacenModal({ isOpen, onClose, onSave, almacen }) {
+export default function AlmacenModal({ isOpen, onClose, onSave, almacen, variant = 'modal' }) {
   const [formData, setFormData] = useState({
     nombre: '',
     direccion: '',
@@ -49,6 +49,7 @@ export default function AlmacenModal({ isOpen, onClose, onSave, almacen }) {
       title={almacen ? 'Editar Almacén' : 'Nuevo Almacén'}
       confirmButtonId="almacen-form"
       maxWidth="max-w-lg"
+      variant={variant}
     >
       <form id="almacen-form" onSubmit={handleSubmit} className="space-y-4">
         

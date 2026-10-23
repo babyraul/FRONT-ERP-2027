@@ -32,7 +32,7 @@ const UnifiedSwitch = ({ state, onClick, color = 'teal' }) => {
   )
 }
 
-export default function RolPermisosModal({ isOpen, onClose, rol }) {
+export default function RolPermisosModal({ isOpen, onClose, rol, variant = 'modal' }) {
   const [modulos, setModulos] = useState([])
   const [permisos, setPermisos] = useState([])
   const [assignedIds, setAssignedIds] = useState(new Set())
@@ -258,6 +258,7 @@ export default function RolPermisosModal({ isOpen, onClose, rol }) {
       isProcessing={saving || loading}
       confirmText="Guardar Permisos"
       maxWidth="max-w-5xl"
+      variant={variant}
     >
       {loading ? (
         <div className="flex justify-center items-center py-12 text-slate-500">

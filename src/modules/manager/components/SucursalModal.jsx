@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Modal from '../../../components/ui/Modal.jsx'
 import { empresaController } from '../controllers/empresa.js'
 
-export default function SucursalModal({ isOpen, onClose, onSave, sucursal }) {
+export default function SucursalModal({ isOpen, onClose, onSave, sucursal, variant = 'modal' }) {
   const [empresas, setEmpresas] = useState([])
 
   const [formData, setFormData] = useState({
@@ -94,6 +94,7 @@ export default function SucursalModal({ isOpen, onClose, onSave, sucursal }) {
       title={sucursal ? 'Editar Sucursal' : 'Nueva Sucursal'}
       confirmButtonId="sucursal-form"
       maxWidth="max-w-3xl"
+      variant={variant}
     >
       <form id="sucursal-form" onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

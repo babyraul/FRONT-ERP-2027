@@ -4,7 +4,7 @@ import Modal from '../../../components/ui/Modal.jsx'
 import api from '../../../utils/api'
 import { toast } from '../../../utils/toast'
 
-export default function EmpresaModal({ isOpen, onClose, onSave, empresa }) {
+export default function EmpresaModal({ isOpen, onClose, onSave, empresa, variant = 'modal' }) {
   const [formData, setFormData] = useState({
     ruc: '',
     razon_social: '',
@@ -84,6 +84,7 @@ export default function EmpresaModal({ isOpen, onClose, onSave, empresa }) {
       title={empresa ? 'Editar Empresa' : 'Nueva Empresa'}
       confirmButtonId="empresa-form"
       maxWidth="max-w-2xl"
+      variant={variant}
     >
       {!empresa && (
         <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-4 rounded-xl text-sm border border-blue-100 dark:border-blue-900/50 shadow-sm">

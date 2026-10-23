@@ -7,7 +7,7 @@ import { empresaController } from '../controllers/empresa.js'
 import { sucursalController } from '../controllers/sucursal.js'
 import { rolController } from '../controllers/rol.js'
 
-export default function UsuarioAccesosModal({ isOpen, onClose, user }) {
+export default function UsuarioAccesosModal({ isOpen, onClose, user, variant = 'modal' }) {
   const [accesos, setAccesos] = useState([])
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -117,6 +117,7 @@ export default function UsuarioAccesosModal({ isOpen, onClose, user }) {
       maxWidth="max-w-4xl"
       showFooter={false}
       noPadding={true}
+      variant={variant}
     >
       <div className="flex-1 overflow-hidden flex flex-col sm:flex-row">
 

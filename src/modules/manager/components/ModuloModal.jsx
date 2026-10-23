@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Modal from '../../../components/ui/Modal.jsx'
 
-export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosList = [] }) {
+export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosList = [], variant = 'modal' }) {
   const [formData, setFormData] = useState({
     codigo: '',
     nombre: '',
@@ -98,6 +98,7 @@ export default function ModuloModal({ isOpen, onClose, onSave, modulo, modulosLi
       title={modulo ? 'Editar Módulo' : 'Nuevo Módulo'}
       confirmButtonId="modulo-form"
       maxWidth="max-w-lg"
+      variant={variant}
     >
       <form id="modulo-form" onSubmit={handleSubmit} className="space-y-4">
         
