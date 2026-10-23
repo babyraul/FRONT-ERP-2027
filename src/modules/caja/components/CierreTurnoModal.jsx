@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
 import Modal from '../../../components/ui/Modal.jsx'
 import { toast } from '../../../utils/toast.js'
+import { usePermission } from '../../../hooks/usePermission'
 import {
   BanknotesIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  CreditCardIcon
+  CreditCardIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline'
 
 const DENOMINACIONES_BILLETES = [
@@ -36,6 +38,10 @@ export default function CierreTurnoModal({
   isProcessing = false,
   variant = 'drawer'
 }) {
+  const { hasPermission } = usePermission()
+  // Permiso especial: Si NO lo tiene, opera en Blind Closing (Cierre a Ciegas)
+  const puedeVerTotales = hasPermission('caja.ver_totales_cierre')
+
   const [declarados, setDeclarados] = useState({})
   const [observacion, setObservacion] = useState('')
   const [cantidadesArqueo, setCantidadesArqueo] = useState({})
@@ -48,21 +54,26 @@ export default function CierreTurnoModal({
       if (Array.isArray(turno.totales) && turno.totales.length > 0) {
         turno.totales.forEach(t => {
           const esEfectivo = String(t.metodo_pago_id) === '1' || String(t.metodo_pago_id) === '01'
-          if (esEfectivo && turno.efectivo_total_en_caja !== undefined) {
-            mapa[t.metodo_pago_id] = turno.efectivo_total_en_caja
+          // Si tiene permiso para ver montos, precarga el monto sugerido; si es Cierre a Ciegas, inicia en 0 o vacío
+          if (puedeVerTotales) {
+            if (esEfectivo && turno.efectivo_total_en_caja !== undefined) {
+              mapa[t.metodo_pago_id] = turno.efectivo_total_en_caja
+            } else {
+              mapa[t.metodo_pago_id] = t.monto_sistema || 0
+            }
           } else {
-            mapa[t.metodo_pago_id] = t.monto_sistema || 0
+            mapa[t.metodo_pago_id] = ''
           }
         })
       } else {
-        mapa['1'] = turno.efectivo_total_en_caja || 0
+        mapa['1'] = puedeVerTotales ? (turno.efectivo_total_en_caja || 0) : ''
       }
       setDeclarados(mapa)
       setObservacion('Cierre regular de operaciones del turno')
       setCantidadesArqueo({})
       setMostrarArqueoEfectivo(true)
     }
-  }, [isOpen, turno])
+  }, [isOpen, turno, puedeVerTotales])
 
   // Desglose reactivo de billetes y monedas
   const desgloseEfectivo = useMemo(() => {
@@ -117,13 +128,18 @@ export default function CierreTurnoModal({
       monto_declarado: Number(monto || 0)
     }))
 
-    // Regla de Negocio VAL-DUR-02 (Opción B acordada):
-    // Se valida que el monto físico de efectivo no sea 0 únicamente si el sistema esperaba efectivo
+    // Regla de Negocio VAL-DUR-02:
+    // Se valida que el monto físico de efectivo no sea 0 únicamente si el sistema esperaba efectivo (y si se conocen los montos)
     const efectivoDeclarado = Number(declarados['1'] || declarados['01'] || 0)
     const efectivoEsperado = Number(turno.efectivo_total_en_caja ?? turno.monto_apertura ?? 0)
 
-    if (efectivoDeclarado <= 0 && efectivoEsperado > 0) {
+    if (puedeVerTotales && efectivoDeclarado <= 0 && efectivoEsperado > 0) {
       toast.error('El monto físico no puede ser cero, por favor ingresar la cantidad solicitada')
+      return
+    }
+
+    if (!puedeVerTotales && efectivoDeclarado <= 0) {
+      toast.error('Debe declarar el monto físico en efectivo antes de confirmar el cierre')
       return
     }
 
@@ -183,6 +199,16 @@ export default function CierreTurnoModal({
       maxWidth="max-w-2xl"
     >
       <form id="cierre-turno-form" onSubmit={handleSubmit} className="space-y-4">
+        {/* Banner informativo de Cierre a Ciegas (si no tiene el permiso caja.ver_totales_cierre) */}
+        {!puedeVerTotales && (
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-200">
+            <EyeSlashIcon className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div>
+              <span className="font-bold">Modo Cierre a Ciegas Activo:</span>{' '}
+              Por políticas de seguridad y control interno, debe realizar el arqueo y declarar los montos físicos reales encontrados en caja. Los saldos teóricos calculados por el sistema permanecen ocultos.
+            </div>
+          </div>
+        )}
         
         {/* Desglose Interactivo de Billetes y Monedas (Opción 1) */}
         <div className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-800/30 overflow-hidden">
@@ -338,20 +364,26 @@ export default function CierreTurnoModal({
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
-                        <span>Sistema: <strong className="font-mono text-slate-600 dark:text-slate-300">S/ {montoSistemaEsperado.toFixed(2)}</strong></span>
-                        {valorActual !== '' && (
-                          <span className={`font-mono text-[10px] font-bold ${
-                            Math.abs(diferenciaPreliminar) < 0.01 
-                              ? 'text-emerald-600 dark:text-emerald-400' 
-                              : diferenciaPreliminar > 0 
-                                ? 'text-blue-600 dark:text-blue-400' 
-                                : 'text-rose-600 dark:text-rose-400'
-                          }`}>
-                            ({diferenciaPreliminar >= 0 ? `+${diferenciaPreliminar.toFixed(2)}` : diferenciaPreliminar.toFixed(2)})
-                          </span>
-                        )}
-                      </div>
+                      {puedeVerTotales ? (
+                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
+                          <span>Sistema: <strong className="font-mono text-slate-600 dark:text-slate-300">S/ {montoSistemaEsperado.toFixed(2)}</strong></span>
+                          {valorActual !== '' && (
+                            <span className={`font-mono text-[10px] font-bold ${
+                              Math.abs(diferenciaPreliminar) < 0.01 
+                                ? 'text-emerald-600 dark:text-emerald-400' 
+                                : diferenciaPreliminar > 0 
+                                  ? 'text-blue-600 dark:text-blue-400' 
+                                  : 'text-rose-600 dark:text-rose-400'
+                            }`}>
+                              ({diferenciaPreliminar >= 0 ? `+${diferenciaPreliminar.toFixed(2)}` : diferenciaPreliminar.toFixed(2)})
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="mt-0.5 text-[11px] text-slate-400 italic font-mono">
+                          Total del sistema: [Oculto]
+                        </div>
+                      )}
                     </div>
                   </div>
 

@@ -15,7 +15,8 @@ import {
   CheckCircleIcon,
   InformationCircleIcon,
   PrinterIcon,
-  EyeIcon
+  EyeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline'
 import AperturaTurnoModal from '../components/AperturaTurnoModal.jsx'
 import CierreTurnoModal from '../components/CierreTurnoModal.jsx'
@@ -26,9 +27,12 @@ import Can from '../../../components/ui/Can.jsx'
 import PageHeader from '../../../components/ui/PageHeader.jsx'
 import { RefreshButton } from '../../../components/ui/ActionButtons.jsx'
 import { useAuthStore } from '../../../store/useAuthStore.js'
+import { usePermission } from '../../../hooks/usePermission'
 import { imprimirTicketMovimiento, imprimirTicketCierre } from '../../../utils/ticketPrint.js'
 
 export default function Caja() {
+  const { hasPermission } = usePermission()
+  const puedeVerTotales = hasPermission('caja.ver_totales_cierre')
   const [turnoActivo, setTurnoActivo] = useState(null)
   const [cajasConfiguradas, setCajasConfiguradas] = useState([])
   const [metodosPago, setMetodosPago] = useState([])
@@ -281,32 +285,6 @@ export default function Caja() {
                   </p>
                 </div>
               </div>
-
-              {/* Acciones del Turno */}
-              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-                <button
-                  onClick={() => {
-                    setCierreOpen(false)
-                    setMovimientoOpen(true)
-                  }}
-                  className="btn-primary text-xs flex items-center gap-1.5 py-1.5 px-3"
-                  title="Registrar entrada o retiro de dinero en gaveta"
-                >
-                  <PlusIcon className="h-4 w-4 text-white" /> Nuevo Movimiento
-                </button>
-
-                <Can I="editar" a="cajas">
-                  <button
-                    onClick={() => {
-                      setMovimientoOpen(false)
-                      setCierreOpen(true)
-                    }}
-                    className="btn-danger text-xs flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-xl shadow-sm font-semibold"
-                  >
-                    <LockClosedIcon className="h-4 w-4" /> Cerrar Turno
-                  </button>
-                </Can>
-              </div>
             </div>
           </div>
 
@@ -319,7 +297,7 @@ export default function Caja() {
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Efectivo en Caja</span>
                 <p className="text-xl font-black font-mono text-slate-900 dark:text-white mt-0.5">
-                  S/ {totalEfectivoSistema.toFixed(2)}
+                  {puedeVerTotales ? `S/ ${totalEfectivoSistema.toFixed(2)}` : '••••••'}
                 </p>
               </div>
             </div>
@@ -331,7 +309,7 @@ export default function Caja() {
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ventas del Turno</span>
                 <p className="text-xl font-black font-mono text-slate-900 dark:text-white mt-0.5">
-                  S/ {totalVentasMonto.toFixed(2)}
+                  {puedeVerTotales ? `S/ ${totalVentasMonto.toFixed(2)}` : '••••••'}
                 </p>
               </div>
             </div>
