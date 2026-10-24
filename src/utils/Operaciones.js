@@ -72,7 +72,7 @@ export function calcularTotalesVenta(items = []) {
     }
   }
 
-  let gravadoTotalScaled = 0
+  let totalGravadoConIgvScaled = 0
   let exoneradoTotalScaled = 0
   let inafectoTotalScaled = 0
   let gratuitoTotalScaled = 0
@@ -116,20 +116,20 @@ export function calcularTotalesVenta(items = []) {
 
     // Gravados (10, 17, etc.): Precio incluye IGV (1.18)
     const totalItemConIgv = Math.max(0, cant * precio - desc)
-    const baseItem = totalItemConIgv / (1 + TASA_IGV)
-    gravadoTotalScaled += Math.round(baseItem * FACTOR_MONETARIO)
+    totalGravadoConIgvScaled += Math.round(totalItemConIgv * FACTOR_MONETARIO)
   })
 
-  // Conversión exacta desde la escala del factor monetario (sin truncamiento floor)
-  const gravado = Number((gravadoTotalScaled / FACTOR_MONETARIO).toFixed(2))
-  const igv = Number((gravado * TASA_IGV).toFixed(2))
+  // Conversión exacta respetando la suma de precios finales (Punto de Venta Retail)
+  const totalGravadoConIgv = totalGravadoConIgvScaled / FACTOR_MONETARIO
+  const gravado = Number((totalGravadoConIgv / (1 + TASA_IGV)).toFixed(2))
+  const igv = Number((totalGravadoConIgv - gravado).toFixed(2))
   const exonerado = Number((exoneradoTotalScaled / FACTOR_MONETARIO).toFixed(2))
   const inafecto = Number((inafectoTotalScaled / FACTOR_MONETARIO).toFixed(2))
   const gratuito = Number((gratuitoTotalScaled / FACTOR_MONETARIO).toFixed(2))
   const icbper = Number((icbperTotalScaled / FACTOR_MONETARIO).toFixed(2))
 
-  // Total final exacto: Base Gravada + IGV + Exonerado + Inafecto + ICBPER
-  const total = Number((gravado + igv + exonerado + inafecto + icbper).toFixed(2))
+  // Total final exacto: suma de todos los totales cobrables
+  const total = Number((totalGravadoConIgv + exonerado + inafecto + icbper).toFixed(2))
 
   return {
     subtotal: Number((gravado + exonerado + inafecto).toFixed(2)),
