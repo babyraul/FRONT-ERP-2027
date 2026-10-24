@@ -77,5 +77,27 @@ export const empresaController = {
       console.error('Error al asignar modulos a la empresa:', error)
       return { success: false, message: error.response?.data?.message || error.message }
     }
+  },
+
+  // Obtener configuraciones activas asignadas a una empresa
+  getConfiguraciones: async (id) => {
+    try {
+      const response = await api.get(`/empresas/${id}/configuraciones`)
+      return { success: true, data: response.data?.data || [] }
+    } catch (error) {
+      console.error('Error al obtener configuraciones de la empresa:', error)
+      return { success: false, message: error.response?.data?.message || error.message }
+    }
+  },
+
+  // Asignar configuraciones a una empresa
+  assignConfiguraciones: async (id, configuracionesIds) => {
+    try {
+      const response = await api.post(`/empresas/${id}/configuraciones`, { configuracionesIds })
+      return { success: true, message: response.data?.message }
+    } catch (error) {
+      console.error('Error al asignar configuraciones a la empresa:', error)
+      return { success: false, message: error.response?.data?.message || error.message }
+    }
   }
 }

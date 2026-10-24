@@ -12,6 +12,10 @@ export const usePermission = () => {
     return new Set(user?.permisos || [])
   }, [user?.permisos])
 
+  const configuracionesSet = useMemo(() => {
+    return new Set(user?.configuraciones || [])
+  }, [user?.configuraciones])
+
   /**
    * Evalúa si el usuario activo tiene un permiso específico
    * @param {string} permissionCode - Ejemplo: 'empresas.crear'
@@ -26,5 +30,15 @@ export const usePermission = () => {
     return permissionsSet.has(permissionCode)
   }
 
-  return { hasPermission, permissionsSet, user }
+  /**
+   * Evalúa si la empresa activa tiene una configuración o bandera activada
+   * @param {string} configCode - Ejemplo: 'VENTAS_DOC_DEFECTO_VALE'
+   * @returns {boolean}
+   */
+  const hasConfig = (configCode) => {
+    if (!user) return false
+    return configuracionesSet.has(configCode)
+  }
+
+  return { hasPermission, hasConfig, permissionsSet, configuracionesSet, user }
 }

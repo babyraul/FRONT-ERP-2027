@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuthStore } from '../../../store/useAuthStore.js'
 import { useProductosStore } from '../../../store/useProductosStore.js'
 import { useVentaActivaStore } from '../store/useVentaActivaStore.js'
 import TipoDocumentoSelector from '../components/TipoDocumentoSelector.jsx'
@@ -18,8 +19,17 @@ import { ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/out
 export default function Vender() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user } = useAuthStore()
   const store = useVentaActivaStore()
   const { productos, loading: loadingProductos, fetchProductos } = useProductosStore()
+
+  // Evaluación de configuraciones activas de la empresa (Feature Flags)
+  const configsEmpresa = user?.configuraciones || []
+  const docDefectoConfig = configsEmpresa.includes('VENTAS_DOC_DEFECTO_VALE')
+    ? 'vale'
+    : configsEmpresa.includes('VENTAS_DOC_DEFECTO_FACTURA')
+      ? 'factura'
+      : 'boleta'
 
   // 0. Control de Caja Activa (RN-V01 y RN-V02)
   const [cajaStatus, setCajaStatus] = useState({
@@ -29,10 +39,14 @@ export default function Vender() {
     mensaje: ''
   })
 
-  // 1. Estados Principales (inicializados desde navigation state o store para persistencia)
+  // 1. Estados Principales (inicializados desde navigation state o configuración de empresa o store)
   const navState = location.state || {}
   const [preventaId, setPreventaId] = useState(navState.preventaId || store.preventaId || null)
-  const [tipoDocumento, setTipoDocumento] = useState(navState.tipoDocumento || store.tipoDocumento || 'boleta')
+  const [tipoDocumento, setTipoDocumento] = useState(() => {
+    if (navState.tipoDocumento) return navState.tipoDocumento
+    if (docDefectoConfig) return docDefectoConfig
+    return store.tipoDocumento || 'boleta'
+  })
   const [cliente, setCliente] = useState(
     navState.cliente || store.cliente || {
       id: '00000000-0000-0000-0000-000000000000',
@@ -56,6 +70,14 @@ export default function Vender() {
 
   // Sincronizar estado cuando se navega con datos nuevos (ej. Duplicar venta desde Reporte de Ventas)
   useEffect(() => {
+    console.group('🔍 [Vender.jsx] Debug de Configuración e Inicialización de Documento')
+    console.log('🏢 Configuraciones de la empresa (user.configuraciones):', configsEmpresa)
+    console.log('⚙️ Documento resuelto por configuración (docDefectoConfig):', docDefectoConfig)
+    console.log('🧭 Documento en navegación (navState.tipoDocumento):', location.state?.tipoDocumento || 'ninguno')
+    console.log('📦 Documento en useVentaActivaStore:', store.tipoDocumento)
+    console.log('🎯 Estado activo inicial (tipoDocumento):', tipoDocumento)
+    console.groupEnd()
+
     if (location.state) {
       if (location.state.tipoDocumento) setTipoDocumento(location.state.tipoDocumento)
       if (location.state.cliente) setCliente(location.state.cliente)
@@ -67,8 +89,20 @@ export default function Vender() {
       if (location.state.preventaId !== undefined) {
         setPreventaId(location.state.preventaId)
       }
+    } else {
+      // Si no viene de navegación con documento explícito, priorizar la configuración activa de la empresa
+      if (docDefectoConfig && tipoDocumento !== docDefectoConfig) {
+        console.log(`🚀 [Vender.jsx] Aplicando documento predeterminado por configuración: ${docDefectoConfig}`)
+        setTipoDocumento(docDefectoConfig)
+        store.setTipoDocumento(docDefectoConfig)
+      }
     }
-  }, [location.state])
+  }, [location.state, docDefectoConfig])
+
+  // Debug al cambiar manualmente el tipo de documento
+  useEffect(() => {
+    console.log(`📄 [Vender.jsx] Tipo de documento actualmente activo: ${tipoDocumento.toUpperCase()}`)
+  }, [tipoDocumento])
 
   // Cargar productos activos y verificar turno de caja al montar
   useEffect(() => {
@@ -572,6 +606,7 @@ export default function Vender() {
                 <TipoDocumentoSelector
                   tipoDocumento={tipoDocumento}
                   onChange={handleCambioTipoDocumento}
+                  tipoDefecto={docDefectoConfig}
                 />
               </div>
             </div>

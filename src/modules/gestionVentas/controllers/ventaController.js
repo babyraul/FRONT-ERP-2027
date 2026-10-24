@@ -4,7 +4,7 @@ export const ventaController = {
   // Obtener listado de ventas con filtros (fecha_inicio, fecha_fin, cliente_id, estado, tipo_documento, q)
   getVentas: async (params = {}) => {
     try {
-      const response = await api.get('/ventas', { params })
+      const response = await api.get('/listventas', { params }).catch(() => api.get('/ventas', { params }))
       return {
         success: true,
         data: response.data?.data || response.data || [],
@@ -23,7 +23,7 @@ export const ventaController = {
   // Obtener detalle de una venta por ID
   getVentaById: async (id) => {
     try {
-      const response = await api.get(`/ventas/${id}`)
+      const response = await api.get(`/listventas/${id}`).catch(() => api.get(`/ventas/${id}`))
       return {
         success: true,
         data: response.data?.data || response.data
@@ -40,8 +40,7 @@ export const ventaController = {
   // Obtener listado de preventas (tabla pre_ventas)
   getPreventas: async (params = {}) => {
     try {
-      // Intenta endpoint específico /preventas o fallback a /ventas/preventas
-      const response = await api.get('/preventas', { params }).catch(() => api.get('/ventas/preventas', { params }))
+      const response = await api.get('/gespreventas', { params })
       return {
         success: true,
         data: response.data?.data || response.data || [],
@@ -60,7 +59,7 @@ export const ventaController = {
   // Obtener detalle de preventa por ID
   getPreventaById: async (id) => {
     try {
-      const response = await api.get(`/preventas/${id}`).catch(() => api.get(`/ventas/preventas/${id}`))
+      const response = await api.get(`/gespreventas/${id}`)
       return {
         success: true,
         data: response.data?.data || response.data
@@ -77,7 +76,7 @@ export const ventaController = {
   // Anular pre-venta
   anularPreventa: async (id) => {
     try {
-      const response = await api.delete(`/preventas/${id}`)
+      const response = await api.delete(`/gespreventas/${id}`)
       return {
         success: true,
         message: response.data?.message || 'Pre-venta anulada correctamente'

@@ -30,7 +30,7 @@ export const venderController = {
   // Crear preventa
   crearPreventa: async (preventaData) => {
     try {
-      const response = await api.post('/preventas', preventaData)
+      const response = await api.post('/gespreventas', preventaData)
       return { success: true, data: response.data?.data || response.data }
     } catch (error) {
       console.error('Error al crear preventa:', error)
@@ -44,7 +44,7 @@ export const venderController = {
   // Actualizar preventa
   actualizarPreventa: async (id, preventaData) => {
     try {
-      const response = await api.put(`/preventas/${id}`, preventaData)
+      const response = await api.put(`/gespreventas/${id}`, preventaData)
       return { success: true, data: response.data?.data || response.data }
     } catch (error) {
       console.error('Error al actualizar preventa:', error)
@@ -58,7 +58,7 @@ export const venderController = {
   // Registrar venta
   registrarVenta: async (ventaData) => {
     try {
-      const response = await api.post('/ventas', ventaData)
+      const response = await api.post('/vender', ventaData)
       return { success: true, data: response.data?.data || response.data }
     } catch (error) {
       console.error('Error al registrar venta:', error)

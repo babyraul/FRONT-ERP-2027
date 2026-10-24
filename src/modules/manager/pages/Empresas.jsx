@@ -5,7 +5,8 @@ import {
   ArrowLeftIcon,
   MagnifyingGlassIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline'
 import { Link } from 'react-router-dom'
 import { empresaController } from '../controllers/empresa.js'
@@ -13,6 +14,7 @@ import { exportToExcel } from '../../../utils/exportExcel.js'
 import { toast } from '../../../utils/toast'
 import EmpresaModal from '../components/EmpresaModal.jsx'
 import EmpresaModulosModal from '../components/EmpresaModulosModal.jsx'
+import EmpresaConfiguracionesModal from '../components/EmpresaConfiguracionesModal.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import PageHeader from '../../../components/ui/PageHeader.jsx'
 import {
@@ -36,6 +38,10 @@ export function Empresas() {
   // Modal / Formulario Inline de Módulos
   const [isModulosModalOpen, setModulosModalOpen] = useState(false)
   const [empresaModulosEdit, setEmpresaModulosEdit] = useState(null)
+
+  // Modal / Formulario Inline de Configuraciones por Empresa
+  const [isConfigModalOpen, setConfigModalOpen] = useState(false)
+  const [empresaConfigEdit, setEmpresaConfigEdit] = useState(null)
 
   const loadEmpresas = useCallback(async () => {
     setLoading(true)
@@ -224,6 +230,19 @@ export function Empresas() {
             </button>
           </Can>
 
+          <Can I="editar" a="empresas" fallback={null}>
+            <button
+              onClick={() => {
+                setEmpresaConfigEdit(row.original)
+                setConfigModalOpen(true)
+              }}
+              className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors cursor-pointer"
+              title="Configuraciones de la Empresa"
+            >
+              <Cog6ToothIcon className="h-4 w-4" />
+            </button>
+          </Can>
+
           <Can I="editar" a="empresas" fallback={
             <button disabled className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed" title="Sin permiso">
               <PencilIcon className="h-4 w-4" />
@@ -358,6 +377,16 @@ export function Empresas() {
               setEmpresaModulosEdit(null)
             }}
             empresa={empresaModulosEdit}
+            variant="inline"
+          />
+        ) : isConfigModalOpen ? (
+          <EmpresaConfiguracionesModal
+            isOpen={isConfigModalOpen}
+            onClose={() => {
+              setConfigModalOpen(false)
+              setEmpresaConfigEdit(null)
+            }}
+            empresa={empresaConfigEdit}
             variant="inline"
           />
         ) : (
