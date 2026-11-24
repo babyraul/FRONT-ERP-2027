@@ -10,35 +10,45 @@
 
 ```
 FRONT/
+├── AGENTS.md                     # Instrucciones y convenciones para agentes
+├── docs/                         # Guías técnicas de UI y patrones
+│   └── MODAL_ACTION_SECTION_GUIDE.md
 ├── public/                       # Activos estáticos públicos (logos, favicons e íconos)
-│   ├── images/                   # Logotipos de la aplicación y marcas
+│   ├── images/                   # Logotipos de la aplicación, marcas y medios de pago
+│   ├── rive/                     # Activos de animación Rive
 │   └── icon.ico                  # Favicon del sistema
 ├── server/                       # Microservicio Node.js auxiliar para envíos de correo
 │   └── emailServer.js            # Servidor Express + Nodemailer (puerto 3001)
 ├── src/                          # Código fuente principal de la aplicación React
 │   ├── components/               # Componentes reutilizables de UI y layout general
-│   │   ├── layout/               # Componentes estructurales de la aplicación
-│   │   └── ui/                   # Componentes de interfaz atómicos y modulares
-│   ├── hooks/                    # Hooks personalizados de React
+│   │   ├── layout/               # Componentes estructurales (Layout, Navbar, Sidebar, ProtectedRoute)
+│   │   ├── ThemeToggle.jsx       # Selector de tema claro/oscuro
+│   │   └── ui/                   # Componentes atómicos (DataTable, Modal, Can, Button, PageHeader, etc.)
+│   ├── hooks/                    # Hooks personalizados (usePermission.js, useTheme.js)
 │   ├── modules/                  # Arquitectura modular por dominios de negocio
-│   │   ├── auth/                 # Módulo de Autenticación y Login
+│   │   ├── auth/                 # Autenticación y Login
+│   │   ├── caja/                 # Operación de turnos, movimientos y arqueos de caja
 │   │   ├── clientes/             # Gestión de Clientes / Directorio comercial
-│   │   ├── compras/             # Módulo de Compras y Abastecimiento (en desarrollo)
+│   │   ├── combos/               # Gestión de Combos promocionales
+│   │   ├── compras/              # Módulo de Compras y Abastecimiento
 │   │   ├── dashboard/            # Panel de métricas, KPIs y estadísticas
-│   │   ├── manager/              # Módulo de Administración del Sistema (Multi-tenant)
-│   │   ├── productos/            # Gestión de Catálogo e Inventario básico
+│   │   ├── facturacion/          # Emisión y gestión de facturación electrónica
+│   │   ├── gestionVentas/        # Listado de ventas, vales y preventas
+│   │   ├── manager/              # Administración del Sistema (Multi-tenant, roles, permisos, sedes)
+│   │   ├── productos/            # Gestión de Catálogo y presentaciones
+│   │   ├── proveedores/          # Directorio de Proveedores
 │   │   ├── reportes/             # Reportes analíticos y gráficos
-│   │   ├── stock/                # Módulo de Stock y Kárdex (en desarrollo)
-│   │   └── ventas/               # Registro de transacciones y comprobantes
+│   │   ├── stock/                # Control de Stock y Kárdex
+│   │   └── vender/               # Punto de Venta (POS) y pantalla de cobro
 │   ├── router/                   # Configuración del enrutador central (React Router DOM)
 │   ├── store/                    # Manejo de estado global con Zustand
-│   ├── utils/                    # Clientes HTTP, helpers y utilitarios
+│   ├── utils/                    # Clientes HTTP, helpers, impresión de tickets y catálogos fijos
 │   ├── App.jsx                   # Componente raíz con proveedores de contexto/tema
 │   ├── index.css                 # Estilos globales y directivas Tailwind CSS
 │   └── main.jsx                  # Punto de entrada de Vite (ReactDOM.createRoot)
 ├── tests/                        # Suite de pruebas automatizadas
 │   ├── setup.js                  # Configuración de Vitest y Testing Library
-│   └── unit/                     # Pruebas unitarias de componentes
+│   └── unit/                     # Pruebas unitarias de componentes (RolPermisosModal.test.jsx)
 ├── index.html                    # Plantilla HTML principal
 ├── package.json                  # Dependencias y scripts del proyecto
 ├── postcss.config.js             # Configuración de PostCSS para Tailwind
@@ -58,7 +68,7 @@ FRONT/
 | `FRONT/src/modules/` | Organización modular del ERP. Cada módulo contiene sus páginas (`pages/`), controladores (`controllers/`) y componentes locales (`components/`). |
 | `FRONT/src/router/` | Definición de rutas declarativas con `createBrowserRouter`, jerarquía de layouts y rutas protegidas. |
 | `FRONT/src/store/` | Stores globales con Zustand para autenticación, notificaciones y entidades de negocio. |
-| `FRONT/src/utils/` | Cliente Axios configurado (`api.js`), cálculos globales de facturación (`Operaciones.js`), exportación a hojas de cálculo (`exportExcel.js`) y utilidades de alertas (`toast.js`). |
+| `FRONT/src/utils/` | Cliente Axios (`api.js`), cálculos globales (`Operaciones.js`), catálogos fijos (`tablasFijas.js`), impresión de tickets (`ticketPrint.js`, `ticketVentaPrint.js`), unidades (`unidades.js`), exportación a Excel (`exportExcel.js`) y alertas (`toast.js`). |
 | `FRONT/tests/` | Pruebas unitarias y de integración ejecutadas con Vitest y `@testing-library/react`. |
 
 ---
@@ -72,12 +82,16 @@ La navegación del sistema está centralizada en [`FRONT/src/router/index.jsx`](
 | `/login` | `<Login />` (`modules/auth`) | Público | Formulario de autenticación de usuario y selección de credenciales. |
 | `/` | `Navigate -> /dashboard` | Sesión activa | Redirección por defecto a la vista principal del dashboard. |
 | `/dashboard` | `<Dashboard />` (`modules/dashboard`) | Dentro de `<Layout />` | Métricas de ventas, accesos directos y gráficos estadísticos. |
+| `/vender` | `<Vender />` (`modules/vender`) | Dentro de `<Layout />` | Punto de venta (POS) para armado de pedidos y pre-ventas. |
+| `/vender/pagar`, `/pagar` | `<Pagar />` (`modules/vender`) | Dentro de `<Layout />` | Pantalla de cobro, medios de pago y emisión de comprobante. |
 | `/productos` | `<Productos />` (`modules/productos`) | Dentro de `<Layout />` | Catálogo de productos, filtros por categoría, búsqueda y CRUD básico. |
 | `/combos` | `<Combos />` (`modules/combos`) | Dentro de `<Layout />` | Gestión de paquetes comerciales/combos, stock dinámico, precios y edición de composición. |
-| `/clientes` | `<Clientes />` (`modules/clientes`) | Dentro de `<Layout />` | Directorio de clientes con filtros por RUC/Nombre y exportación. |
-| `/ventas` / `/listventas` | `<Ventas />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Histórico y listado de comprobantes emitidos con DataTable y filtros de fecha. |
-| `/vales` / `/listvales` | `<Vales />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Histórico y listado de vales / notas de venta internas con DataTable y filtros de fecha. |
-| `/preventas` | `<Preventas />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Listado y gestión de órdenes pre-ventas pendientes de liquidación y cobro. |
+| `/stock` | `<Stock />` (`modules/stock`) | `<ProtectedRoute requirePermission="stock.ver">` | Control de stock actual, ajustes manuales, carga masiva y kárdex. |
+| `/clientes` | `<Clientes />` (`modules/clientes`) | `<ProtectedRoute>` | Directorio de clientes con filtros por RUC/Nombre y exportación. |
+| `/listventas` | `<Ventas />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Histórico y listado de comprobantes emitidos con DataTable y filtros de fecha. |
+| `/facturacion`, `/listfacturacion` | `<Facturacion />` (`modules/facturacion`) | `<ProtectedRoute>` | Gestión y consulta de comprobantes electrónicos. |
+| `/vales`, `/listvales` | `<Vales />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Histórico y listado de vales / notas de venta internas con DataTable y filtros de fecha. |
+| `/gespreventas` | `<Preventas />` (`modules/gestionVentas`) | Dentro de `<Layout />` | Listado y gestión de órdenes pre-ventas pendientes de liquidación y cobro. |
 | `/caja` | `<Caja />` (`modules/caja`) | `<ProtectedRoute>` | Gestión operativa de turnos de caja, fondo de apertura, ventas y arqueo/cierre de turnos. |
 | `/reportes` | `<Reportes />` (`modules/reportes`) | Dentro de `<Layout />` | Reportes detallados y gráficos analíticos con Recharts. |
 | `/proveedores` | `<Proveedores />` (`modules/proveedores`) | `<ProtectedRoute>` | Directorio de proveedores, clasificación, búsqueda y CRUD con integración a SUNAT. |
@@ -110,6 +124,7 @@ La navegación del sistema está centralizada en [`FRONT/src/router/index.jsx`](
 * **`<Can />`** ([`FRONT/src/components/ui/Can.jsx`](FRONT/src/components/ui/Can.jsx)): Renderizador condicional según permisos de usuario (`hasPermission(permission)`).
 * **`<ErrorBoundary />` / `<RouteErrorBoundary />`** ([`FRONT/src/components/ui/ErrorBoundary.jsx`](FRONT/src/components/ui/ErrorBoundary.jsx)): Captura y recuperación ante excepciones imprevistas en el ciclo de vida de React o en las rutas.
 * **`<ToastContainer />`** ([`FRONT/src/components/ui/ToastContainer.jsx`](FRONT/src/components/ui/ToastContainer.jsx)): Contenedor flotante de notificaciones informativas, de éxito o error.
+* **Otros primitivos UI (`components/ui`):** `ActionButtons.jsx`, `ActionSection.jsx`, `Button.jsx`, `DateRangeFilter.jsx`, `PageHeader.jsx` y `SearchableSelect.jsx`.
 
 ### C. Modales de Gestión Administrativa (`modules/manager/components`)
 * **`<EmpresaModal />`**: Alta y edición de empresas con consulta automática de RUC en SUNAT vía API.
@@ -144,6 +159,7 @@ El proyecto utiliza **Zustand** como solución ligera, rápida y reactiva para e
 | **`useClientesStore`** | [`FRONT/src/store/useClientesStore.js`](FRONT/src/store/useClientesStore.js) | En memoria | Gestión de clientes comerciales (`clientes`, `busqueda`), filtros por documento/razón social y acciones de actualización. |
 | **`useVentasStore`** | [`FRONT/src/store/useVentasStore.js`](FRONT/src/store/useVentasStore.js) | En memoria | Histórico de ventas (`ventas`, `estadoFiltro`), sumatorias por fechas (`getTotalesPorDia`) y estados de comprobantes. |
 | **`useUsuariosStore`** | [`FRONT/src/store/useUsuariosStore.js`](FRONT/src/store/useUsuariosStore.js) | En memoria | Directorio de usuarios y estados de acceso para vistas rápidas de configuración. |
+| **`useVentaActivaStore`** | [`FRONT/src/modules/vender/store/useVentaActivaStore.js`](FRONT/src/modules/vender/store/useVentaActivaStore.js) | En memoria | Estado local del carrito/venta activa en el módulo POS (`vender`). |
 
 ---
 
@@ -174,6 +190,11 @@ Los módulos de gestión (`modules/manager/controllers/`) implementan la arquite
 | **`rolController`** | [`FRONT/src/modules/manager/controllers/rol.js`](FRONT/src/modules/manager/controllers/rol.js) | `GET /roles`<br>`GET /roles/:id`<br>`POST /roles`<br>`PUT /roles/:id`<br>`DELETE /roles/:id`<br>`GET /roles/:id/permisos`<br>`POST /roles/:id/permisos` |
 | **`moduloController`** | [`FRONT/src/modules/manager/controllers/modulo.js`](FRONT/src/modules/manager/controllers/modulo.js) | `GET /modulos`<br>`GET /modulos/:id`<br>`POST /modulos`<br>`PUT /modulos/:id`<br>`DELETE /modulos/:id` |
 | **`permisoController`** | [`FRONT/src/modules/manager/controllers/permiso.js`](FRONT/src/modules/manager/controllers/permiso.js) | `GET /permisos` |
+| **`configuracionController`** | [`FRONT/src/modules/manager/controllers/configuracion.js`](FRONT/src/modules/manager/controllers/configuracion.js) | Gestión de configuraciones de sistema y empresa (`/configuraciones`, `/empresas/:id/configuraciones`). |
+| **`cajaOperativaController`** | [`FRONT/src/modules/caja/controllers/caja.js`](FRONT/src/modules/caja/controllers/caja.js) | Turnos, apertura, movimientos manuales, arqueos y cierre (`/cajas/turnos/*`). |
+| **`combosController`** | [`FRONT/src/modules/combos/controller/combos.js`](FRONT/src/modules/combos/controller/combos.js) | CRUD de combos promocionales (`/combos`). |
+| **`facturacionController`** | [`FRONT/src/modules/facturacion/controllers/facturacion.js`](FRONT/src/modules/facturacion/controllers/facturacion.js) | Operaciones de facturación electrónica. |
+| **`stockController`** | [`FRONT/src/modules/stock/controllers/stock.js`](FRONT/src/modules/stock/controllers/stock.js) | Control de stock, ajustes, reinicio masivo, carga masiva y kárdex (`/stock/*`). |
 | **`productoController`** | [`FRONT/src/modules/productos/controllers/producto.js`](FRONT/src/modules/productos/controllers/producto.js) | `GET /productos`<br>`GET /productos/:id`<br>`POST /productos`<br>`PUT /productos/:id`<br>`DELETE /productos/:id` |
 | **`clienteController`** | [`FRONT/src/modules/clientes/controllers/cliente.js`](FRONT/src/modules/clientes/controllers/cliente.js) | `GET /clientes`<br>`GET /clientes/:id`<br>`POST /clientes`<br>`PUT /clientes/:id`<br>`DELETE /clientes/:id` |
 | **`proveedorController`** | [`FRONT/src/modules/proveedores/controllers/proveedor.js`](FRONT/src/modules/proveedores/controllers/proveedor.js) | `GET /proveedores`<br>`GET /proveedores/:id`<br>`POST /proveedores`<br>`PUT /proveedores/:id`<br>`DELETE /proveedores/:id` |
