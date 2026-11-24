@@ -59,5 +59,25 @@ export const productoController = {
       console.error(`Error al obtener kardex del producto ${id}:`, error)
       return { success: false, data: [], error: error.response?.data?.message || 'Error al obtener kárdex' }
     }
+  },
+
+  getPrecios: async (params = {}) => {
+    try {
+      const response = await api.get('/productos/precios', { params })
+      return { success: true, data: response.data?.data || [] }
+    } catch (error) {
+      console.error('Error al obtener precios por presentación:', error)
+      return { success: false, data: [], error: error.response?.data?.message || 'Error al obtener precios' }
+    }
+  },
+
+  updatePreciosMasivo: async (items = []) => {
+    try {
+      const response = await api.put('/productos/precios/masivo', { items })
+      return { success: true, data: response.data?.data || response.data }
+    } catch (error) {
+      console.error('Error al actualizar precios masivamente:', error)
+      return { success: false, error: error.response?.data?.message || 'Error al actualizar precios' }
+    }
   }
 }

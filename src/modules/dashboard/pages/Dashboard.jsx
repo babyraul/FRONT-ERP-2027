@@ -98,17 +98,17 @@ export default function Dashboard() {
       </div>
 
       {/* Últimas ventas */}
-      <div className="card">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">Últimas ventas</h2>
+      <div className="table-container p-5">
+        <h2 className="text-base font-semibold text-slate-800 dark:text-white mb-4">Últimas ventas</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500 border-b border-gray-100">
-                <th className="pb-2 font-medium">Comprobante</th>
-                <th className="pb-2 font-medium">Cliente</th>
-                <th className="pb-2 font-medium">Fecha</th>
-                <th className="pb-2 font-medium text-right">Total</th>
-                <th className="pb-2 font-medium text-center">Estado</th>
+          <table className="w-full text-sm border-collapse">
+            <thead className="table-thead">
+              <tr>
+                <th className="px-4 py-3 text-left">Comprobante</th>
+                <th className="px-4 py-3 text-left">Cliente</th>
+                <th className="px-4 py-3 text-left">Fecha</th>
+                <th className="px-4 py-3 text-right">Total</th>
+                <th className="px-4 py-3 text-center">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">

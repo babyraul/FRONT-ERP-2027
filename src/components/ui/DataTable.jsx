@@ -15,19 +15,55 @@ import {
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
 
-// Componente para filtro por columna con diseño integrado en la cabecera
-function Filter({ column, table }) {
+// Componente para filtro por columna unificado con el título en la cabecera
+function Filter({ column, headerTitle }) {
   const columnFilterValue = column.getFilterValue()
+  const meta = column.columnDef.meta || {}
+  const filterVariant = meta.filterVariant || column.columnDef.filterVariant
+  const filterOptions = meta.filterOptions || column.columnDef.filterOptions
+  const rawHeader = column.columnDef.header
+  const title = headerTitle || (typeof rawHeader === 'string' ? rawHeader : meta.title || column.id)
+
+  if (filterVariant === 'select' && filterOptions) {
+    return (
+      <div className="relative w-full">
+        <select
+          value={(columnFilterValue ?? '')}
+          onChange={e => column.setFilterValue(e.target.value === '' ? undefined : e.target.value)}
+          className="w-full text-[11px] font-bold py-1.5 px-2 border border-slate-200/80 dark:border-slate-700/80 rounded-xl bg-white/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#01a59c]/30 focus:border-[#01a59c] transition-all cursor-pointer shadow-2xs uppercase tracking-wider"
+        >
+          <option value="">{title}: TODOS</option>
+          {filterOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    )
+  }
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full flex items-center">
+      <MagnifyingGlassIcon className="absolute left-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
       <input
         type="text"
         value={(columnFilterValue ?? '')}
-        onChange={e => column.setFilterValue(e.target.value)}
-        placeholder="Filtrar..."
-        className="w-full text-[11px] py-1 px-2 border border-slate-200 dark:border-slate-700/80 rounded-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-[#01a59c] focus:border-[#01a59c] transition-all font-normal placeholder:text-slate-400/80 shadow-2xs"
+        onChange={e => column.setFilterValue(e.target.value === '' ? undefined : e.target.value)}
+        placeholder={title}
+        title={`Filtrar por ${title}`}
+        className="w-full text-[11px] font-bold py-1.5 pl-7 pr-6 border border-slate-200/80 dark:border-slate-700/80 rounded-xl bg-white/80 dark:bg-slate-900/80 text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-[#01a59c]/30 focus:border-[#01a59c] transition-all placeholder:text-slate-500 dark:placeholder:text-slate-400 placeholder:font-bold placeholder:uppercase placeholder:tracking-wider shadow-2xs"
       />
+      {columnFilterValue ? (
+        <button
+          type="button"
+          onClick={() => column.setFilterValue(undefined)}
+          className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-0.5"
+          title="Limpiar filtro"
+        >
+          <span className="text-xs font-bold leading-none">&times;</span>
+        </button>
+      ) : null}
     </div>
   )
 }
@@ -40,10 +76,20 @@ export function DataTable({
   onFilteredData,
   renderExpandedRow,
   expanded: controlledExpanded,
-  onExpandedChange: controlledSetExpanded
+  onExpandedChange: controlledSetExpanded,
+  columnFilters: controlledColumnFilters,
+  onColumnFiltersChange: controlledSetColumnFilters,
+  getRowId: getRowIdProp,
+  className = '',
+  maxHeight = '65vh',
+  stickyHeader = true
 }) {
-  const [columnFilters, setColumnFilters] = useState([])
+  const [internalColumnFilters, setInternalColumnFilters] = useState([])
   const [internalExpanded, setInternalExpanded] = useState({})
+
+  const isControlledColumnFilters = controlledColumnFilters !== undefined
+  const columnFilters = isControlledColumnFilters ? controlledColumnFilters : internalColumnFilters
+  const setColumnFilters = isControlledColumnFilters ? controlledSetColumnFilters : setInternalColumnFilters
 
   const isControlledExpanded = controlledExpanded !== undefined
   const expanded = isControlledExpanded ? controlledExpanded : internalExpanded
@@ -52,6 +98,7 @@ export function DataTable({
   const table = useReactTable({
     data,
     columns,
+    getRowId: getRowIdProp || ((row, idx) => (row?.id !== undefined ? String(row.id) : String(idx))),
     state: {
       columnFilters,
       ...(renderExpandedRow ? { expanded } : {})
@@ -79,12 +126,15 @@ export function DataTable({
   }, [table.getFilteredRowModel().rows, onFilteredData])
 
   return (
-    <div className="w-full flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60 overflow-hidden transition-all">
-      <div className="overflow-x-auto">
+    <div className={`w-full flex flex-col glass-card rounded-3xl border border-white/70 dark:border-slate-800/80 overflow-hidden transition-all ${className}`}>
+      <div
+        className={`overflow-x-auto min-h-[340px] ${maxHeight ? 'overflow-y-auto' : ''}`}
+        style={maxHeight ? { maxHeight } : {}}
+      >
         <table className="w-full text-sm text-left border-collapse">
-          <thead>
+          <thead className={stickyHeader ? 'sticky top-0 z-20 shadow-xs' : ''}>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
+              <tr key={headerGroup.id} className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/95 dark:bg-[var(--panel)] backdrop-blur-md">
                 {headerGroup.headers.map((header) => {
                   const isAcciones = header.column.id === 'acciones'
                   const colDef = header.column.columnDef
@@ -101,24 +151,32 @@ export function DataTable({
                     <th
                       key={header.id}
                       colSpan={header.colSpan}
-                      className={`relative px-5 py-4 font-semibold text-slate-600 dark:text-slate-300 group align-top ${extraClass}`}
+                      className={`px-5 py-3.5 font-semibold text-slate-600 dark:text-slate-300 group align-top ${
+                        stickyHeader ? 'sticky top-0 z-20 bg-slate-50/95 dark:bg-[var(--panel)] backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800' : ''
+                      } ${extraClass}`}
                       style={thStyle}
                     >
                       {header.isPlaceholder ? null : (
-                        <div className={`flex flex-col h-full gap-1.5 justify-start ${isAcciones ? 'items-center text-center' : ''}`}>
-                          <div className={`flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200 ${isAcciones ? 'justify-center text-center w-full' : 'justify-between'}`}>
-                            <span className="truncate">
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                            </span>
-                          </div>
+                        <div className={`flex flex-col h-full justify-center ${isAcciones ? 'items-center text-center' : ''}`}>
                           {header.column.getCanFilter() ? (
-                            <div className="w-full">
-                              <Filter column={header.column} table={table} />
+                            <Filter
+                              column={header.column}
+                              headerTitle={
+                                typeof header.column.columnDef.header === 'string'
+                                  ? header.column.columnDef.header
+                                  : (header.column.columnDef.meta?.title || header.column.id)
+                              }
+                            />
+                          ) : (
+                            <div className={`flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200 ${isAcciones ? 'justify-center text-center w-full' : 'justify-between'}`}>
+                              <span className="truncate">
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                              </span>
                             </div>
-                          ) : null}
+                          )}
                         </div>
                       )}
 
@@ -205,7 +263,7 @@ export function DataTable({
 
       {/* Pagination */}
       {pagination && (
-        <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-4 bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between px-5 py-4 bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/80 dark:border-slate-800 gap-4">
           <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
             <span className="font-medium bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
               Pág {table.getState().pagination.pageIndex + 1} de {table.getPageCount() || 1}

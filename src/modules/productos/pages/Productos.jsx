@@ -22,6 +22,8 @@ import StockKardexModal from '../../stock/components/StockKardexModal.jsx'
 import Modal from '../../../components/ui/Modal.jsx'
 import { DataTable } from '../../../components/ui/DataTable.jsx'
 import Can from '../../../components/ui/Can.jsx'
+import RowActionMenu from '../../../components/ui/RowActionMenu.jsx'
+import { usePermission } from '../../../hooks/usePermission.js'
 import {
   ActionCell,
   EditRowButton,
@@ -35,6 +37,7 @@ import {
 import { toast } from '../../../utils/toast.js'
 
 export default function Productos() {
+  const { hasPermission } = usePermission()
   const { productos, loading, fetchProductos, deleteProducto, activarProducto } = useProductosStore()
 
   const [busq, setBusq] = useState('')
@@ -161,31 +164,46 @@ export default function Productos() {
     {
       id: 'acciones',
       header: 'Acciones',
+      size: 65,
       cell: (info) => {
         const p = info.row.original
         const isActivo = p.activo !== false
         return (
-          <ActionCell>
-            <Can I="editar" a="productos">
-              <EditRowButton
-                onClick={() => handleOpenEdit(p)}
-                title="Editar producto"
-              />
-            </Can>
-            <Can I="eliminar" a="productos">
-              {isActivo ? (
-                <DeleteRowButton
-                  onClick={() => handleSolicitarBaja(p)}
-                  title="Dar de baja / Inactivar producto"
-                />
-              ) : (
-                <ReactivateRowButton
-                  onClick={() => handleReactivar(p)}
-                  title="Reactivar producto"
-                />
-              )}
-            </Can>
-          </ActionCell>
+          <RowActionMenu
+            title="Acciones de Producto"
+            menuTitle="Opciones de Producto"
+            items={[
+              {
+                label: 'Editar Producto',
+                icon: PencilIcon,
+                tone: 'blue',
+                visible: hasPermission('productos.editar'),
+                onClick: () => handleOpenEdit(p)
+              },
+              {
+                label: 'Ver Kárdex',
+                icon: ClipboardDocumentListIcon,
+                tone: 'teal',
+                visible: hasPermission('productos.ver'),
+                onClick: () => handleOpenKardex(p)
+              },
+              isActivo
+                ? {
+                    label: 'Dar de Baja',
+                    icon: TrashIcon,
+                    tone: 'rose',
+                    visible: hasPermission('productos.eliminar'),
+                    onClick: () => handleSolicitarBaja(p)
+                  }
+                : {
+                    label: 'Reactivar Producto',
+                    icon: ArrowPathIcon,
+                    tone: 'emerald',
+                    visible: hasPermission('productos.eliminar'),
+                    onClick: () => handleReactivar(p)
+                  }
+            ]}
+          />
         )
       },
       enableColumnFilter: false,
@@ -458,7 +476,7 @@ export default function Productos() {
         )
       }
     }
-  ], [expandedRows])
+  ], [expandedRows, hasPermission])
 
   return (
     <div className="space-y-6 p-6">
@@ -480,6 +498,17 @@ export default function Productos() {
                 label="Excel"
                 title="Exportar catálogo de productos a Excel"
               />
+            </Can>
+
+            <Can I="editar" a="productos">
+              <Link
+                to="/precios"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors"
+                title="Gestión masiva de precios y listas"
+              >
+                <TagIcon className="h-4 w-4" />
+                Precios Masivos
+              </Link>
             </Can>
 
             <Can I="crear" a="productos">

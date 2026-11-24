@@ -338,4 +338,31 @@
     background-color: var(--color-secondary);
     box-shadow: 0 4px 12px rgba(1, 165, 156, 0.35);
   }
+
+  /* Estándar global de tablas (pControl2027) */
+  .table-container {
+    @apply w-full flex flex-col glass-card rounded-3xl border border-white/70 dark:border-slate-800/80 overflow-hidden transition-all;
+  }
+
+  .table-thead {
+    @apply sticky top-0 z-20 bg-slate-50/95 dark:bg-[var(--panel)] backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-sm text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 4px 6px -4px rgba(0, 0, 0, 0.02);
+  }
+
+  html[data-theme='dark'] .glass-card {
+    background: rgba(15, 23, 42, 0.68);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 14px 35px -10px rgba(0, 0, 0, 0.4);
+  }
 }

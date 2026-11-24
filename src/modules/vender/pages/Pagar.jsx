@@ -481,7 +481,7 @@ export default function Pagar() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4.25rem)] -m-4 sm:-m-6 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-4rem)] -m-4 sm:-m-6 overflow-hidden">
       {/* ── CUERPO PRINCIPAL: 2 PANELES (RESUMEN EDITABLE IZQ, PAGOS DER) ── */}
       <div className="flex-1 p-3 sm:p-4 overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">
         {/* PANEL IZQUIERDO: Resumen Editable de Preventa (Cliente, Tipo Doc, Productos) */}

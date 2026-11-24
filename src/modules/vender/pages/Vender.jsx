@@ -554,7 +554,7 @@ export default function Vender() {
   }, [cartItems, tipoDocumento, cliente, placa])
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4.25rem)] -m-4 sm:-m-6 overflow-hidden relative">
+    <div className="flex flex-col h-[calc(100vh-4rem)] -m-4 sm:-m-6 overflow-hidden relative">
       {/* ── BANNER BLOQUEANTE DE CAJA (RN-V01 y RN-V02) ── */}
       {cajaStatus.bloqueado && (
         <div className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
