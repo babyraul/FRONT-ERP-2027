@@ -4,7 +4,7 @@ import ProtectedRoute from '../components/layout/ProtectedRoute.jsx'
 import { RouteErrorBoundary } from '../components/ui/ErrorBoundary.jsx'
 import { Login } from '../modules/auth'
 import { Dashboard } from '../modules/dashboard'
-import { Productos, PreciosMasivos } from '../modules/productos'
+import { Productos, PreciosMasivos, ConsultadorPrecios } from '../modules/productos'
 import { Clientes } from '../modules/clientes'
 import { Ventas, Preventas, Vales } from '../modules/gestionVentas'
 import { Facturacion } from '../modules/facturacion'
@@ -34,6 +34,8 @@ export const router = createBrowserRouter([
       { path: 'pagar', element: <Pagar /> },
       { path: 'productos', element: <Productos /> },
       { path: 'precios', element: <ProtectedRoute requirePermission="productos.editar"><PreciosMasivos /></ProtectedRoute> },
+      { path: 'consulta-precios', element: <ProtectedRoute requirePermission="productos.ver"><ConsultadorPrecios /></ProtectedRoute> },
+      { path: 'consultar-precios', element: <ProtectedRoute><ConsultadorPrecios /></ProtectedRoute> },
       { path: 'combos', element: <Combos /> },
       { path: 'stock', element: <ProtectedRoute requirePermission="stock.ver"><Stock /></ProtectedRoute> },
       // { path: 'kardexprod', element: <ProtectedRoute requirePermission="kardexprod.ver"><Stock /></ProtectedRoute> },

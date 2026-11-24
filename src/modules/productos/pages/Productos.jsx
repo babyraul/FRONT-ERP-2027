@@ -500,6 +500,17 @@ export default function Productos() {
               />
             </Can>
 
+            <Can I="ver" a="productos">
+              <Link
+                to="/consulta-precios"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/60 text-[#01a59c] hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-colors"
+                title="Consultador rápido de precios (tótem / lector de barras)"
+              >
+                <MagnifyingGlassIcon className="h-4 w-4" />
+                Consultador
+              </Link>
+            </Can>
+
             <Can I="editar" a="productos">
               <Link
                 to="/precios"

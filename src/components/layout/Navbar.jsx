@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import {
   Bars3Icon,
-  BellIcon,
   ArrowRightOnRectangleIcon,
   ChevronDownIcon,
   ChevronRightIcon,
@@ -14,6 +13,7 @@ import { useAuthStore } from '../../store/useAuthStore.js'
 import { toast } from '../../utils/toast'
 import ThemeToggle from '../ThemeToggle.jsx'
 import { buildNavData, resolveBreadcrumb } from './menuUtils.js'
+import { NotificacionesBell } from '../../modules/notificaciones'
 
 export default function Navbar({ onMenuClick }) {
   const { user, logout, menu, switchBranch } = useAuthStore()
@@ -179,10 +179,7 @@ export default function Navbar({ onMenuClick }) {
           </div>
         )}
 
-        <button id="navbar-notifications" className="icon-btn relative text-white hover:bg-white/15 hover:text-white" aria-label="Notificaciones">
-          <BellIcon className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-400 ring-2 ring-[#01a59c]" />
-        </button>
+        <NotificacionesBell className="text-white hover:bg-white/15 hover:text-white" />
 
         <div className="relative ml-1" ref={menuRef}>
           <button

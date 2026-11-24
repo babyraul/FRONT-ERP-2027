@@ -115,6 +115,7 @@ export function buildNavData(menu = [], user = null, { includeConfig = false } =
 
 const EXTRA_ROUTE_LABELS = {
   '/precios': { sectionTitle: 'Catálogos', label: 'Precios Masivos' },
+  '/consulta-precios': { sectionTitle: 'Catálogos', label: 'Consultador de Precios' },
   '/vender/pagar': { sectionTitle: 'Ventas', label: 'Cobrar Pedido' },
   '/pagar': { sectionTitle: 'Ventas', label: 'Cobrar Pedido' },
   '/configuracion': { sectionTitle: 'Administración', label: 'Configuración' }
