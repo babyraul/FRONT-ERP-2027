@@ -117,9 +117,8 @@ export default function ConsultadorPrecios() {
   return (
     <div
       ref={containerRef}
-      className={`min-h-[calc(100vh-5rem)] flex flex-col gap-5 p-6 ${
-        isFullscreen ? 'bg-slate-100 dark:bg-slate-950 overflow-y-auto' : ''
-      }`}
+      className={`min-h-[calc(100vh-5rem)] flex flex-col gap-5 p-6 ${isFullscreen ? 'bg-slate-100 dark:bg-slate-950 overflow-y-auto' : ''
+        }`}
     >
       {/* Barra superior */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -157,11 +156,10 @@ export default function ConsultadorPrecios() {
               setAutoLimpiar((v) => !v)
               focusInput()
             }}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
-              autoLimpiar
-                ? 'border-teal-300 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/40 text-[#01a59c]'
-                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500'
-            }`}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${autoLimpiar
+              ? 'border-teal-300 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/40 text-[#01a59c]'
+              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500'
+              }`}
             title="Vuelve a la lista general automáticamente después de 6 segundos"
           >
             <ClockIcon className="h-4 w-4" />
@@ -311,8 +309,6 @@ export default function ConsultadorPrecios() {
                   <th className="px-4 py-3">Presentación</th>
                   <th className="px-4 py-3">Cód. Barras</th>
                   <th className="px-4 py-3 text-right">P. Venta</th>
-                  <th className="px-4 py-3 text-right">P. Mayor</th>
-                  <th className="px-4 py-3 text-right">P. Especial</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -341,12 +337,6 @@ export default function ConsultadorPrecios() {
                     </td>
                     <td className="px-4 py-2.5 text-right font-black font-mono text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(Number(item.precio_venta || 0))}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-slate-600 dark:text-slate-300">
-                      {Number(item.precio_mayor || 0) > 0 ? formatCurrency(Number(item.precio_mayor)) : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-slate-600 dark:text-slate-300">
-                      {Number(item.precio_especial || 0) > 0 ? formatCurrency(Number(item.precio_especial)) : '—'}
                     </td>
                   </tr>
                 ))}
